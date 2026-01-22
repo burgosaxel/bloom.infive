@@ -199,9 +199,10 @@ h2{
 /* ---------- Blog index grid ---------- */
 .blogGrid{
   display:grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr;
   gap: 14px;
 }
+
 
 .postCard{
   background: var(--card);

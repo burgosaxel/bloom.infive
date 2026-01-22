@@ -3,7 +3,7 @@ async function loadNav() {
   if (!host) return;
 
   const path = window.location.pathname.replace(/\\/g, "/");
-  const depth = (path.includes("/pages/") || path.includes("/blog/")) ? 1 : 0;
+  const depth = (path.includes("/pages/") || path.includes("/blog/") || path.includes("/admin/")) ? 1 : 0;
   const prefix = depth === 1 ? "../" : "./";
 
   const res = await fetch(prefix + "partials/nav.html");
@@ -20,6 +20,9 @@ async function loadNav() {
 
   wireNavInteractions(host);
   setYear();
+
+  // Fill Blog dropdown dynamically (latest posts)
+  await populateBlogDropdown(host, prefix);
 }
 
 function setYear() {
@@ -65,6 +68,58 @@ function wireNavInteractions(scope) {
       }
     });
   });
+}
+
+function esc(s){
+  return (s || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+async function populateBlogDropdown(scope, prefix){
+  const menu = scope.querySelector("#blogMenu");
+  if (!menu) return;
+
+  try {
+    // Load firebase.js dynamically (module)
+    const { db } = await import(prefix + "firebase.js");
+
+    const firestore = await import("https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js");
+    const { collection, query, where, orderBy, limit, getDocs } = firestore;
+
+    // Requires composite index: published + createdAt desc
+    const q = query(
+      collection(db, "posts"),
+      where("published", "==", true),
+      orderBy("createdAt", "desc"),
+      limit(6)
+    );
+
+    const snap = await getDocs(q);
+
+    // remove "Loading posts…" placeholder
+    const loading = menu.querySelector("span");
+    if (loading) loading.remove();
+
+    if (snap.empty) {
+      menu.insertAdjacentHTML("beforeend",
+        `<span class="muted fine" style="display:block; padding:10px 10px;">No posts yet.</span>`
+      );
+      return;
+    }
+
+    const itemsHtml = snap.docs.map(d => {
+      const p = d.data();
+      return `<a href="${prefix}blog/post.html?id=${d.id}">${esc(p.title || "Untitled")}</a>`;
+    }).join("");
+
+    menu.insertAdjacentHTML("beforeend", itemsHtml);
+  } catch (err) {
+    // If firebase.js missing or index not created, fail quietly
+    const loading = menu.querySelector("span");
+    if (loading) loading.textContent = "Posts unavailable.";
+  }
 }
 
 loadNav();

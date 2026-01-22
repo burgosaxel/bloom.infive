@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin | BLOOM.INFIVE</title>
+
+  <link rel="stylesheet" href="../styles.css" />
+
+  <!-- Quill rich text editor -->
+  <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet" />
+
+  <style>
+    .adminRow{
+      display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+    }
+    .adminRow .left{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+    }
+    .adminTools{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+      margin: 10px 0 0;
+    }
+    .adminGrid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .adminList{
+      display:grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .adminItem{
+      background:#fff;
+      border:1px solid rgba(0,0,0,.08);
+      border-radius: 18px;
+      padding: 14px 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.06);
+      display:flex;
+      gap: 12px;
+      justify-content:space-between;
+      align-items:flex-start;
+      flex-wrap:wrap;
+    }
+    .adminItem h3{ margin: 0 0 6px; }
+    .adminItem .meta{ display:flex; gap:8px; flex-wrap:wrap; }
+    .adminItem .actions{ display:flex; gap:10px; flex-wrap:wrap; }
+    .fine{ font-size: 13px; }
+    /* Quill sizing to match your UI */
+    #editor{
+      background:#fff;
+      border-radius: 14px;
+      border:1.5px solid rgba(0,0,0,.2);
+      overflow:hidden;
+    }
+    .ql-toolbar{
+      border:0 !important;
+      border-bottom:1px solid rgba(0,0,0,.12) !important;
+    }
+    .ql-container{
+      border:0 !important;
+      font-size: 16px;
+    }
+    .ql-editor{
+      min-height: 220px;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="section">
+    <div class="container">
+      <div class="card">
+        <div class="adminRow">
+          <div class="left">
+            <h2 style="margin:0;">Admin</h2>
+            <span class="tag">Posts</span>
+          </div>
+          <button class="btn ghost small" id="logoutBtn" type="button" style="display:none;">Logout</button>
+        </div>
+
+        <p class="muted" style="margin-top:10px;">Login to create, edit, or delete blog posts.</p>
+
+        <!-- Login -->
+        <div id="authBox">
+          <form class="form" id="loginForm">
+            <input type="email" id="email" placeholder="Email" required />
+            <input type="password" id="password" placeholder="Password" required />
+            <button class="btn primary" type="submit">Login</button>
+            <p class="muted fine" id="loginMsg" style="margin:8px 0 0;" aria-live="polite"></p>
+          </form>
+        </div>
+
+        <!-- Admin -->
+        <div id="adminBox" style="display:none; margin-top:18px;">
+          <div class="adminTools">
+            <button class="btn small ghost" id="newBtn" type="button">Add New Blog</button>
+            <button class="btn small ghost" id="cancelEditBtn" type="button" style="display:none;">Cancel</button>
+            <span class="muted fine" id="statusMsg" aria-live="polite"></span>
+          </div>
+
+          <!-- Editor / Form -->
+          <div id="editorWrap" style="display:none; margin-top:14px;">
+            <div class="adminGrid">
+              <input id="title" placeholder="Post title" required />
+              <input id="tags" placeholder="Tags (comma separated)" />
+              <div id="editor"></div>
+
+              <button class="btn primary" id="publishBtn" type="button">Publish</button>
+              <p class="muted fine" id="postMsg" aria-live="polite" style="margin:8px 0 0;"></p>
+            </div>
+          </div>
+
+          <!-- Saved posts list -->
+          <div style="margin-top:18px;">
+            <h2 style="margin:0 0 10px;">Saved Posts</h2>
+            <div id="postsList" class="adminList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Quill -->
+  <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
+
+  <!-- Admin logic -->
+  <script type="module" src="./admin.js"></script>
+</body>
+</html>

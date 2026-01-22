@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Blog Post | BLOOM.INFIVE</title>
+  <meta name="description" content="Blog post." />
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+
+<body>
+  <div id="nav-host"></div>
+
+  <main>
+    <section class="section">
+      <div class="container">
+        <div class="card">
+          <h2 id="title">Loading…</h2>
+          <p class="muted" id="meta"></p>
+
+          <!-- IMPORTANT: contentHtml is trusted because only you can publish -->
+          <div id="content" style="margin-top:12px;"></div>
+
+          <div style="margin-top:14px;">
+            <a class="btn small ghost" href="./index.html">← Back to Blog</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="../nav.js"></script>
+
+  <script type="module">
+    import { db } from "../firebase.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    const params = new URLSearchParams(location.search);
+    const id = params.get("id");
+
+    const titleEl = document.getElementById("title");
+    const metaEl = document.getElementById("meta");
+    const contentEl = document.getElementById("content");
+
+    function esc(s){
+      return (s || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    }
+
+    if (!id) {
+      titleEl.textContent = "Post not found.";
+      metaEl.textContent = "";
+    } else {
+      const snap = await getDoc(doc(db, "posts", id));
+
+      if (!snap.exists()) {
+        titleEl.textContent = "Post not found.";
+        metaEl.textContent = "";
+      } else {
+        const p = snap.data();
+        titleEl.textContent = p.title || "Untitled";
+
+        const tags = Array.isArray(p.tags) ? p.tags : [];
+        metaEl.textContent = tags.join(" • ");
+
+        // Render the rich HTML saved from Quill
+        contentEl.innerHTML = p.contentHtml || "<p class='muted'>No content.</p>";
+      }
+    }
+  </script>
+</body>
+</html>

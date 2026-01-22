@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Blog | Angelika Burgos</title>
-  <meta name="description" content="Blog posts by Angelika Burgos." />
+  <title>Blog | BLOOM.INFIVE</title>
+  <meta name="description" content="Blog posts, reflections, and updates." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../styles.css" />
 </head>
+
 <body>
   <div id="nav-host"></div>
 
@@ -21,40 +22,13 @@
           <p class="muted">Short posts, reflections, and updates.</p>
         </div>
 
-        <div class="blogGrid">
-          <article class="postCard">
-            <h2 style="margin:0 0 10px;"><a href="./quiet-mornings.html">Quiet Mornings</a></h2>
-            <p class="muted">A short reflection on quiet mornings in motherhood.</p>
-            <div class="metaRow">
-              <span class="tag">Faith</span>
-              <span class="tag">Motherhood</span>
-            </div>
-          </article>
-
-          <article class="postCard">
-            <h2 style="margin:0 0 10px;"><a href="./bedtime-prayer.html">A Simple Bedtime Prayer</a></h2>
-            <p class="muted">A simple bedtime prayer for little voices.</p>
-            <div class="metaRow">
-              <span class="tag">Faith</span>
-              <span class="tag">Parenting</span>
-            </div>
-          </article>
-
-          <article class="postCard">
-            <h2 style="margin:0 0 10px;"><a href="./writing-in-between.html">Writing In Between</a></h2>
-            <p class="muted">A reflection about writing in small moments.</p>
-            <div class="metaRow">
-              <span class="tag">Writing</span>
-              <span class="tag">Motherhood</span>
-            </div>
-          </article>
-        </div>
+        <div id="posts" class="blogGrid"></div>
       </div>
     </section>
 
     <footer class="footer">
       <div class="container footerInner">
-        <p class="muted">© <span id="year"></span> Angelika Burgos. All rights reserved.</p>
+        <p class="muted">© <span id="year"></span> BLOOM.INFIVE. All rights reserved.</p>
         <div class="footerLinks">
           <a href="../index.html">Home</a>
           <a href="./index.html">Blog</a>
@@ -65,5 +39,69 @@
   </main>
 
   <script src="../nav.js"></script>
+
+  <script type="module">
+    import { db } from "../firebase.js";
+    import {
+      collection, query, where, orderBy, getDocs
+    } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    const postsEl = document.getElementById("posts");
+
+    function esc(s){
+      return (s || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    }
+
+    function textPreviewFromHtml(html, n=160){
+      const d = document.createElement("div");
+      d.innerHTML = html || "";
+      const t = (d.textContent || "").trim();
+      return t.length > n ? t.slice(0, n).trimEnd() + "…" : t;
+    }
+
+    const q = query(
+      collection(db, "posts"),
+      where("published", "==", true),
+      orderBy("createdAt", "desc")
+    );
+
+    try {
+      const snap = await getDocs(q);
+
+      if (snap.empty) {
+        postsEl.innerHTML = `<p class="muted">No posts yet.</p>`;
+      } else {
+        postsEl.innerHTML = snap.docs.map(docSnap => {
+          const p = docSnap.data();
+          const tags = Array.isArray(p.tags) ? p.tags : [];
+          const preview = textPreviewFromHtml(p.contentHtml || "");
+
+          return `
+            <article class="postCard">
+              <h2 style="margin:0 0 10px;">
+                <a href="./post.html?id=${docSnap.id}">${esc(p.title || "Untitled")}</a>
+              </h2>
+
+              <p class="muted">${esc(preview)}</p>
+
+              <div class="metaRow" style="margin-top:10px;">
+                ${tags.slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join("")}
+              </div>
+            </article>
+          `;
+        }).join("");
+      }
+    } catch (err) {
+      postsEl.innerHTML = `
+        <div class="card" style="box-shadow:none;">
+          <h2 style="margin:0 0 10px;">Blog loading error</h2>
+          <p class="muted" style="margin:0;">${esc(err.message)}</p>
+        </div>
+      `;
+    }
+  </script>
 </body>
 </html>

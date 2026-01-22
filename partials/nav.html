@@ -7,6 +7,8 @@
     </button>
 
     <nav class="navLinks" id="navLinks">
+
+      <!-- About -->
       <div class="dropdown">
         <button class="dropBtn" type="button">About</button>
         <div class="dropMenu">
@@ -14,14 +16,15 @@
         </div>
       </div>
 
+      <!-- Upcoming -->
       <div class="dropdown">
         <button class="dropBtn" type="button">Upcoming</button>
         <div class="dropMenu">
           <a data-link="pages/upcoming.html" href="#">Upcoming Books</a>
-          <a data-link="pages/upcoming.html#calendar" href="#">Upcoming Calendar</a>
         </div>
       </div>
 
+      <!-- Activities -->
       <div class="dropdown">
         <button class="dropBtn" type="button">Activities</button>
         <div class="dropMenu">
@@ -30,23 +33,26 @@
         </div>
       </div>
 
+      <!-- Blog (dynamic) -->
       <div class="dropdown">
         <button class="dropBtn" type="button">Blog</button>
-        <div class="dropMenu">
+        <div class="dropMenu" id="blogMenu">
           <a data-link="blog/index.html" href="#"><strong>All Posts</strong></a>
           <div class="dropDivider"></div>
-          <a data-link="blog/quiet-mornings.html" href="#">Quiet Mornings</a>
-          <a data-link="blog/bedtime-prayer.html" href="#">A Simple Bedtime Prayer</a>
-          <a data-link="blog/writing-in-between.html" href="#">Writing In Between</a>
+          <span class="muted fine" style="display:block; padding:10px 10px;">
+            Loading posts…
+          </span>
         </div>
       </div>
 
+      <!-- Newsletter -->
       <div class="dropdown">
         <button class="dropBtn" type="button">Newsletter</button>
         <div class="dropMenu">
           <a data-link="pages/newsletter.html" href="#">Subscribe</a>
         </div>
       </div>
+
     </nav>
   </div>
 </header>
