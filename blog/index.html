@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Blog | BLOOM.INFIVE</title>
   <meta name="description" content="Blog posts, reflections, and updates." />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../styles.css" />
 </head>
 
@@ -18,11 +15,11 @@
     <section class="section">
       <div class="container">
         <div class="sectionHead">
-          <h2>Blog</h2>
+          <h2>All Posts</h2>
           <p class="muted">Short posts, reflections, and updates.</p>
         </div>
 
-        <div id="posts" class="blogGrid"></div>
+        <div id="posts" style="display:grid; grid-template-columns:1fr; gap:14px;"></div>
       </div>
     </section>
 
@@ -43,10 +40,11 @@
   <script type="module">
     import { db } from "../firebase.js";
     import {
-      collection, query, where, orderBy, getDocs
+      collection, query, where, orderBy, getDocs, Timestamp
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
     const postsEl = document.getElementById("posts");
+    const now = Timestamp.now();
 
     function esc(s){
       return (s || "")
@@ -55,17 +53,19 @@
         .replaceAll(">", "&gt;");
     }
 
-    function textPreviewFromHtml(html, n=160){
+    function previewFromHtml(html, n=220){
       const d = document.createElement("div");
       d.innerHTML = html || "";
       const t = (d.textContent || "").trim();
       return t.length > n ? t.slice(0, n).trimEnd() + "…" : t;
     }
 
+    // Only show posts that are officially published AND have publishAt <= now
     const q = query(
       collection(db, "posts"),
-      where("published", "==", true),
-      orderBy("createdAt", "desc")
+      where("status", "==", "published"),
+      where("publishAt", "<=", now),
+      orderBy("publishAt", "desc")
     );
 
     try {
@@ -77,10 +77,10 @@
         postsEl.innerHTML = snap.docs.map(docSnap => {
           const p = docSnap.data();
           const tags = Array.isArray(p.tags) ? p.tags : [];
-          const preview = textPreviewFromHtml(p.contentHtml || "");
+          const preview = previewFromHtml(p.contentHtml || "");
 
           return `
-            <article class="postCard">
+            <article class="postCard" style="padding:18px;">
               <h2 style="margin:0 0 10px;">
                 <a href="./post.html?id=${docSnap.id}">${esc(p.title || "Untitled")}</a>
               </h2>
@@ -88,7 +88,7 @@
               <p class="muted">${esc(preview)}</p>
 
               <div class="metaRow" style="margin-top:10px;">
-                ${tags.slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join("")}
+                ${tags.slice(0, 6).map(t => `<span class="tag">${esc(t)}</span>`).join("")}
               </div>
             </article>
           `;
@@ -99,6 +99,9 @@
         <div class="card" style="box-shadow:none;">
           <h2 style="margin:0 0 10px;">Blog loading error</h2>
           <p class="muted" style="margin:0;">${esc(err.message)}</p>
+          <p class="muted" style="margin-top:10px;">
+            If it says “requires an index”, click the Firebase link and create it.
+          </p>
         </div>
       `;
     }

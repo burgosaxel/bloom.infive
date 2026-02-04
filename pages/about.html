@@ -3,13 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>About | Angelika Burgos</title>
+  <title>About | BLOOM.INFIVE</title>
   <meta name="description" content="Meet Angelika Burgos, author." />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../styles.css" />
 </head>
+
 <body>
   <div id="nav-host"></div>
 
@@ -17,7 +15,7 @@
     <section class="section">
       <div class="container grid2">
         <div class="authorPhotoWrap">
-          <img src="../angelika.png" alt="Angelika Burgos, author" class="authorPhoto" />
+          <img id="authorImg" src="../angelika.png" alt="Angelika Burgos, author" class="authorPhoto" />
         </div>
 
         <div>
@@ -53,16 +51,23 @@
 
     <footer class="footer">
       <div class="container footerInner">
-        <p class="muted">© <span id="year"></span> Angelika Burgos. All rights reserved.</p>
-        <div class="footerLinks">
-          <a href="../index.html">Home</a>
-          <a href="../blog/index.html">Blog</a>
-          <a href="../pages/newsletter.html">Newsletter</a>
-        </div>
+        <p class="muted">© <span id="year"></span> BLOOM.INFIVE. All rights reserved.</p>
       </div>
     </footer>
   </main>
 
   <script src="../nav.js"></script>
+
+  <script type="module">
+    import { db } from "../firebase.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    const img = document.getElementById("authorImg");
+    const snap = await getDoc(doc(db, "site", "profile"));
+    if (snap.exists()) {
+      const d = snap.data();
+      if (d.photoUrl) img.src = d.photoUrl;
+    }
+  </script>
 </body>
 </html>

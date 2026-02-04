@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Affiliate Links | BLOOM.INFIVE</title>
+  <meta name="description" content="Amazon and affiliate recommendations." />
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+
+<body>
+  <div id="nav-host"></div>
+
+  <main>
+    <section class="section">
+      <div class="container">
+        <div class="sectionHead">
+          <h2>Amazon & Affiliate Links</h2>
+          <p class="muted">Curated recommendations and links.</p>
+        </div>
+
+        <div id="links" style="display:grid; grid-template-columns:1fr; gap:14px;"></div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="container footerInner">
+        <p class="muted">© <span id="year"></span> BLOOM.INFIVE. All rights reserved.</p>
+        <div class="footerLinks">
+          <a href="../index.html">Home</a>
+          <a href="../blog/index.html">Blog</a>
+          <a href="../pages/newsletter.html">Newsletter</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <script src="../nav.js"></script>
+
+  <script type="module">
+    import { db } from "../firebase.js";
+    import { collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    const linksEl = document.getElementById("links");
+
+    function esc(s){
+      return (s || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    }
+
+    const q = query(collection(db, "affiliateLinks"), orderBy("createdAt", "desc"));
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      linksEl.innerHTML = `<p class="muted">No links yet.</p>`;
+    } else {
+      linksEl.innerHTML = snap.docs.map(d => {
+        const x = d.data();
+        return `
+          <article class="card">
+            <h2 style="margin:0 0 10px;">${esc(x.title || "Link")}</h2>
+            <p class="muted" style="margin:0 0 12px;">${esc(x.description || "")}</p>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+              ${x.category ? `<span class="tag">${esc(x.category)}</span>` : ""}
+            </div>
+            <a class="btn small ghost" href="${esc(x.url)}" target="_blank" rel="noopener">Open</a>
+          </article>
+        `;
+      }).join("");
+    }
+  </script>
+</body>
+</html>

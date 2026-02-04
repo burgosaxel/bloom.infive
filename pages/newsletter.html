@@ -3,13 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Newsletter | Angelika Burgos</title>
-  <meta name="description" content="Subscribe to Angelika Burgos newsletter." />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+  <title>Newsletter | BLOOM.INFIVE</title>
   <link rel="stylesheet" href="../styles.css" />
 </head>
+
 <body>
   <div id="nav-host"></div>
 
@@ -18,9 +15,12 @@
       <div class="container">
         <div class="card">
           <h2>Newsletter</h2>
-          <p class="muted">Subscribe for monthly updates on posts, activities, and new releases.</p>
 
-          <form class="form" onsubmit="return subscribe(event)">
+          <div id="newsletterIntro">
+            <p class="muted">Loading…</p>
+          </div>
+
+          <form class="form" onsubmit="return subscribe(event)" style="margin-top:12px;">
             <label class="srOnly" for="email">Email</label>
             <input id="email" name="email" type="email" placeholder="you@email.com" required />
             <button class="btn primary" type="submit">Subscribe</button>
@@ -32,17 +32,13 @@
 
     <footer class="footer">
       <div class="container footerInner">
-        <p class="muted">© <span id="year"></span> Angelika Burgos. All rights reserved.</p>
-        <div class="footerLinks">
-          <a href="../index.html">Home</a>
-          <a href="../blog/index.html">Blog</a>
-          <a href="../pages/newsletter.html">Newsletter</a>
-        </div>
+        <p class="muted">© <span id="year"></span> BLOOM.INFIVE. All rights reserved.</p>
       </div>
     </footer>
   </main>
 
   <script src="../nav.js"></script>
+
   <script>
     function subscribe(e){
       e.preventDefault();
@@ -51,6 +47,21 @@
       msg.textContent = `Thanks! We'll send updates to ${email}.`;
       e.target.reset();
       return false;
+    }
+  </script>
+
+  <script type="module">
+    import { db } from "../firebase.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    const el = document.getElementById("newsletterIntro");
+    const snap = await getDoc(doc(db, "site", "newsletter"));
+
+    if (!snap.exists()) {
+      el.innerHTML = `<p class="muted">Subscribe for monthly updates on posts, activities, and new releases.</p>`;
+    } else {
+      const d = snap.data();
+      el.innerHTML = d.contentHtml || `<p class="muted">Subscribe for updates.</p>`;
     }
   </script>
 </body>

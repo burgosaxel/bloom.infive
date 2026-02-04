@@ -7,8 +7,7 @@ async function loadNav() {
   const prefix = depth === 1 ? "../" : "./";
 
   const res = await fetch(prefix + "partials/nav.html");
-  const html = await res.text();
-  host.innerHTML = html;
+  host.innerHTML = await res.text();
 
   const home = host.querySelector("[data-home-link]");
   if (home) home.setAttribute("href", prefix + "index.html");
@@ -21,7 +20,6 @@ async function loadNav() {
   wireNavInteractions(host);
   setYear();
 
-  // Fill Blog dropdown dynamically (latest posts)
   await populateBlogDropdown(host, prefix);
 }
 
@@ -82,23 +80,25 @@ async function populateBlogDropdown(scope, prefix){
   if (!menu) return;
 
   try {
-    // Load firebase.js dynamically (module)
     const { db } = await import(prefix + "firebase.js");
-
     const firestore = await import("https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js");
-    const { collection, query, where, orderBy, limit, getDocs } = firestore;
+    const { collection, query, where, orderBy, limit, getDocs, Timestamp } = firestore;
 
-    // Requires composite index: published + createdAt desc
+    // Only published posts; scheduled posts become published by time check on public pages
+    // but for dropdown we show posts that are "published" and publishAt <= now.
+    const now = Timestamp.now();
+
+    // This query can require an index if you haven't created it yet.
     const q = query(
       collection(db, "posts"),
-      where("published", "==", true),
-      orderBy("createdAt", "desc"),
+      where("status", "==", "published"),
+      where("publishAt", "<=", now),
+      orderBy("publishAt", "desc"),
       limit(6)
     );
 
     const snap = await getDocs(q);
 
-    // remove "Loading posts…" placeholder
     const loading = menu.querySelector("span");
     if (loading) loading.remove();
 
@@ -116,7 +116,6 @@ async function populateBlogDropdown(scope, prefix){
 
     menu.insertAdjacentHTML("beforeend", itemsHtml);
   } catch (err) {
-    // If firebase.js missing or index not created, fail quietly
     const loading = menu.querySelector("span");
     if (loading) loading.textContent = "Posts unavailable.";
   }

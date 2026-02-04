@@ -17,8 +17,6 @@
         <div class="card">
           <h2 id="title">Loading…</h2>
           <p class="muted" id="meta"></p>
-
-          <!-- IMPORTANT: contentHtml is trusted because only you can publish -->
           <div id="content" style="margin-top:12px;"></div>
 
           <div style="margin-top:14px;">
@@ -33,7 +31,7 @@
 
   <script type="module">
     import { db } from "../firebase.js";
-    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+    import { doc, getDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
     const params = new URLSearchParams(location.search);
     const id = params.get("id");
@@ -42,31 +40,35 @@
     const metaEl = document.getElementById("meta");
     const contentEl = document.getElementById("content");
 
-    function esc(s){
-      return (s || "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;");
-    }
-
     if (!id) {
       titleEl.textContent = "Post not found.";
       metaEl.textContent = "";
     } else {
       const snap = await getDoc(doc(db, "posts", id));
-
       if (!snap.exists()) {
         titleEl.textContent = "Post not found.";
         metaEl.textContent = "";
       } else {
         const p = snap.data();
-        titleEl.textContent = p.title || "Untitled";
+        const now = Timestamp.now();
+        const publishAt = p.publishAt;
 
-        const tags = Array.isArray(p.tags) ? p.tags : [];
-        metaEl.textContent = tags.join(" • ");
+        // Only show if published and time has passed
+        const ok =
+          p.status === "published" &&
+          publishAt &&
+          publishAt.toMillis() <= now.toMillis();
 
-        // Render the rich HTML saved from Quill
-        contentEl.innerHTML = p.contentHtml || "<p class='muted'>No content.</p>";
+        if (!ok) {
+          titleEl.textContent = "Post not available.";
+          metaEl.textContent = "";
+          contentEl.innerHTML = `<p class="muted">This post is not published yet.</p>`;
+        } else {
+          titleEl.textContent = p.title || "Untitled";
+          const tags = Array.isArray(p.tags) ? p.tags : [];
+          metaEl.textContent = tags.join(" • ");
+          contentEl.innerHTML = p.contentHtml || "<p class='muted'>No content.</p>";
+        }
       }
     }
   </script>

@@ -3,13 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Activities | Angelika Burgos</title>
-  <meta name="description" content="Activities, events, and visits." />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+  <title>Activities | BLOOM.INFIVE</title>
   <link rel="stylesheet" href="../styles.css" />
 </head>
+
 <body>
   <div id="nav-host"></div>
 
@@ -21,47 +18,41 @@
           <p class="muted">Readings, events, and visits.</p>
         </div>
 
-        <div class="list">
-          <div class="listItem">
-            <div>
-              <h3>Library Reading (coming soon)</h3>
-              <p class="muted">Location • Date TBD</p>
-            </div>
-            <div style="display:flex; gap:8px; align-items:center;">
-              <span class="tag">TBD</span>
-            </div>
-          </div>
-
-          <div class="listItem">
-            <div>
-              <h3>School Visit (coming soon)</h3>
-              <p class="muted">Location • Date TBD</p>
-            </div>
-            <div style="display:flex; gap:8px; align-items:center;">
-              <span class="tag">TBD</span>
-            </div>
+        <div class="card">
+          <div id="activitiesContent">
+            <p class="muted">Loading…</p>
           </div>
         </div>
 
         <div class="card" id="request" style="margin-top:14px;">
           <h2>Request a Visit</h2>
-          <p class="muted">coming soon.</p>
+          <p class="muted">Use the contact method you prefer (we can add a form later).</p>
         </div>
       </div>
     </section>
 
     <footer class="footer">
       <div class="container footerInner">
-        <p class="muted">© <span id="year"></span> Angelika Burgos. All rights reserved.</p>
-        <div class="footerLinks">
-          <a href="../index.html">Home</a>
-          <a href="../blog/index.html">Blog</a>
-          <a href="../pages/newsletter.html">Newsletter</a>
-        </div>
+        <p class="muted">© <span id="year"></span> BLOOM.INFIVE. All rights reserved.</p>
       </div>
     </footer>
   </main>
 
   <script src="../nav.js"></script>
+
+  <script type="module">
+    import { db } from "../firebase.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    const el = document.getElementById("activitiesContent");
+    const snap = await getDoc(doc(db, "site", "activities"));
+
+    if (!snap.exists()) {
+      el.innerHTML = `<p class="muted">No content yet. Add it from the admin portal.</p>`;
+    } else {
+      const d = snap.data();
+      el.innerHTML = d.contentHtml || `<p class="muted">No content yet.</p>`;
+    }
+  </script>
 </body>
 </html>
