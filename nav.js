@@ -84,11 +84,8 @@ async function populateBlogDropdown(scope, prefix){
     const firestore = await import("https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js");
     const { collection, query, where, orderBy, limit, getDocs, Timestamp } = firestore;
 
-    // Only published posts; scheduled posts become published by time check on public pages
-    // but for dropdown we show posts that are "published" and publishAt <= now.
     const now = Timestamp.now();
 
-    // This query can require an index if you haven't created it yet.
     const q = query(
       collection(db, "posts"),
       where("status", "==", "published"),
@@ -109,12 +106,13 @@ async function populateBlogDropdown(scope, prefix){
       return;
     }
 
-    const itemsHtml = snap.docs.map(d => {
-      const p = d.data();
-      return `<a href="${prefix}blog/post.html?id=${d.id}">${esc(p.title || "Untitled")}</a>`;
-    }).join("");
+    menu.insertAdjacentHTML("beforeend",
+      snap.docs.map(d => {
+        const p = d.data();
+        return `<a href="${prefix}blog/post.html?id=${d.id}">${esc(p.title || "Untitled")}</a>`;
+      }).join("")
+    );
 
-    menu.insertAdjacentHTML("beforeend", itemsHtml);
   } catch (err) {
     const loading = menu.querySelector("span");
     if (loading) loading.textContent = "Posts unavailable.";

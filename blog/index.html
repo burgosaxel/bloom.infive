@@ -26,11 +26,6 @@
     <footer class="footer">
       <div class="container footerInner">
         <p class="muted">© <span id="year"></span> BLOOM.INFIVE. All rights reserved.</p>
-        <div class="footerLinks">
-          <a href="../index.html">Home</a>
-          <a href="./index.html">Blog</a>
-          <a href="../pages/newsletter.html">Newsletter</a>
-        </div>
       </div>
     </footer>
   </main>
@@ -60,7 +55,6 @@
       return t.length > n ? t.slice(0, n).trimEnd() + "…" : t;
     }
 
-    // Only show posts that are officially published AND have publishAt <= now
     const q = query(
       collection(db, "posts"),
       where("status", "==", "published"),

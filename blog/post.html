@@ -45,6 +45,7 @@
       metaEl.textContent = "";
     } else {
       const snap = await getDoc(doc(db, "posts", id));
+
       if (!snap.exists()) {
         titleEl.textContent = "Post not found.";
         metaEl.textContent = "";
@@ -53,7 +54,6 @@
         const now = Timestamp.now();
         const publishAt = p.publishAt;
 
-        // Only show if published and time has passed
         const ok =
           p.status === "published" &&
           publishAt &&
@@ -62,7 +62,7 @@
         if (!ok) {
           titleEl.textContent = "Post not available.";
           metaEl.textContent = "";
-          contentEl.innerHTML = `<p class="muted">This post is not published yet.</p>`;
+          contentEl.innerHTML = `<p class="muted">This post isn’t live yet.</p>`;
         } else {
           titleEl.textContent = p.title || "Untitled";
           const tags = Array.isArray(p.tags) ? p.tags : [];

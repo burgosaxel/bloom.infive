@@ -54,7 +54,7 @@ const postMsg = document.getElementById("postMsg");
 
 const postTitle = document.getElementById("postTitle");
 const postTags = document.getElementById("postTags");
-const postStatus = document.getElementById("postStatus");
+const postStatus = document.getElementById("postStatus"); // draft | scheduled | published (UI only)
 const publishAtEl = document.getElementById("publishAt");
 const postsList = document.getElementById("postsList");
 
@@ -144,8 +144,7 @@ const quillPage = new Quill("#pageEditor", {
   }
 });
 
-/* Image uploads inside blog posts:
-   Clicking the "image" button uploads a file to Storage and inserts its URL. */
+/* Image uploads inside blog posts */
 const postToolbar = quillPost.getModule("toolbar");
 postToolbar.addHandler("image", async () => {
   const input = document.createElement("input");
@@ -159,8 +158,8 @@ postToolbar.addHandler("image", async () => {
 
     try {
       statusMsg.textContent = "Uploading image…";
-
       const user = auth.currentUser;
+
       const safeName = file.name.replace(/\s+/g, "-").toLowerCase();
       const path = `post-images/${user.uid}/${Date.now()}-${safeName}`;
       const r = ref(storage, path);
@@ -225,7 +224,13 @@ logoutBtn.addEventListener("click", async () => {
   await signOut(auth);
 });
 
-/* ---------------- POSTS: Create/Edit/Delete + Draft/Scheduled/Published ---------------- */
+/* ---------------- POSTS (Option A scheduling) ----------------
+   Stored in Firestore:
+   - status: "draft" | "published"
+   - publishAt: Timestamp (required for published, null for draft)
+   UI offers: draft | scheduled | published
+   - scheduled saves as status="published" with publishAt in the future
+-------------------------------------------------------------- */
 let editingPostId = null;
 
 function openPostEditor(mode){
@@ -264,27 +269,31 @@ savePostBtn.addEventListener("click", async () => {
   const contentHtml = quillPost.root.innerHTML?.trim() || "";
   const isEmpty = contentHtml === "<p><br></p>" || contentHtml === "";
 
-  const status = postStatus.value; // draft|scheduled|published
-  const publishAt = datetimeLocalToTimestamp(publishAtEl.value);
+  const uiStatus = postStatus.value; // draft | scheduled | published (UI)
+  const picked = datetimeLocalToTimestamp(publishAtEl.value);
 
   if (!title || isEmpty) {
     postMsg.textContent = "Title and content are required.";
     return;
   }
 
-  // Enforce publishAt rules:
-  // - draft: can be null
-  // - scheduled: must have publishAt in the future (or now)
-  // - published: must have publishAt (default now)
-  let finalPublishAt = publishAt;
+  // Option A mapping:
+  // - draft -> store draft, publishAt null
+  // - published -> store published, publishAt = picked or now
+  // - scheduled -> store published, publishAt = picked (required)
+  let storedStatus = (uiStatus === "draft") ? "draft" : "published";
 
-  if (status === "scheduled" && !finalPublishAt) {
-    postMsg.textContent = "Scheduled posts need a publish date/time.";
+  if (uiStatus === "scheduled" && !picked) {
+    postMsg.textContent = "Scheduled needs a publish date/time.";
     return;
   }
 
-  if (status === "published" && !finalPublishAt) {
-    finalPublishAt = Timestamp.now();
+  let finalPublishAt = null;
+
+  if (storedStatus === "published") {
+    finalPublishAt = picked || Timestamp.now();
+    // If scheduled, we already required picked above, so it won't default to now.
+    if (uiStatus === "scheduled") finalPublishAt = picked;
   }
 
   savePostBtn.disabled = true;
@@ -295,19 +304,16 @@ savePostBtn.addEventListener("click", async () => {
       title,
       tags,
       contentHtml,
-      status,
-      publishAt: finalPublishAt || null,
+      status: storedStatus,
+      publishAt: storedStatus === "published" ? finalPublishAt : null,
       updatedAt: serverTimestamp()
     };
 
     if (!editingPostId) {
       data.createdAt = serverTimestamp();
-      // default publishAt to now for drafts? keep null
-      if (status === "draft") data.publishAt = null;
-      const refDoc = await addDoc(collection(db, "posts"), data);
+      await addDoc(collection(db, "posts"), data);
       postMsg.textContent = "Saved.";
       statusMsg.textContent = "Post saved.";
-      editingPostId = refDoc.id;
       closePostEditor();
     } else {
       await updateDoc(doc(db, "posts", editingPostId), data);
@@ -341,7 +347,15 @@ function bindPosts(){
       const preview = plain.length > 140 ? plain.slice(0, 140).trimEnd() + "…" : plain;
 
       const status = p.status || "draft";
-      const pill = `<span class="statusPill">${esc(status)}</span>`;
+
+      // Show "Scheduled" pill in UI if status=published but publishAt is in the future.
+      let uiPill = status;
+      if (status === "published" && p.publishAt) {
+        const future = p.publishAt.toMillis() > Date.now();
+        if (future) uiPill = "scheduled";
+      }
+
+      const pill = `<span class="statusPill">${esc(uiPill)}</span>`;
       const when = p.publishAt ? `<span class="statusPill">${esc(timestampToDatetimeLocal(p.publishAt).replace("T"," "))}</span>` : "";
 
       const tagHtml = (Array.isArray(p.tags) ? p.tags : [])
@@ -405,9 +419,21 @@ async function handlePostActions(e){
 
     postTitle.value = p.title || "";
     postTags.value = Array.isArray(p.tags) ? p.tags.join(", ") : "";
-    postStatus.value = p.status || "draft";
-    publishAtEl.value = p.publishAt ? timestampToDatetimeLocal(p.publishAt) : "";
     quillPost.root.innerHTML = p.contentHtml || "<p><br></p>";
+
+    // Convert stored status back to UI status
+    if (p.status === "draft") {
+      postStatus.value = "draft";
+      publishAtEl.value = "";
+    } else {
+      // published, might be scheduled depending on publishAt
+      if (p.publishAt && p.publishAt.toMillis() > Date.now()) {
+        postStatus.value = "scheduled";
+      } else {
+        postStatus.value = "published";
+      }
+      publishAtEl.value = p.publishAt ? timestampToDatetimeLocal(p.publishAt) : "";
+    }
 
     openPostEditor("Editing post");
   }
@@ -579,7 +605,7 @@ async function handleLinkActions(e){
   }
 }
 
-/* ---------------- PROFILE: Upload author photo and store URL in Firestore ---------------- */
+/* ---------------- PROFILE: Upload author photo ---------------- */
 async function loadProfilePreview(){
   try {
     const snap = await getDoc(doc(db, "site", "profile"));
@@ -607,6 +633,7 @@ uploadProfileBtn.addEventListener("click", async () => {
   try {
     profileMsg.textContent = "Uploading…";
     const user = auth.currentUser;
+
     const safeName = file.name.replace(/\s+/g, "-").toLowerCase();
     const path = `profile/${user.uid}/${Date.now()}-${safeName}`;
     const r = ref(storage, path);
