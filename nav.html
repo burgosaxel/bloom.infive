@@ -1,38 +1,38 @@
 <header class="header">
   <div class="container nav">
-    <a class="brand" data-home-link href="#">BLOOM.INFIVE</a>
+    <a href="/index.html" class="brand">BLOOM.INFIVE</a>
 
-    <!-- Mobile hamburger (hidden on desktop via CSS) -->
-    <button class="menuBtn" id="menuBtn" aria-label="Open menu" aria-expanded="false">
+    <button class="menuBtn" id="menuBtn" aria-label="Toggle menu">
       <span></span><span></span><span></span>
     </button>
 
     <nav class="navLinks" id="navLinks">
-      <a data-link="about" href="#">About</a>
-      <a data-link="upcoming" href="#">Upcoming</a>
-      <a data-link="activities" href="#">Activities</a>
+      <a href="/pages/about.html">About</a>
+      <a href="/pages/upcoming.html">Upcoming</a>
+      <a href="/pages/activities.html">Activities</a>
 
-      <div class="dropdown" data-dd="blog">
-        <button class="dropBtn" type="button" aria-haspopup="true" aria-expanded="false">
-          Blog
-        </button>
-        <div class="dropMenu" id="blogMenu">
-          <a data-link="blogIndex" href="#">All Posts</a>
-          <div class="dropDivider"></div>
-          <div id="blogTitles"></div>
-        </div>
-      </div>
-
-      <div class="dropdown" data-dd="amazon">
-        <button class="dropBtn" type="button" aria-haspopup="true" aria-expanded="false">
-          Amazon
-        </button>
+      <div class="dropdown">
+        <button class="dropBtn">Blog</button>
         <div class="dropMenu">
-          <a data-link="amazon" href="#">Amazon & Affiliate</a>
+          <a href="/blog/index.html">All Posts</a>
         </div>
       </div>
 
-      <a data-link="newsletter" href="#">Newsletter</a>
+      <div class="dropdown">
+        <button class="dropBtn">Amazon</button>
+        <div class="dropMenu">
+          <a href="/pages/affiliate.html">Amazon & Affiliate</a>
+        </div>
+      </div>
+
+      <a href="/pages/newsletter.html">Newsletter</a>
+
+      <!-- 🌙 Theme toggle -->
+      <button class="themeToggle" id="themeToggle" aria-label="Toggle theme">
+        🌙
+      </button>
     </nav>
   </div>
 </header>
+
+<script src="/nav.js"></script>
