@@ -1,25 +1,20 @@
-// ===== Helpers: base path that works on GitHub Pages + locally =====
+// ===== Base path helper (works on custom domain + GitHub Pages + localhost) =====
 function getBasePath() {
-  // If you're using a custom domain (bloominfive.blog), base is "/"
-  // If you ever use github.io/<repo>, this auto-detects "/<repo>/"
-  const parts = window.location.pathname.split("/").filter(Boolean);
+  const isLocal =
+    window.location.hostname === "127.0.0.1" ||
+    window.location.hostname === "localhost";
 
-  // If running on localhost (Live Server), base is "/"
-  const isLocal = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost";
   if (isLocal) return "/";
 
-  // If custom domain -> usually root
-  // If GitHub pages project site -> first part is repo name
-  // We'll detect "blog" / "pages" / "admin" and assume repo root is before them.
+  // If using a custom domain, you're usually at root
+  // If using github.io/<repo>/, first segment is repo name
+  const parts = window.location.pathname.split("/").filter(Boolean);
   if (parts.length === 0) return "/";
 
-  // If your site is hosted at root with custom domain, keep "/"
-  // If hosted at github.io/<repo>/..., base = "/<repo>/"
-  // Heuristic: if first segment is not one of your known folders, treat it as repo name
   const knownFolders = new Set(["blog", "pages", "admin", "partials"]);
   const first = parts[0];
-  if (knownFolders.has(first)) return "/";
 
+  if (knownFolders.has(first)) return "/";
   return `/${first}/`;
 }
 
@@ -33,34 +28,39 @@ async function loadNav() {
   try {
     const res = await fetch(`${BASE}nav.html`, { cache: "no-store" });
     if (!res.ok) throw new Error(`Failed to load nav.html (${res.status})`);
-    const html = await res.text();
-    mount.innerHTML = html;
+    mount.innerHTML = await res.text();
 
-    // After nav loads, wire up menu + theme + blog dropdown list
     wireNavInteractions();
-    populateBlogDropdown();
+    populateBlogDropdown(); // optional, only runs if you provide getNavBlogTitles()
   } catch (err) {
     console.error("Nav load error:", err);
   }
 }
 
-// ===== Wire up interactions after nav is injected =====
+// ===== Wire up menu + theme after nav mounts =====
 function wireNavInteractions() {
   const menuBtn = document.getElementById("menuBtn");
   const navLinks = document.getElementById("navLinks");
   const themeToggle = document.getElementById("themeToggle");
 
-  // Mobile menu toggle
+  // Mobile menu
   menuBtn?.addEventListener("click", () => {
     navLinks?.classList.toggle("open");
   });
 
-  // Theme toggle
-  const root = document.documentElement;
+  // Close menu when tapping a link (mobile)
+  navLinks?.addEventListener("click", (e) => {
+    const a = e.target.closest("a");
+    if (!a) return;
+    navLinks.classList.remove("open");
+  });
 
-  function getSystemTheme() {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  }
+  // Brand always home (base-aware)
+  const homeLink = document.querySelector("[data-home-link]");
+  if (homeLink) homeLink.setAttribute("href", `${BASE}index.html`);
+
+  // ===== THEME TOGGLE (fixed) =====
+  const root = document.documentElement;
 
   function updateToggleIcon() {
     const isDark = root.getAttribute("data-theme") === "dark";
@@ -68,51 +68,62 @@ function wireNavInteractions() {
   }
 
   function applyTheme(theme) {
-    root.setAttribute("data-theme", theme);
+    // Force explicit theme so it never "falls back" into prefers-color-scheme
+    root.setAttribute("data-theme", theme); // "dark" or "light"
     localStorage.setItem("theme", theme);
     updateToggleIcon();
   }
 
+  // Init theme
   const saved = localStorage.getItem("theme");
-  if (saved) {
+  if (saved === "dark" || saved === "light") {
     applyTheme(saved);
   } else {
-    root.setAttribute("data-theme", getSystemTheme());
-    updateToggleIcon();
+    const system = window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+    applyTheme(system);
   }
 
+  // Toggle click
   themeToggle?.addEventListener("click", () => {
-    const current = root.getAttribute("data-theme") || getSystemTheme();
+    const current = root.getAttribute("data-theme") || "light";
     applyTheme(current === "dark" ? "light" : "dark");
   });
-
-  // Fix brand link to always go home
-  const homeLink = document.querySelector("[data-home-link]");
-  if (homeLink) homeLink.setAttribute("href", `${BASE}index.html`);
 }
 
-// ===== Populate Blog dropdown titles (optional) =====
-// If you already build blog titles from Firestore elsewhere, keep that.
-// This version tries to find a global `window.getNavBlogTitles()` if you created one.
-// Otherwise it safely does nothing.
+// ===== Optional blog dropdown population =====
+// If you already have a function in blog/index.html that exposes titles,
+// you can provide this globally:
+//
+// window.getNavBlogTitles = async () => [{ title, url }, ...]
+//
 async function populateBlogDropdown() {
   const list = document.getElementById("navBlogList");
   if (!list) return;
 
-  // If you already have a function to get titles, use it.
-  if (typeof window.getNavBlogTitles === "function") {
-    try {
-      const items = await window.getNavBlogTitles();
-      list.innerHTML = "";
-      items.forEach((p) => {
-        const a = document.createElement("a");
-        a.href = p.url;
-        a.textContent = p.title;
-        list.appendChild(a);
-      });
-    } catch (e) {
-      console.warn("Could not populate blog dropdown:", e);
-    }
+  if (typeof window.getNavBlogTitles !== "function") return;
+
+  try {
+    const items = await window.getNavBlogTitles();
+    // keep first section (All Posts + divider), then append titles
+    // We will append after the divider.
+    const divider = list.querySelector(".dropDivider");
+    if (!divider) return;
+
+    // Remove any previously injected items after divider
+    const all = Array.from(list.children);
+    const dividerIndex = all.indexOf(divider);
+    all.slice(dividerIndex + 1).forEach((n) => n.remove());
+
+    items.forEach((p) => {
+      const a = document.createElement("a");
+      a.href = p.url;
+      a.textContent = p.title;
+      list.appendChild(a);
+    });
+  } catch (e) {
+    console.warn("Could not populate blog dropdown:", e);
   }
 }
 
