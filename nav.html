@@ -1,8 +1,8 @@
 <header class="header">
   <div class="container nav">
-    <a href="/index.html" class="brand">BLOOM.INFIVE</a>
+    <a class="brand" data-home-link href="/index.html">BLOOM.INFIVE</a>
 
-    <button class="menuBtn" id="menuBtn" aria-label="Toggle menu">
+    <button class="menuBtn" id="menuBtn" aria-label="Open menu">
       <span></span><span></span><span></span>
     </button>
 
@@ -12,23 +12,25 @@
       <a href="/pages/activities.html">Activities</a>
 
       <div class="dropdown">
-        <button class="dropBtn">Blog</button>
+        <button class="dropBtn" type="button">Blog</button>
         <div class="dropMenu">
           <a href="/blog/index.html">All Posts</a>
+          <div class="dropDivider"></div>
+          <div id="navBlogList"></div>
         </div>
       </div>
 
       <div class="dropdown">
-        <button class="dropBtn">Amazon</button>
+        <button class="dropBtn" type="button">Amazon</button>
         <div class="dropMenu">
-          <a href="/pages/affiliate.html">Amazon & Affiliate</a>
+          <a href="/pages/affiliate.html">Amazon &amp; Affiliate</a>
         </div>
       </div>
 
       <a href="/pages/newsletter.html">Newsletter</a>
 
-      <!-- 🌙 Theme toggle -->
-      <button class="themeToggle" id="themeToggle" aria-label="Toggle theme">
+      <!-- Theme toggle -->
+      <button class="themeToggle" id="themeToggle" type="button" aria-label="Toggle theme">
         🌙
       </button>
     </nav>
