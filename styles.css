@@ -13,69 +13,73 @@
   --menuBorder:rgba(0,0,0,.12);
   --hover:rgba(0,0,0,.05);
 
-  /* Luxury accents (used mostly in dark mode, harmless in light) */
+  /* Luxury accents */
   --glow: rgba(255, 241, 214, .18);
   --glow2: rgba(255, 241, 214, .10);
   --hairline: rgba(0,0,0,.10);
-  --cardSheen: rgba(255,255,255,.35);
 }
 
-/* ✅ Auto dark mode fallback */
+/* Auto dark (only used if user has NOT toggled yet) */
 @media (prefers-color-scheme: dark){
   :root{
-    /* Warm charcoal base */
     --bg:#0f0f10;
     --bg2:#141213;
-
-    /* Softer, warmer whites */
     --ink:#f3f1ec;
     --muted:#c8c2b8;
-
-    /* Premium card surface */
     --card:#161415;
-
-    /* Strokes and lines */
     --stroke:#f3f1ec;
     --hairline: rgba(255,255,255,.10);
 
-    /* Menu surfaces */
     --menuBg:#191617;
     --menuBorder:rgba(255,255,255,.12);
-
-    /* Hover */
     --hover:rgba(255,255,255,.06);
 
-    /* Luxury glow accents */
     --glow: rgba(255, 219, 153, .20);
     --glow2: rgba(255, 219, 153, .10);
 
-    /* Deeper shadow for dark */
     --shadow: 0 18px 50px rgba(0,0,0,.60);
   }
 }
 
-/* ✅ Manual dark override (toggle uses this) */
+/* Manual dark override */
 html[data-theme="dark"]{
   --bg:#0f0f10;
   --bg2:#141213;
-
   --ink:#f3f1ec;
   --muted:#c8c2b8;
-
   --card:#161415;
-
   --stroke:#f3f1ec;
   --hairline: rgba(255,255,255,.10);
 
   --menuBg:#191617;
   --menuBorder:rgba(255,255,255,.12);
-
   --hover:rgba(255,255,255,.06);
 
   --glow: rgba(255, 219, 153, .20);
   --glow2: rgba(255, 219, 153, .10);
 
   --shadow: 0 18px 50px rgba(0,0,0,.60);
+}
+
+/* ✅ Manual light override (THIS fixes your issue) */
+html[data-theme="light"]{
+  --bg:#f3d9a9;
+  --bg2:#f7e6c4;
+  --ink:#111;
+  --muted:#3a3a3a;
+  --card:#fff;
+  --stroke:#111;
+  --radius:18px;
+  --shadow:0 10px 30px rgba(0,0,0,.08);
+  --max:1040px;
+
+  --menuBg:#fff;
+  --menuBorder:rgba(0,0,0,.12);
+  --hover:rgba(0,0,0,.05);
+
+  --glow: rgba(255, 241, 214, .18);
+  --glow2: rgba(255, 241, 214, .10);
+  --hairline: rgba(0,0,0,.10);
 }
 
 *{box-sizing:border-box}
@@ -102,7 +106,6 @@ a:hover{text-decoration:underline}
   z-index:10;
 }
 
-/* Luxury header in dark: slight glass + hairline */
 html[data-theme="dark"] .header{
   background: color-mix(in srgb, var(--bg) 86%, black 14%);
   border-bottom:1px solid var(--hairline);
@@ -116,12 +119,12 @@ html[data-theme="dark"] .header{
 
 .brand{font-weight:700; letter-spacing:.4px;}
 
-/* Hamburger */
+/* Hamburger (hidden desktop, shown mobile) */
 .menuBtn{
   display:none;
   width:44px;height:44px;
   border:1px solid var(--menuBorder);
-  border-radius:12px;
+  border-radius:14px;
   background:transparent;
   cursor:pointer;
 }
@@ -134,32 +137,29 @@ html[data-theme="dark"] .header{
   gap:28px;
 }
 
-/* Top-level nav = bold */
 .navLinks > a,
 .navLinks .dropBtn{
   font-weight:700;
   font-size:15px;
   padding:10px 0;
-  cursor:pointer;
 }
 
-/* Theme toggle button (luxury) */
+/* Theme toggle */
 .themeToggle{
   border:1px solid var(--menuBorder);
   background: color-mix(in srgb, var(--card) 86%, transparent 14%);
   color:var(--ink);
-  border-radius:12px;
-  padding:8px 12px;
+  border-radius:14px;
+  padding:10px 12px;
   cursor:pointer;
   font-size:16px;
+  line-height:1;
   box-shadow: 0 10px 24px rgba(0,0,0,.10);
 }
 html[data-theme="dark"] .themeToggle{
   box-shadow: 0 18px 40px rgba(0,0,0,.55);
 }
-.themeToggle:hover{
-  transform: translateY(-1px);
-}
+.themeToggle:hover{transform: translateY(-1px);}
 
 /* ---------- Dropdown nav ---------- */
 .dropdown{position:relative;}
@@ -169,7 +169,6 @@ html[data-theme="dark"] .themeToggle{
   font: inherit;
   font-weight:700;
   cursor:pointer;
-  padding:10px 0;
 }
 
 /* Desktop hover open */
@@ -181,7 +180,6 @@ html[data-theme="dark"] .themeToggle{
   }
 }
 
-/* Dropdown panel (luxury) */
 .dropMenu{
   position:absolute;
   left:0;
@@ -198,6 +196,7 @@ html[data-theme="dark"] .themeToggle{
   transition:all .18s ease;
   z-index:50;
 }
+
 html[data-theme="dark"] .dropMenu{
   background:
     linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
@@ -205,7 +204,7 @@ html[data-theme="dark"] .dropMenu{
   box-shadow: 0 22px 70px rgba(0,0,0,.72);
 }
 
-/* Dropdown items not bold */
+/* Dropdown items NOT bold */
 .dropMenu a{
   display:block;
   padding: 10px 10px;
@@ -216,6 +215,7 @@ html[data-theme="dark"] .dropMenu{
   background: var(--hover);
   text-decoration:none;
 }
+
 .dropDivider{
   height:1px;
   background: color-mix(in srgb, var(--ink) 16%, transparent);
@@ -228,7 +228,6 @@ html[data-theme="dark"] .dropMenu{
   position: relative;
 }
 
-/* Luxury glow behind hero in dark */
 html[data-theme="dark"] .hero::before{
   content:"";
   position:absolute;
@@ -243,7 +242,6 @@ html[data-theme="dark"] .hero::before{
 }
 
 .heroInner{text-align:center; position:relative;}
-
 .kicker{font-size:18px;margin:0 0 18px;}
 
 .heroTitle{
@@ -255,7 +253,6 @@ html[data-theme="dark"] .hero::before{
 }
 
 .heroSub{margin:18px auto 26px; max-width:620px; font-size:18px;}
-
 .heroCtas{display:flex; justify-content:center; gap:12px; flex-wrap:wrap;}
 
 /* ---------- Sections ---------- */
@@ -273,7 +270,7 @@ h2{
   margin:0 0 10px;
 }
 
-/* ---------- Cards (luxury) ---------- */
+/* ---------- Cards ---------- */
 .card{
   background:var(--card);
   border-radius:var(--radius);
@@ -291,7 +288,7 @@ html[data-theme="dark"] .card{
 
 .cards2{display:grid; grid-template-columns: repeat(2, 1fr); gap:14px;}
 
-/* ---------- Buttons (luxury) ---------- */
+/* ---------- Buttons ---------- */
 .btn{
   display:inline-flex; align-items:center; justify-content:center;
   padding:14px 22px;
@@ -302,9 +299,7 @@ html[data-theme="dark"] .card{
   color:var(--ink);
   transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
 }
-.btn:hover{
-  transform: translateY(-1px);
-}
+.btn:hover{transform: translateY(-1px);}
 .btn.primary{background:var(--card);}
 .btn.ghost{border-color:color-mix(in srgb, var(--ink) 35%, transparent);}
 .btn.small{padding:10px 14px; border-width:1.5px; font-size:14px;}
@@ -345,7 +340,6 @@ html[data-theme="dark"] .btn.ghost{
   text-decoration: none;
   font-weight:600;
 }
-
 .footerLinks a:hover { text-decoration: underline; }
 
 /* ---------- About layout ---------- */
@@ -365,12 +359,11 @@ html[data-theme="dark"] .btn.ghost{
   box-shadow: 0 10px 28px rgba(0,0,0,.18);
   object-fit: cover;
 }
-
 html[data-theme="dark"] .authorPhoto{
   box-shadow: 0 22px 80px rgba(0,0,0,.70);
 }
 
-/* ---------- Blog index grid ---------- */
+/* ---------- Blog ---------- */
 .blogGrid{
   display:grid;
   grid-template-columns: 1fr;
@@ -384,7 +377,6 @@ html[data-theme="dark"] .authorPhoto{
   box-shadow: var(--shadow);
   border:1px solid color-mix(in srgb, var(--ink) 10%, transparent);
 }
-
 html[data-theme="dark"] .postCard{
   background:
     linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
@@ -392,11 +384,7 @@ html[data-theme="dark"] .postCard{
   border:1px solid rgba(255,255,255,.10);
 }
 
-.metaRow{
-  display:flex;
-  gap: 8px;
-  align-items:center;
-}
+.metaRow{display:flex; gap: 8px; align-items:center;}
 
 .tag{
   padding: 6px 10px;
@@ -405,7 +393,6 @@ html[data-theme="dark"] .postCard{
   background: color-mix(in srgb, var(--card) 70%, transparent);
   font-size: 13px;
 }
-
 html[data-theme="dark"] .tag{
   border:1px solid rgba(255,255,255,.14);
   background: rgba(255,255,255,.05);
@@ -427,7 +414,6 @@ input{
   background:var(--card);
   color:var(--ink);
 }
-
 html[data-theme="dark"] input{
   border: 1.5px solid rgba(255,255,255,.14);
 }
@@ -455,19 +441,19 @@ html[data-theme="dark"] input{
     top:64px;
     background:var(--menuBg);
     border:1px solid var(--menuBorder);
-    padding:24px 20px;
-    border-radius:20px;
+    padding:26px 20px;
+    border-radius:22px;
     box-shadow:var(--shadow);
     flex-direction:column;
     align-items:center;
     text-align:center;
-    min-width: 260px;
+    min-width: 280px;
     gap:18px;
   }
 
   .navLinks.open{display:flex;}
 
-  /* Mobile dropdown shows inline */
+  /* Mobile dropdown stacks centered */
   .dropMenu{
     position: static;
     opacity:1;
@@ -483,11 +469,15 @@ html[data-theme="dark"] input{
     flex-direction:column;
     align-items:center;
     text-align:center;
-    gap:6px;
+    gap:8px;
   }
 
   .dropDivider{
     width:60%;
-    margin:8px auto;
+    margin:10px auto;
+  }
+
+  .themeToggle{
+    margin-top: 4px;
   }
 }
