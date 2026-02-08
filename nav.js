@@ -1,122 +1,155 @@
-async function loadNav() {
+(async function () {
   const host = document.getElementById("nav-host");
   if (!host) return;
 
-  const path = window.location.pathname.replace(/\\/g, "/");
-  const depth = (path.includes("/pages/") || path.includes("/blog/") || path.includes("/admin/")) ? 1 : 0;
-  const prefix = depth === 1 ? "../" : "./";
+  const base = getBasePath();
 
-  const res = await fetch(prefix + "partials/nav.html");
+  const res = await fetch(base + "nav.html");
+  if (!res.ok) {
+    host.innerHTML = `<div class="container muted" style="padding:14px 0;">
+      Nav failed to load: ${res.status} ${res.statusText} (tried ${base}nav.html)
+    </div>`;
+    return;
+  }
   host.innerHTML = await res.text();
 
-  const home = host.querySelector("[data-home-link]");
-  if (home) home.setAttribute("href", prefix + "index.html");
+  wireLinks(base);
+  setupMobileMenu();
+  setupDropdownClicks();
+  await loadBlogTitles(base);
 
-  host.querySelectorAll("[data-link]").forEach(a => {
-    const target = a.getAttribute("data-link");
-    a.setAttribute("href", prefix + target);
-  });
+  // ---------------- helpers ----------------
 
-  wireNavInteractions(host);
-  setYear();
+  function getBasePath(){
+    const p = window.location.pathname;
+    if (p.includes("/blog/") || p.includes("/admin/") || p.includes("/pages/")) return "../";
+    return "./";
+  }
 
-  await populateBlogDropdown(host, prefix);
-}
+  function wireLinks(base){
+    const brand = host.querySelector("[data-home-link]");
+    if (brand) brand.href = base + "index.html";
 
-function setYear() {
-  const y = document.getElementById("year");
-  if (y) y.textContent = new Date().getFullYear();
-}
+    const map = {
+      about: base + "pages/about.html",
+      upcoming: base + "pages/upcoming.html",
+      activities: base + "pages/activities.html",
+      newsletter: base + "pages/newsletter.html",
+      amazon: base + "pages/affiliate.html",
+      blogIndex: base + "blog/index.html",
+    };
 
-function wireNavInteractions(scope) {
-  const menuBtn = scope.querySelector(".menuBtn");
-  const navLinks = scope.querySelector(".navLinks");
-
-  if (menuBtn && navLinks) {
-    menuBtn.addEventListener("click", () => {
-      const isOpen = navLinks.classList.toggle("open");
-      menuBtn.setAttribute("aria-expanded", String(isOpen));
+    host.querySelectorAll("[data-link]").forEach(a => {
+      const key = a.getAttribute("data-link");
+      if (map[key]) a.href = map[key];
     });
   }
 
-  scope.querySelectorAll(".dropdown .dropBtn").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      const dd = btn.closest(".dropdown");
-      const isOpen = dd.classList.contains("open");
+  function setupMobileMenu(){
+    const menuBtn = document.getElementById("menuBtn");
+    const navLinks = document.getElementById("navLinks");
+    if (!menuBtn || !navLinks) return;
 
-      scope.querySelectorAll(".dropdown.open").forEach(x => x.classList.remove("open"));
-      if (!isOpen) dd.classList.add("open");
+    menuBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isOpen = navLinks.classList.toggle("open");
+      menuBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
     });
-  });
 
-  document.addEventListener("click", (e) => {
-    if (!e.target.closest(".dropdown")) {
-      scope.querySelectorAll(".dropdown.open").forEach(x => x.classList.remove("open"));
-    }
-  });
+    // close when clicking outside
+    document.addEventListener("click", () => {
+      navLinks.classList.remove("open");
+      menuBtn.setAttribute("aria-expanded", "false");
+      closeAllDropdowns();
+    });
 
-  scope.querySelectorAll(".navLinks a").forEach(a => {
-    a.addEventListener("click", () => {
-      const navLinks2 = scope.querySelector(".navLinks");
-      const menuBtn2 = scope.querySelector(".menuBtn");
-      if (navLinks2 && menuBtn2) {
-        navLinks2.classList.remove("open");
-        menuBtn2.setAttribute("aria-expanded", "false");
+    // don’t close when clicking inside the menu
+    navLinks.addEventListener("click", (e) => e.stopPropagation());
+
+    // close menu on resize to desktop
+    window.addEventListener("resize", () => {
+      if (window.innerWidth > 640) {
+        navLinks.classList.remove("open");
+        menuBtn.setAttribute("aria-expanded", "false");
+        closeAllDropdowns();
       }
     });
-  });
-}
-
-function esc(s){
-  return (s || "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
-}
-
-async function populateBlogDropdown(scope, prefix){
-  const menu = scope.querySelector("#blogMenu");
-  if (!menu) return;
-
-  try {
-    const { db } = await import(prefix + "firebase.js");
-    const firestore = await import("https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js");
-    const { collection, query, where, orderBy, limit, getDocs, Timestamp } = firestore;
-
-    const now = Timestamp.now();
-
-    const q = query(
-      collection(db, "posts"),
-      where("status", "==", "published"),
-      where("publishAt", "<=", now),
-      orderBy("publishAt", "desc"),
-      limit(6)
-    );
-
-    const snap = await getDocs(q);
-
-    const loading = menu.querySelector("span");
-    if (loading) loading.remove();
-
-    if (snap.empty) {
-      menu.insertAdjacentHTML("beforeend",
-        `<span class="muted fine" style="display:block; padding:10px 10px;">No posts yet.</span>`
-      );
-      return;
-    }
-
-    menu.insertAdjacentHTML("beforeend",
-      snap.docs.map(d => {
-        const p = d.data();
-        return `<a href="${prefix}blog/post.html?id=${d.id}">${esc(p.title || "Untitled")}</a>`;
-      }).join("")
-    );
-
-  } catch (err) {
-    const loading = menu.querySelector("span");
-    if (loading) loading.textContent = "Posts unavailable.";
   }
-}
 
-loadNav();
+  function setupDropdownClicks(){
+    const dropdowns = document.querySelectorAll(".dropdown");
+    dropdowns.forEach(dd => {
+      const btn = dd.querySelector(".dropBtn");
+      if (!btn) return;
+
+      btn.addEventListener("click", (e) => {
+        // On desktop hover handles it; on mobile, click toggles
+        e.stopPropagation();
+
+        const isOpen = dd.classList.contains("open");
+        closeAllDropdowns();
+        if (!isOpen) dd.classList.add("open");
+
+        btn.setAttribute("aria-expanded", (!isOpen).toString());
+      });
+    });
+
+    // prevent closing when clicking inside dropdown menu
+    document.querySelectorAll(".dropMenu").forEach(menu => {
+      menu.addEventListener("click", (e) => e.stopPropagation());
+    });
+  }
+
+  function closeAllDropdowns(){
+    document.querySelectorAll(".dropdown.open").forEach(x => {
+      x.classList.remove("open");
+      const btn = x.querySelector(".dropBtn");
+      if (btn) btn.setAttribute("aria-expanded", "false");
+    });
+  }
+
+  async function loadBlogTitles(base){
+    const titlesHost = document.getElementById("blogTitles");
+    if (!titlesHost) return;
+
+    titlesHost.innerHTML = `<p class="muted" style="margin:6px 10px;">Loading…</p>`;
+
+    try {
+      const { db } = await import(base + "firebase.js");
+      const fs = await import("https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js");
+      const { collection, query, where, orderBy, limit, getDocs, Timestamp } = fs;
+
+      const now = Timestamp.now();
+
+      const q = query(
+        collection(db, "posts"),
+        where("status", "==", "published"),
+        where("publishAt", "<=", now),
+        orderBy("publishAt", "desc"),
+        limit(10)
+      );
+
+      const snap = await getDocs(q);
+
+      if (snap.empty) {
+        titlesHost.innerHTML = `<p class="muted" style="margin:6px 10px;">No posts yet.</p>`;
+        return;
+      }
+
+      titlesHost.innerHTML = snap.docs.map(d => {
+        const p = d.data();
+        const title = escapeHtml(p.title || "Untitled");
+        return `<a href="${base}blog/post.html?id=${d.id}">${title}</a>`;
+      }).join("");
+    } catch (err) {
+      titlesHost.innerHTML = `<p class="muted" style="margin:6px 10px;">Couldn’t load posts.</p>`;
+    }
+  }
+
+  function escapeHtml(s){
+    return (s || "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;");
+  }
+})();

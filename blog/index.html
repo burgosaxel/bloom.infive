@@ -19,7 +19,19 @@
           <p class="muted">Short posts, reflections, and updates.</p>
         </div>
 
-        <div id="posts" style="display:grid; grid-template-columns:1fr; gap:14px;"></div>
+        <!-- Show something immediately -->
+        <div id="posts" style="display:grid; grid-template-columns:1fr; gap:14px;">
+          <article class="postCard" style="padding:18px;">
+            <h2 style="margin:0 0 10px;">Loading posts…</h2>
+            <p class="muted" style="margin:0;">Please give it a moment on first load.</p>
+          </article>
+
+          <article class="postCard" style="padding:18px; opacity:.85;">
+            <h2 style="margin:0 0 10px;"> </h2>
+            <p class="muted" style="margin:0;"> </p>
+            <div style="height:14px;"></div>
+          </article>
+        </div>
       </div>
     </section>
 
@@ -35,11 +47,10 @@
   <script type="module">
     import { db } from "../firebase.js";
     import {
-      collection, query, where, orderBy, getDocs, Timestamp
+      collection, query, where, orderBy, onSnapshot, Timestamp
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
     const postsEl = document.getElementById("posts");
-    const now = Timestamp.now();
 
     function esc(s){
       return (s || "")
@@ -55,50 +66,67 @@
       return t.length > n ? t.slice(0, n).trimEnd() + "…" : t;
     }
 
-    const q = query(
-      collection(db, "posts"),
-      where("status", "==", "published"),
-      where("publishAt", "<=", now),
-      orderBy("publishAt", "desc")
-    );
-
-    try {
-      const snap = await getDocs(q);
-
-      if (snap.empty) {
+    function renderDocs(docs){
+      if (!docs.length) {
         postsEl.innerHTML = `<p class="muted">No posts yet.</p>`;
-      } else {
-        postsEl.innerHTML = snap.docs.map(docSnap => {
-          const p = docSnap.data();
-          const tags = Array.isArray(p.tags) ? p.tags : [];
-          const preview = previewFromHtml(p.contentHtml || "");
-
-          return `
-            <article class="postCard" style="padding:18px;">
-              <h2 style="margin:0 0 10px;">
-                <a href="./post.html?id=${docSnap.id}">${esc(p.title || "Untitled")}</a>
-              </h2>
-
-              <p class="muted">${esc(preview)}</p>
-
-              <div class="metaRow" style="margin-top:10px;">
-                ${tags.slice(0, 6).map(t => `<span class="tag">${esc(t)}</span>`).join("")}
-              </div>
-            </article>
-          `;
-        }).join("");
+        return;
       }
-    } catch (err) {
+
+      postsEl.innerHTML = docs.map(docSnap => {
+        const p = docSnap.data();
+        const tags = Array.isArray(p.tags) ? p.tags : [];
+        const preview = previewFromHtml(p.contentHtml || "");
+
+        return `
+          <article class="postCard" style="padding:18px;">
+            <h2 style="margin:0 0 10px;">
+              <a href="./post.html?id=${docSnap.id}">${esc(p.title || "Untitled")}</a>
+            </h2>
+
+            <p class="muted">${esc(preview)}</p>
+
+            <div class="metaRow" style="margin-top:10px;">
+              ${tags.slice(0, 6).map(t => `<span class="tag">${esc(t)}</span>`).join("")}
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function showError(msg){
       postsEl.innerHTML = `
         <div class="card" style="box-shadow:none;">
           <h2 style="margin:0 0 10px;">Blog loading error</h2>
-          <p class="muted" style="margin:0;">${esc(err.message)}</p>
-          <p class="muted" style="margin-top:10px;">
-            If it says “requires an index”, click the Firebase link and create it.
-          </p>
+          <p class="muted" style="margin:0;">${esc(msg)}</p>
         </div>
       `;
     }
+
+    // Real-time listener (updates immediately once the network returns)
+    // Recompute "now" every 30s so scheduled posts appear without refresh.
+    let unsubscribe = null;
+
+    function startListener(){
+      const now = Timestamp.now();
+
+      const q = query(
+        collection(db, "posts"),
+        where("status", "==", "published"),
+        where("publishAt", "<=", now),
+        orderBy("publishAt", "desc")
+      );
+
+      if (unsubscribe) unsubscribe();
+
+      unsubscribe = onSnapshot(q, (snap) => {
+        renderDocs(snap.docs);
+      }, (err) => {
+        showError(err.message);
+      });
+    }
+
+    startListener();
+    setInterval(startListener, 30000);
   </script>
 </body>
 </html>
