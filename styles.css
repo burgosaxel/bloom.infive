@@ -8,6 +8,25 @@
   --radius:18px;
   --shadow:0 10px 30px rgba(0,0,0,.08);
   --max:1040px;
+
+  --menuBg:#fff;
+  --menuBorder:rgba(0,0,0,.12);
+  --hover:rgba(0,0,0,.05);
+}
+
+/* 🌙 Dark mode variables */
+html[data-theme="dark"]{
+  --bg:#0f1115;
+  --bg2:#141923;
+  --ink:#f2f4f8;
+  --muted:#b9c0cc;
+  --card:#171c26;
+  --stroke:#f2f4f8;
+  --shadow:0 14px 36px rgba(0,0,0,.45);
+
+  --menuBg:#171c26;
+  --menuBorder:rgba(255,255,255,.12);
+  --hover:rgba(255,255,255,.06);
 }
 
 /* ---------- Reset ---------- */
@@ -15,12 +34,12 @@
 html,body{margin:0;padding:0}
 
 body{
-  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  color:var(--ink);
+  font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   background:var(--bg);
+  color:var(--ink);
 }
 
-a{color:inherit;text-decoration:none}
+a{text-decoration:none;color:inherit}
 
 /* ---------- Layout ---------- */
 .container{
@@ -28,15 +47,12 @@ a{color:inherit;text-decoration:none}
   margin:0 auto;
 }
 
-.muted{color:var(--muted); line-height:1.7}
-
 /* ---------- Header / Nav ---------- */
 .header{
   position:sticky;
   top:0;
   z-index:100;
-  background:color-mix(in srgb, var(--bg) 92%, white 8%);
-  backdrop-filter:blur(8px);
+  background:var(--bg);
   border-bottom:1px solid rgba(0,0,0,.08);
 }
 
@@ -59,27 +75,24 @@ a{color:inherit;text-decoration:none}
   gap:28px;
 }
 
-/* Top-level nav items bold */
 .navLinks > a,
-.navLinks .dropBtn{
+.dropBtn{
   font-weight:700;
   font-size:15px;
   padding:10px 0;
-  cursor:pointer;
 }
 
 /* ---------- Dropdown ---------- */
-.dropdown{
-  position:relative;
-}
+.dropdown{position:relative}
 
 .dropBtn{
   background:none;
   border:none;
   font-family:inherit;
+  cursor:pointer;
+  color:inherit;
 }
 
-/* Hover dropdown on desktop */
 @media (hover:hover) and (pointer:fine){
   .dropdown:hover .dropMenu{
     opacity:1;
@@ -88,25 +101,22 @@ a{color:inherit;text-decoration:none}
   }
 }
 
-/* ---------- Dropdown Menu (desktop behavior) ---------- */
 .dropMenu{
   position:absolute;
   top:42px;
   left:0;
   min-width:260px;
-  background:#fff;
-  border:1px solid rgba(0,0,0,.12);
+  background:var(--menuBg);
+  border:1px solid var(--menuBorder);
   border-radius:16px;
   box-shadow:var(--shadow);
   padding:12px;
   opacity:0;
   pointer-events:none;
   transform:translateY(8px);
-  transition:all .18s ease;
-  z-index:60;
+  transition:.18s ease;
 }
 
-/* Dropdown items NOT bold */
 .dropMenu a{
   display:block;
   padding:10px 12px;
@@ -115,21 +125,31 @@ a{color:inherit;text-decoration:none}
 }
 
 .dropMenu a:hover{
-  background:rgba(0,0,0,.05);
+  background:var(--hover);
 }
 
 .dropDivider{
   height:1px;
-  background:rgba(0,0,0,.1);
+  background:rgba(0,0,0,.12);
   margin:8px 6px;
 }
 
-/* ---------- Hamburger (Mobile only) ---------- */
+/* ---------- Theme Toggle ---------- */
+.themeToggle{
+  border:1px solid var(--menuBorder);
+  background:transparent;
+  border-radius:12px;
+  padding:8px 12px;
+  cursor:pointer;
+  font-size:16px;
+}
+
+/* ---------- Hamburger ---------- */
 .menuBtn{
   display:none;
   width:42px;
   height:42px;
-  border:1px solid rgba(0,0,0,.2);
+  border:1px solid var(--menuBorder);
   border-radius:12px;
   background:transparent;
   cursor:pointer;
@@ -138,182 +158,32 @@ a{color:inherit;text-decoration:none}
 .menuBtn span{
   display:block;
   height:2px;
-  background:#111;
+  background:var(--ink);
   margin:6px 10px;
-}
-
-/* ---------- Hero ---------- */
-.hero{padding:64px 0 36px}
-.heroInner{text-align:center}
-
-.heroTitle{
-  font-family:"Playfair Display", serif;
-  font-weight:600;
-  line-height:1.05;
-  font-size:clamp(42px, 6vw, 84px);
-  margin:0;
-}
-
-.heroSub{
-  margin:20px auto 30px;
-  max-width:620px;
-  font-size:18px;
-}
-
-/* ---------- Sections ---------- */
-.section{padding:64px 0}
-.section.alt{background:var(--bg2)}
-
-h2{
-  font-family:"Playfair Display", serif;
-  font-weight:600;
-  margin:0 0 12px;
-}
-
-/* ---------- Cards ---------- */
-.card{
-  background:var(--card);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  padding:22px;
-  border:1px solid rgba(0,0,0,.08);
-}
-
-.cards2{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:18px;
-}
-
-/* ---------- Buttons ---------- */
-.btn{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  padding:14px 24px;
-  border-radius:14px;
-  border:2px solid var(--stroke);
-  font-weight:600;
-  cursor:pointer;
-}
-
-.btn.primary{background:#fff}
-.btn.ghost{border-color:rgba(0,0,0,.35)}
-.btn.small{
-  padding:10px 14px;
-  border-width:1.5px;
-  font-size:14px;
-}
-
-/* ---------- About ---------- */
-.grid2{
-  display:grid;
-  grid-template-columns:260px 1fr;
-  gap:32px;
-  align-items:flex-start;
-}
-
-.authorPhoto{
-  width:100%;
-  max-width:260px;
-  border-radius:20px;
-  box-shadow:0 10px 28px rgba(0,0,0,.18);
-}
-
-/* ---------- Blog ---------- */
-.blogGrid{
-  display:grid;
-  grid-template-columns:1fr;
-  gap:16px;
-}
-
-.postCard{
-  background:var(--card);
-  padding:20px;
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-}
-
-.metaRow{
-  display:flex;
-  gap:10px;
-  align-items:center;
-}
-
-.tag{
-  padding:6px 10px;
-  border-radius:999px;
-  border:1px solid rgba(0,0,0,.18);
-  background:rgba(255,255,255,.55);
-  font-size:13px;
-}
-
-/* ---------- Footer ---------- */
-.footer{
-  border-top:1px solid rgba(0,0,0,.08);
-  padding:28px 0;
-  margin-top:80px;
-}
-
-.footerInner{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:16px;
-  flex-wrap:wrap;
-}
-
-.footerLinks{
-  display:flex;
-  gap:18px;
-}
-
-.footerLinks a{
-  font-size:14px;
-  font-weight:600;
 }
 
 /* ---------- Mobile ---------- */
 @media (max-width:760px){
-  .grid2{grid-template-columns:1fr}
-  .cards2{grid-template-columns:1fr}
+  .menuBtn{display:block}
 
-  /* Show hamburger */
-  .menuBtn{
-    display:block;
-  }
-
-  /* Mobile nav container - CENTERED */
   .navLinks{
     display:none;
     position:absolute;
     right:16px;
     top:70px;
-    background:#fff;
-    padding:24px 20px;
+    background:var(--menuBg);
+    border:1px solid var(--menuBorder);
     border-radius:20px;
-    box-shadow:var(--shadow);
+    padding:24px;
     flex-direction:column;
     gap:18px;
-    min-width:260px;
-
-    /* 🔥 center everything */
     align-items:center;
     text-align:center;
+    min-width:260px;
   }
 
-  .navLinks.open{
-    display:flex;
-  }
+  .navLinks.open{display:flex}
 
-  /* Top-level links */
-  .navLinks > a,
-  .navLinks .dropBtn{
-    font-size:16px;
-    font-weight:700;
-  }
-
-  /* Dropdown menu inside mobile nav */
   .dropMenu{
     position:static;
     opacity:1;
@@ -321,23 +191,10 @@ h2{
     transform:none;
     box-shadow:none;
     border:none;
-    padding:10px 0 0;
-    min-width:unset;
-
+    background:transparent;
+    padding-top:10px;
     display:flex;
     flex-direction:column;
     align-items:center;
-    text-align:center;
-    gap:6px;
-  }
-
-  .dropMenu a{
-    font-weight:400;
-    padding:6px 0;
-  }
-
-  .dropDivider{
-    width:60%;
-    margin:8px auto;
   }
 }
