@@ -1,26 +1,27 @@
 <header class="header">
   <div class="container nav">
-    <a class="brand" data-home-link href="/index.html">BLOOM.INFIVE</a>
+    <a class="brand" data-home-link href="index.html">BLOOM.INFIVE</a>
 
-    <button class="menuBtn" id="menuBtn" aria-label="Open menu">
+    <!-- Mobile hamburger (hidden on desktop via CSS) -->
+    <button class="menuBtn" id="menuBtn" aria-label="Open menu" type="button">
       <span></span><span></span><span></span>
     </button>
 
-    <nav class="navLinks" id="navLinks">
+    <nav class="navLinks" id="navLinks" aria-label="Primary">
       <a href="/pages/about.html">About</a>
       <a href="/pages/upcoming.html">Upcoming</a>
       <a href="/pages/activities.html">Activities</a>
 
-      <div class="dropdown">
+      <div class="dropdown" id="blogDropdown">
         <button class="dropBtn" type="button">Blog</button>
-        <div class="dropMenu">
+        <div class="dropMenu" id="navBlogList">
           <a href="/blog/index.html">All Posts</a>
           <div class="dropDivider"></div>
-          <div id="navBlogList"></div>
+          <!-- Blog titles get injected here by blog/nav logic if present -->
         </div>
       </div>
 
-      <div class="dropdown">
+      <div class="dropdown" id="amazonDropdown">
         <button class="dropBtn" type="button">Amazon</button>
         <div class="dropMenu">
           <a href="/pages/affiliate.html">Amazon &amp; Affiliate</a>
@@ -36,5 +37,3 @@
     </nav>
   </div>
 </header>
-
-<script src="/nav.js"></script>
