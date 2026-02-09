@@ -7,7 +7,7 @@ import {
   onAuthStateChanged, signInWithEmailAndPassword, signOut,
   collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc,
   query, orderBy, limit, Timestamp, serverTimestamp,
-  ref, uploadBytes, getDownloadURL
+  storageRef, uploadBytes, getDownloadURL
 } from "../firebase.js";
 
 const THEME_KEY = "bloomTheme";
@@ -459,9 +459,9 @@ async function uploadProfile() {
   }
 
   try {
-    const storageRef = ref(storage, `assets/author-${Date.now()}-${file.name}`);
-    await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(storageRef);
+    const fileRef = storageRef(storage, `assets/author-${Date.now()}-${file.name}`);
+    await uploadBytes(fileRef, file);
+    const url = await getDownloadURL(fileRef);
 
     await setDoc(doc(db, "site", "profile"), { photoUrl: url, updatedAt: serverTimestamp() }, { merge: true });
 
