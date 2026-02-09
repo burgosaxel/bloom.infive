@@ -3,34 +3,38 @@
     <a class="brand" data-home-link href="#">BLOOM.INFIVE</a>
 
     <div class="navRight">
-      <button class="menuBtn" id="menuBtn" aria-label="Open menu">
+      <button class="menuBtn" id="menuBtn" aria-label="Open menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
 
-      <nav class="navLinks" id="navLinks">
-        <a data-link="about" href="#">About</a>
-        <a data-link="upcoming" href="#">Upcoming</a>
-        <a data-link="activities" href="#">Activities</a>
+      <nav class="navLinks" id="navLinks" aria-label="Primary">
+        <a class="navLink" data-link="about" href="#">About</a>
+        <a class="navLink" data-link="upcoming" href="#">Upcoming</a>
+        <a class="navLink" data-link="activities" href="#">Activities</a>
 
         <div class="dropdown" data-dd="blog">
-          <button class="dropBtn" type="button">Blog</button>
-          <div class="dropMenu" id="blogMenu">
-            <a data-link="blogIndex" href="#">All Posts</a>
+          <button class="dropBtn navLink" type="button" aria-haspopup="true" aria-expanded="false">
+            Blog
+          </button>
+          <div class="dropMenu" id="blogMenu" role="menu">
+            <a data-link="blogIndex" href="#" role="menuitem">All Posts</a>
             <div class="dropDivider"></div>
             <div id="blogTitlesMount">
-              <a href="#">Loading…</a>
+              <a href="#" role="menuitem">Loading…</a>
             </div>
           </div>
         </div>
 
         <div class="dropdown" data-dd="amazon">
-          <button class="dropBtn" type="button">Amazon</button>
-          <div class="dropMenu">
-            <a data-link="amazonAffiliate" href="#">Amazon &amp; Affiliate</a>
+          <button class="dropBtn navLink" type="button" aria-haspopup="true" aria-expanded="false">
+            Amazon
+          </button>
+          <div class="dropMenu" role="menu">
+            <a data-link="amazonAffiliate" href="#" role="menuitem">Amazon &amp; Affiliate</a>
           </div>
         </div>
 
-        <a data-link="newsletter" href="#">Newsletter</a>
+        <a class="navLink" data-link="newsletter" href="#">Newsletter</a>
       </nav>
 
       <button class="themeBtn" id="themeBtn" aria-label="Toggle dark mode" title="Toggle theme">☀️</button>

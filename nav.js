@@ -6,7 +6,6 @@
   }
 
   function pathPrefix() {
-    // Works on /, /pages/*, /blog/*, /admin/*
     const p = location.pathname;
     if (p.includes("/pages/")) return "../";
     if (p.includes("/blog/")) return "../";
@@ -14,21 +13,30 @@
     return "./";
   }
 
-  function setTheme(theme) {
-    const root = document.documentElement;
-    root.setAttribute("data-theme", theme);
+  function applyTheme(theme) {
+    // ✅ This matches your CSS: body.dark { ... }
+    const isDark = theme === "dark";
+    document.body.classList.toggle("dark", isDark);
+
+    // Optional compatibility hook (doesn't hurt)
+    document.documentElement.setAttribute("data-theme", theme);
+
     localStorage.setItem(THEME_KEY, theme);
   }
 
   function getTheme() {
     const saved = localStorage.getItem(THEME_KEY);
     if (saved === "light" || saved === "dark") return saved;
-    return "dark"; // default you liked
+    return "dark"; // your preferred default
   }
 
   function formatThemeIcon(themeBtn, theme) {
     themeBtn.textContent = (theme === "dark") ? "☀️" : "🌙";
     themeBtn.title = (theme === "dark") ? "Switch to light" : "Switch to dark";
+  }
+
+  function isMobile() {
+    return window.matchMedia("(max-width: 760px)").matches;
   }
 
   async function injectNav() {
@@ -37,10 +45,12 @@
 
     // Apply theme early
     const currentTheme = getTheme();
-    setTheme(currentTheme);
+    applyTheme(currentTheme);
 
     const prefix = pathPrefix();
+
     const res = await fetch(prefix + "nav.html", { cache: "no-store" });
+    if (!res.ok) throw new Error("Failed to fetch nav.html");
     const html = await res.text();
     mount.innerHTML = html;
 
@@ -65,35 +75,71 @@
     // Hamburger menu
     const menuBtn = mount.querySelector("#menuBtn");
     const navLinks = mount.querySelector("#navLinks");
+
+    function closeAllDropdowns() {
+      mount.querySelectorAll(".dropdown.open").forEach(dd => dd.classList.remove("open"));
+    }
+
+    function closeMenu() {
+      if (navLinks) navLinks.classList.remove("open");
+      closeAllDropdowns();
+    }
+
     if (menuBtn && navLinks) {
-      menuBtn.addEventListener("click", () => {
+      menuBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
         navLinks.classList.toggle("open");
+
+        // If closing the hamburger, also close dropdowns
+        if (!navLinks.classList.contains("open")) closeAllDropdowns();
       });
 
       // close menu on link click (mobile)
       navLinks.querySelectorAll("a").forEach(a => {
-        a.addEventListener("click", () => navLinks.classList.remove("open"));
+        a.addEventListener("click", () => {
+          if (isMobile()) closeMenu();
+        });
       });
     }
 
-    // Mobile dropdown toggles
+    // Mobile dropdown toggles (Blog / Amazon)
     mount.querySelectorAll(".dropdown .dropBtn").forEach(btn => {
       btn.addEventListener("click", (e) => {
-        // only act like "click-to-open" on mobile widths
-        if (window.matchMedia("(max-width: 760px)").matches) {
-          const dd = btn.closest(".dropdown");
-          dd.classList.toggle("open");
-        }
+        if (!isMobile()) return; // desktop uses hover
+        e.preventDefault();
+        e.stopPropagation();
+
+        const dd = btn.closest(".dropdown");
+        const wasOpen = dd.classList.contains("open");
+
+        // close others first
+        closeAllDropdowns();
+
+        // toggle this one
+        dd.classList.toggle("open", !wasOpen);
       });
+    });
+
+    // Close menu/dropdowns when clicking outside
+    document.addEventListener("click", (e) => {
+      if (!isMobile()) return;
+      if (!mount.contains(e.target)) closeMenu();
+    });
+
+    // If we resize to desktop, clear mobile "open" states
+    window.addEventListener("resize", () => {
+      if (!isMobile()) closeMenu();
     });
 
     // Theme toggle button
     const themeBtn = mount.querySelector("#themeBtn");
     if (themeBtn) {
       formatThemeIcon(themeBtn, getTheme());
-      themeBtn.addEventListener("click", () => {
+      themeBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         const next = (getTheme() === "dark") ? "light" : "dark";
-        setTheme(next);
+        applyTheme(next);
         formatThemeIcon(themeBtn, next);
       });
     }
@@ -101,7 +147,7 @@
     // Load blog titles into dropdown
     loadBlogTitles(prefix, mount).catch(() => {
       const host = mount.querySelector("#blogTitlesMount");
-      if (host) host.innerHTML = `<a href="${map.blogIndex}">View posts</a>`;
+      if (host) host.innerHTML = `<a href="${map.blogIndex}">All Posts</a>`;
     });
   }
 
@@ -138,17 +184,15 @@
     snap.forEach(docSnap => {
       const data = docSnap.data() || {};
       const title = (data.title || "Untitled").toString();
-      // Your blog viewer likely uses post.html?id=DOCID
       const url = `${prefix}blog/post.html?id=${encodeURIComponent(docSnap.id)}`;
 
       const a = document.createElement("a");
       a.href = url;
       a.textContent = title;
-      a.style.fontWeight = "400";
+      // (CSS already makes dropdown items not bold, so no inline styles needed)
       host.appendChild(a);
     });
   }
 
-  // Run
   document.addEventListener("DOMContentLoaded", injectNav);
 })();
