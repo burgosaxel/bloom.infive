@@ -1,39 +1,35 @@
-/* ==============================
-   CSS VARIABLES
-============================== */
 :root{
+  /* Light mode */
   --bg:#f3d9a9;
   --bg2:#f7e6c4;
   --ink:#111;
   --muted:#3a3a3a;
-  --card:#fff;
+  --card:#ffffff;
   --stroke:#111;
   --radius:18px;
   --shadow:0 10px 30px rgba(0,0,0,.08);
   --max:1040px;
 }
 
-/* DARK MODE */
-[data-theme="dark"]{
-  --bg:#0b0b0c;
-  --bg2:#121214;
+/* ================= DARK MODE ================= */
+body.dark{
+  --bg:#0c0c0c;
+  --bg2:#141414;
   --ink:#f5f5f5;
   --muted:#cfcfcf;
-  --card:rgba(255,255,255,.06);
-  --stroke:#f5f5f5;
-  --shadow:0 20px 40px rgba(0,0,0,.6);
+  --card:#1a1a1a;
+  --stroke:#ffffff;
+  --shadow:0 12px 40px rgba(0,0,0,.65);
 }
 
-/* ==============================
-   GLOBAL
-============================== */
+/* ================= BASE ================= */
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
+
 body{
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  background:var(--bg);
   color:var(--ink);
-  transition: background .3s ease, color .3s ease;
+  background:var(--bg);
 }
 
 a{color:inherit;text-decoration:none}
@@ -44,20 +40,20 @@ a:hover{text-decoration:underline}
   margin:0 auto;
 }
 
-/* ==============================
-   HEADER / NAV
-============================== */
+.muted{color:var(--muted); line-height:1.7;}
+
+/* ================= HEADER / NAV ================= */
 .header{
   position:sticky;
   top:0;
-  z-index:100;
-  background:linear-gradient(
-    to bottom,
-    rgba(0,0,0,.25),
-    rgba(0,0,0,.05)
-  );
+  z-index:20;
+  background:color-mix(in srgb, var(--bg) 92%, transparent);
   backdrop-filter: blur(10px);
-  border-bottom:1px solid rgba(255,255,255,.08);
+  border-bottom:1px solid rgba(0,0,0,.08);
+}
+
+body.dark .header{
+  border-bottom:1px solid rgba(255,255,255,.12);
 }
 
 .nav{
@@ -69,115 +65,126 @@ a:hover{text-decoration:underline}
 
 .brand{
   font-weight:700;
-  letter-spacing:.5px;
+  letter-spacing:.4px;
 }
 
-/* TOP LINKS */
+/* ================= NAV LINKS ================= */
 .navLinks{
   display:flex;
   align-items:center;
-  gap:24px;
+  gap:26px;
 }
 
-/* ALL TOP NAV ITEMS BOLD */
+/* ALL top-level nav items (links + dropdown buttons) */
 .navLinks > a,
 .dropBtn{
+  font: inherit;
   font-weight:700;
-}
-
-/* ==============================
-   DROPDOWN
-============================== */
-.dropdown{position:relative}
-
-.dropBtn{
+  color:inherit;
+  line-height:1;
   background:none;
   border:0;
-  font:inherit;
+  padding:0;
+  margin:0;
   cursor:pointer;
-  padding:8px 10px;
-  border-radius:12px;
-  color:inherit;
+  display:inline-flex;
+  align-items:center;
 }
 
+/* Hover = underline (same as links) */
+.navLinks > a:hover,
 .dropBtn:hover{
-  background:rgba(255,255,255,.15);
+  text-decoration:underline;
+}
+
+/* ================= DROPDOWNS ================= */
+.dropdown{
+  position:relative;
 }
 
 .dropMenu{
-  position:absolute;
-  top:44px;
-  left:50%;
-  transform:translateX(-50%);
-  min-width:240px;
-  background:var(--card);
-  border-radius:18px;
-  padding:12px;
-  box-shadow:var(--shadow);
   display:none;
+  position:absolute;
+  top:36px;
+  right:0;
+  min-width:260px;
+  background:var(--card);
+  border-radius:16px;
+  box-shadow:var(--shadow);
+  padding:12px;
+  border:1px solid rgba(0,0,0,.1);
+}
+
+body.dark .dropMenu{
+  border:1px solid rgba(255,255,255,.15);
 }
 
 .dropdown:hover .dropMenu{
   display:block;
 }
 
-/* DROPDOWN ITEMS NOT BOLD */
+/* dropdown links NOT bold */
 .dropMenu a{
   display:block;
-  padding:12px;
+  padding:10px 12px;
   border-radius:12px;
   font-weight:400;
 }
 
 .dropMenu a:hover{
-  background:rgba(255,255,255,.08);
+  background:rgba(0,0,0,.05);
   text-decoration:none;
+}
+
+body.dark .dropMenu a:hover{
+  background:rgba(255,255,255,.08);
 }
 
 .dropDivider{
   height:1px;
-  background:rgba(255,255,255,.15);
-  margin:10px 6px;
+  background:rgba(0,0,0,.1);
+  margin:8px 0;
 }
 
-/* ==============================
-   DARK MODE TOGGLE
-============================== */
+body.dark .dropDivider{
+  background:rgba(255,255,255,.15);
+}
+
+/* ================= DARK MODE TOGGLE ================= */
 .themeToggle{
-  border:1px solid rgba(255,255,255,.3);
-  background:none;
-  color:inherit;
   width:42px;
   height:42px;
-  border-radius:14px;
-  cursor:pointer;
+  border-radius:50%;
+  border:1.5px solid rgba(255,255,255,.3);
+  background:transparent;
+  color:inherit;
   display:flex;
   align-items:center;
   justify-content:center;
+  cursor:pointer;
 }
 
-/* ==============================
-   HERO
-============================== */
+/* ================= HERO ================= */
 .hero{
-  padding:70px 0 40px;
+  padding:64px 0 40px;
+}
+
+.heroInner{
   text-align:center;
-  background:
-    radial-gradient(circle at top, rgba(255,255,255,.12), transparent 55%);
 }
 
 .heroTitle{
   font-family:"Playfair Display", serif;
-  font-size:clamp(42px,6vw,84px);
+  font-weight:600;
   line-height:1.05;
+  font-size:clamp(42px,6vw,84px);
   margin:0;
 }
 
 .heroSub{
-  max-width:640px;
-  margin:20px auto 30px;
+  margin:18px auto 26px;
+  max-width:620px;
   font-size:18px;
-  color:var(--muted);
 }
 
 .heroCtas{
@@ -187,44 +194,42 @@ a:hover{text-decoration:underline}
   flex-wrap:wrap;
 }
 
-/* ==============================
-   BUTTONS
-============================== */
+/* ================= BUTTONS ================= */
 .btn{
-  padding:14px 24px;
-  border-radius:16px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:14px 22px;
+  border-radius:14px;
   border:2px solid var(--stroke);
-  font-weight:700;
-  background:transparent;
-  color:inherit;
+  font-weight:600;
   cursor:pointer;
 }
 
-.btn.primary{
-  background:rgba(255,255,255,.08);
+.btn.primary{background:var(--card);}
+.btn.ghost{border-color:rgba(0,0,0,.35);}
+
+body.dark .btn.ghost{
+  border-color:rgba(255,255,255,.35);
 }
 
-.btn:hover{
-  transform:translateY(-1px);
-}
-
-/* ==============================
-   CARDS
-============================== */
+/* ================= CARDS ================= */
 .card{
   background:var(--card);
-  border-radius:22px;
-  padding:22px;
+  border-radius:var(--radius);
   box-shadow:var(--shadow);
+  padding:18px;
 }
 
-/* ==============================
-   FOOTER
-============================== */
+/* ================= FOOTER ================= */
 .footer{
-  border-top:1px solid rgba(255,255,255,.15);
-  padding:30px 0;
+  border-top:1px solid rgba(0,0,0,.1);
+  padding:24px 0;
   margin-top:80px;
+}
+
+body.dark .footer{
+  border-top:1px solid rgba(255,255,255,.15);
 }
 
 .footerInner{
@@ -236,17 +241,19 @@ a:hover{text-decoration:underline}
 
 .footerLinks{
   display:flex;
-  gap:16px;
+  gap:18px;
 }
 
-/* ==============================
-   MOBILE
-============================== */
+.footerLinks a{
+  font-size:14px;
+}
+
+/* ================= MOBILE ================= */
 .menuBtn{
   display:none;
 }
 
-@media (max-width: 768px){
+@media (max-width:760px){
 
   .menuBtn{
     display:flex;
@@ -254,43 +261,38 @@ a:hover{text-decoration:underline}
     height:44px;
     align-items:center;
     justify-content:center;
-    border-radius:14px;
+    border-radius:12px;
     border:1px solid rgba(255,255,255,.3);
-    background:none;
-    color:inherit;
+    background:transparent;
+    cursor:pointer;
   }
 
   .navLinks{
-    position:fixed;
-    top:70px;
-    left:50%;
-    transform:translateX(-50%);
-    background:var(--card);
-    border-radius:28px;
-    padding:26px;
     display:none;
+    position:absolute;
+    right:16px;
+    top:70px;
+    background:var(--card);
+    border-radius:20px;
+    box-shadow:var(--shadow);
+    padding:22px;
     flex-direction:column;
     align-items:center;
-    gap:22px;
-    width:85%;
-    max-width:340px;
-    box-shadow:var(--shadow);
+    gap:20px;
+    min-width:280px;
   }
 
   .navLinks.open{
     display:flex;
   }
 
-  .dropdown:hover .dropMenu{
-    display:none;
-  }
-
   .dropMenu{
     position:static;
-    transform:none;
-    box-shadow:none;
-    padding-top:10px;
     display:block;
+    background:transparent;
+    box-shadow:none;
+    border:none;
+    padding:0;
   }
 
   .dropMenu a{
