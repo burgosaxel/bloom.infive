@@ -1,40 +1,20 @@
-// firebase.js (module, CDN)
-// Works on GitHub Pages / static hosting.
-// Exposes BOTH module exports and window globals for nav.js.
+// firebase.js (type="module")
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-import {
-  getAuth,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signOut
-} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import {
   getFirestore,
   collection,
-  doc,
-  getDoc,
-  getDocs,
-  setDoc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
   query,
   where,
   orderBy,
   limit,
-  onSnapshot,
-  serverTimestamp,
+  getDocs,
   Timestamp
-} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
-import {
-  getStorage,
-  ref,
-  uploadBytes,
-  getDownloadURL
-} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
 
-// Your Firebase configuration (from Firebase Console)
+// ✅ Your real Firebase config (from your message)
 const firebaseConfig = {
   apiKey: "AIzaSyAXv7cIJLaMbFon-3GyMixJdgAFfoob_qE",
   authDomain: "bloom-in-five.firebaseapp.com",
@@ -45,59 +25,19 @@ const firebaseConfig = {
   measurementId: "G-R6FJ4K8JWG"
 };
 
-// Init
-export const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
 
-// Module exports (admin pages can import these)
-export {
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signOut,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  setDoc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  limit,
-  onSnapshot,
-  serverTimestamp,
-  Timestamp,
-  ref,
-  uploadBytes,
-  getDownloadURL
-};
-
-// Globals (nav.js uses these)
-window.fb = { app, auth, db, storage, Timestamp };
+// ✅ Make Firebase available to non-module scripts (like nav.js)
+window.fb = { app, auth, db, storage };
 window.fbFns = {
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signOut,
   collection,
-  doc,
-  getDoc,
-  getDocs,
-  setDoc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
   query,
   where,
   orderBy,
   limit,
-  onSnapshot,
-  serverTimestamp,
-  Timestamp,
-  ref,
-  uploadBytes,
-  getDownloadURL
+  getDocs,
+  Timestamp
 };

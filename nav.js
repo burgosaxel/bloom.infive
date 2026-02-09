@@ -6,7 +6,6 @@
   }
 
   function pathPrefix() {
-    // Works on /, /pages/*, /blog/*, /admin/*
     const p = location.pathname;
     if (p.includes("/pages/")) return "../";
     if (p.includes("/blog/")) return "../";
@@ -22,62 +21,37 @@
   function getTheme() {
     const saved = localStorage.getItem(THEME_KEY);
     if (saved === "light" || saved === "dark") return saved;
-    return "dark"; // default
+    return "dark"; // your default
   }
 
   function formatThemeIcon(themeBtn, theme) {
-    themeBtn.textContent = (theme === "dark") ? "☀️" : "🌙";
-    themeBtn.title = (theme === "dark") ? "Switch to light" : "Switch to dark";
+    themeBtn.textContent = theme === "dark" ? "☀️" : "🌙";
+    themeBtn.title = theme === "dark" ? "Switch to light" : "Switch to dark";
   }
 
-  function sleep(ms) {
-    return new Promise(r => setTimeout(r, ms));
-  }
-
-  async function ensureFirebase(prefix) {
-    if (window.fb && window.fbFns) return true;
-
-    return new Promise((resolve) => {
-      const existing = document.querySelector('script[data-fb-loader="1"]');
-      if (existing) {
-        (async () => {
-          const start = Date.now();
-          while ((!window.fb || !window.fbFns) && Date.now() - start < 8000) await sleep(150);
-          resolve(!!(window.fb && window.fbFns));
-        })();
-        return;
-      }
-
-      const s = document.createElement("script");
-      s.type = "module";
-      s.src = prefix + "firebase.js";
-      s.async = true;
-      s.dataset.fbLoader = "1";
-      s.onload = async () => {
-        const start = Date.now();
-        while ((!window.fb || !window.fbFns) && Date.now() - start < 8000) await sleep(150);
-        resolve(!!(window.fb && window.fbFns));
-      };
-      s.onerror = () => resolve(false);
-      document.head.appendChild(s);
-    });
+  async function waitForFirebase(maxMs = 10000) {
+    const start = Date.now();
+    while (Date.now() - start < maxMs) {
+      if (window.fb && window.fbFns && window.fb.db) return true;
+      await new Promise((r) => setTimeout(r, 150));
+    }
+    return false;
   }
 
   async function injectNav() {
     const mount = getMountEl();
     if (!mount) return;
 
-    // Apply theme early (prevents flash)
+    // Apply theme early
     const currentTheme = getTheme();
     setTheme(currentTheme);
 
     const prefix = pathPrefix();
-
     const res = await fetch(prefix + "nav.html", { cache: "no-store" });
     const html = await res.text();
     mount.innerHTML = html;
 
-    // Wire links (absolute-by-prefix)
+    // Wire links
     const homeLink = mount.querySelector("[data-home-link]");
     if (homeLink) homeLink.href = prefix + "index.html";
 
@@ -90,7 +64,7 @@
       amazonAffiliate: prefix + "pages/affiliate.html"
     };
 
-    mount.querySelectorAll("[data-link]").forEach(a => {
+    mount.querySelectorAll("[data-link]").forEach((a) => {
       const k = a.getAttribute("data-link");
       if (map[k]) a.href = map[k];
     });
@@ -104,13 +78,13 @@
       });
 
       // close menu on link click (mobile)
-      navLinks.querySelectorAll("a").forEach(a => {
+      navLinks.querySelectorAll("a").forEach((a) => {
         a.addEventListener("click", () => navLinks.classList.remove("open"));
       });
     }
 
-    // Mobile dropdown toggles
-    mount.querySelectorAll(".dropdown .dropBtn").forEach(btn => {
+    // Mobile dropdown toggles (click-to-open only on mobile)
+    mount.querySelectorAll(".dropdown .dropBtn").forEach((btn) => {
       btn.addEventListener("click", () => {
         if (window.matchMedia("(max-width: 760px)").matches) {
           const dd = btn.closest(".dropdown");
@@ -119,27 +93,35 @@
       });
     });
 
-    // Theme toggle button
+    // Theme toggle
     const themeBtn = mount.querySelector("#themeBtn");
     if (themeBtn) {
       formatThemeIcon(themeBtn, getTheme());
       themeBtn.addEventListener("click", () => {
-        const next = (getTheme() === "dark") ? "light" : "dark";
+        const next = getTheme() === "dark" ? "light" : "dark";
         setTheme(next);
         formatThemeIcon(themeBtn, next);
       });
     }
 
     // Load blog titles into dropdown
-    loadBlogTitles(prefix, mount).catch(() => {
+    loadBlogTitles(prefix, mount, map).catch(() => {
       const host = mount.querySelector("#blogTitlesMount");
       if (host) host.innerHTML = `<a href="${map.blogIndex}">View posts</a>`;
     });
   }
 
-  async function loadBlogTitles(prefix, mount) {
-    const ok = await ensureFirebase(prefix);
-    if (!ok) return;
+  async function loadBlogTitles(prefix, mount, map) {
+    const host = mount.querySelector("#blogTitlesMount");
+    if (!host) return;
+
+    host.innerHTML = `<a href="${map.blogIndex}">Loading…</a>`;
+
+    const ok = await waitForFirebase(12000);
+    if (!ok) {
+      host.innerHTML = `<a href="${map.blogIndex}">View posts</a>`;
+      return;
+    }
 
     const { db } = window.fb;
     const { collection, query, where, orderBy, limit, getDocs } = window.fbFns;
@@ -152,16 +134,14 @@
     );
 
     const snap = await getDocs(q);
-    const host = mount.querySelector("#blogTitlesMount");
-    if (!host) return;
 
     if (snap.empty) {
-      host.innerHTML = `<a href="${prefix}blog/index.html">No posts yet</a>`;
+      host.innerHTML = `<a href="${map.blogIndex}">No posts yet</a>`;
       return;
     }
 
     host.innerHTML = "";
-    snap.forEach(docSnap => {
+    snap.forEach((docSnap) => {
       const data = docSnap.data() || {};
       const title = (data.title || "Untitled").toString();
       const url = `${prefix}blog/post.html?id=${encodeURIComponent(docSnap.id)}`;
@@ -169,7 +149,7 @@
       const a = document.createElement("a");
       a.href = url;
       a.textContent = title;
-      a.style.fontWeight = "400"; // dropdown items NOT bold
+      a.className = "dropItem"; // CSS can style this, avoids inline hacks
       host.appendChild(a);
     });
   }
