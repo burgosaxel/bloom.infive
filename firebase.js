@@ -1,29 +1,103 @@
-// /firebase.js  (ES module + optional window globals)
-// Works for: admin portal (imports) + public scripts (window.fb)
+// firebase.js (module, CDN)
+// Works on GitHub Pages / static hosting.
+// Exposes BOTH module exports and window globals for nav.js.
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
-import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
+import {
+  getAuth,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+import {
+  getFirestore,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  orderBy,
+  limit,
+  onSnapshot,
+  serverTimestamp,
+  Timestamp
+} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
 
-// ✅ IMPORTANT: Replace these with your REAL Firebase web config
-// Firebase Console → Project settings → Your apps → Web app → Config
+// Your Firebase configuration (from Firebase Console)
 const firebaseConfig = {
-  apiKey: "REPLACE_ME",
-  authDomain: "REPLACE_ME",
-  projectId: "REPLACE_ME",
-  storageBucket: "REPLACE_ME",
-  messagingSenderId: "REPLACE_ME",
-  appId: "REPLACE_ME"
+  apiKey: "AIzaSyAXv7cIJLaMbFon-3GyMixJdgAFfoob_qE",
+  authDomain: "bloom-in-five.firebaseapp.com",
+  projectId: "bloom-in-five",
+  storageBucket: "bloom-in-five.firebasestorage.app",
+  messagingSenderId: "684423939743",
+  appId: "1:684423939743:web:a37667b6b29154beef44aa",
+  measurementId: "G-R6FJ4K8JWG"
 };
 
-const app = initializeApp(firebaseConfig);
+// Init
+export const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const storage = getStorage(app);
 
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
+// Module exports (admin pages can import these)
+export {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  orderBy,
+  limit,
+  onSnapshot,
+  serverTimestamp,
+  Timestamp,
+  ref,
+  uploadBytes,
+  getDownloadURL
+};
 
-// Optional: expose for non-module scripts / debugging
-window.fb = { app, auth, db, storage };
-
-export { app, auth, db, storage };
+// Globals (nav.js uses these)
+window.fb = { app, auth, db, storage, Timestamp };
+window.fbFns = {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  orderBy,
+  limit,
+  onSnapshot,
+  serverTimestamp,
+  Timestamp,
+  ref,
+  uploadBytes,
+  getDownloadURL
+};
