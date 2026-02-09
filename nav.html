@@ -1,39 +1,39 @@
 <header class="header">
   <div class="container nav">
-    <a class="brand" data-home-link href="index.html">BLOOM.INFIVE</a>
+    <a class="brand" data-home-link href="#">BLOOM.INFIVE</a>
 
-    <!-- Mobile hamburger (hidden on desktop via CSS) -->
-    <button class="menuBtn" id="menuBtn" aria-label="Open menu" type="button">
-      <span></span><span></span><span></span>
-    </button>
-
-    <nav class="navLinks" id="navLinks" aria-label="Primary">
-      <a href="/pages/about.html">About</a>
-      <a href="/pages/upcoming.html">Upcoming</a>
-      <a href="/pages/activities.html">Activities</a>
-
-      <div class="dropdown" id="blogDropdown">
-        <button class="dropBtn" type="button">Blog</button>
-        <div class="dropMenu" id="navBlogList">
-          <a href="/blog/index.html">All Posts</a>
-          <div class="dropDivider"></div>
-          <!-- Blog titles get injected here by blog/nav logic if present -->
-        </div>
-      </div>
-
-      <div class="dropdown" id="amazonDropdown">
-        <button class="dropBtn" type="button">Amazon</button>
-        <div class="dropMenu">
-          <a href="/pages/affiliate.html">Amazon &amp; Affiliate</a>
-        </div>
-      </div>
-
-      <a href="/pages/newsletter.html">Newsletter</a>
-
-      <!-- Theme toggle -->
-      <button class="themeToggle" id="themeToggle" type="button" aria-label="Toggle theme">
-        🌙
+    <div class="navRight">
+      <button class="menuBtn" id="menuBtn" aria-label="Open menu">
+        <span></span><span></span><span></span>
       </button>
-    </nav>
+
+      <nav class="navLinks" id="navLinks">
+        <a data-link="about" href="#">About</a>
+        <a data-link="upcoming" href="#">Upcoming</a>
+        <a data-link="activities" href="#">Activities</a>
+
+        <div class="dropdown" data-dd="blog">
+          <button class="dropBtn" type="button">Blog</button>
+          <div class="dropMenu" id="blogMenu">
+            <a data-link="blogIndex" href="#">All Posts</a>
+            <div class="dropDivider"></div>
+            <div id="blogTitlesMount">
+              <a href="#">Loading…</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="dropdown" data-dd="amazon">
+          <button class="dropBtn" type="button">Amazon</button>
+          <div class="dropMenu">
+            <a data-link="amazonAffiliate" href="#">Amazon &amp; Affiliate</a>
+          </div>
+        </div>
+
+        <a data-link="newsletter" href="#">Newsletter</a>
+      </nav>
+
+      <button class="themeBtn" id="themeBtn" aria-label="Toggle dark mode" title="Toggle theme">☀️</button>
+    </div>
   </div>
 </header>

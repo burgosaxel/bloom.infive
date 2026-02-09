@@ -1,10 +1,6 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
-import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
-
-// Replace with YOUR Firebase web config
-const firebaseConfig = {
+// firebase.js (global helpers for the site)
+// IMPORTANT: put your real config here (project bloom-in-five)
+window.firebaseConfig = {
   apiKey: "AIzaSyAXv7cIJLaMbFon-3GyMixJdgAFfoob_qE",
   authDomain: "bloom-in-five.firebaseapp.com",
   projectId: "bloom-in-five",
@@ -14,7 +10,30 @@ const firebaseConfig = {
   measurementId: "G-R6FJ4K8JWG"
 };
 
-export const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
+(async () => {
+  // Load Firebase modules
+  const appMod = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js");
+  const authMod = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js");
+  const fsMod   = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js");
+  const stMod   = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js");
+
+  const app = appMod.initializeApp(window.firebaseConfig);
+  const auth = authMod.getAuth(app);
+  const db = fsMod.getFirestore(app);
+  const storage = stMod.getStorage(app);
+
+  // Expose to window for other scripts
+  window.fb = { app, auth, db, storage };
+  window.fbFns = {
+    // Firestore
+    collection: fsMod.collection,
+    query: fsMod.query,
+    where: fsMod.where,
+    orderBy: fsMod.orderBy,
+    limit: fsMod.limit,
+    getDocs: fsMod.getDocs,
+    doc: fsMod.doc,
+    getDoc: fsMod.getDoc,
+    Timestamp: fsMod.Timestamp
+  };
+})();

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -11,38 +11,61 @@
   <style>
     .tabs{ display:flex; gap:10px; flex-wrap:wrap; margin:12px 0 0; }
     .tabBtn{
-      padding:10px 14px; border-radius:14px; border:1.5px solid rgba(0,0,0,.2);
+      padding:10px 14px; border-radius:14px;
+      border:1.5px solid rgba(0,0,0,.2);
       background:#fff; font-weight:600; cursor:pointer;
     }
     .tabBtn.active{ border-color: rgba(0,0,0,.55); }
+
     .pane{ display:none; margin-top:14px; }
     .pane.active{ display:block; }
 
-    #editor, #pageEditor { background:#fff; border-radius:14px; border:1.5px solid rgba(0,0,0,.2); overflow:hidden; }
-    .ql-toolbar{ border:0 !important; border-bottom:1px solid rgba(0,0,0,.12) !important; }
+    #editor, #pageEditor {
+      background:#fff;
+      border-radius:14px;
+      border:1.5px solid rgba(0,0,0,.2);
+      overflow:hidden;
+    }
+
+    .ql-toolbar{
+      border:0 !important;
+      border-bottom:1px solid rgba(0,0,0,.12) !important;
+    }
     .ql-container{ border:0 !important; font-size:16px; }
-    .ql-editor{ min-height: 220px; }
+    .ql-editor{ min-height:220px; }
 
     .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
     .right{ margin-left:auto; }
     .list{ display:grid; gap:10px; margin-top:12px; }
 
     .item{
-      background:#fff; border:1px solid rgba(0,0,0,.08);
-      border-radius:18px; padding:14px 16px; box-shadow: 0 10px 30px rgba(0,0,0,.06);
-      display:flex; gap:12px; justify-content:space-between; align-items:flex-start; flex-wrap:wrap;
+      background:#fff;
+      border:1px solid rgba(0,0,0,.08);
+      border-radius:18px;
+      padding:14px 16px;
+      box-shadow:0 10px 30px rgba(0,0,0,.06);
+      display:flex;
+      gap:12px;
+      justify-content:space-between;
+      flex-wrap:wrap;
     }
-    .item h3{ margin:0 0 6px; }
-    .actions{ display:flex; gap:10px; flex-wrap:wrap; }
+
+    .actions{ display:flex; gap:10px; }
     .fine{ font-size:13px; }
 
     .statusPill{
-      padding:6px 10px; border-radius:999px; border:1px solid rgba(0,0,0,.18);
-      background: rgba(255,255,255,.55); font-size:13px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(0,0,0,.18);
+      background:rgba(255,255,255,.55);
+      font-size:13px;
     }
 
     .previewImg{
-      width:90px; height:90px; border-radius:18px; object-fit:cover;
+      width:90px;
+      height:90px;
+      border-radius:18px;
+      object-fit:cover;
       border:1px solid rgba(0,0,0,.12);
     }
 
@@ -56,10 +79,20 @@
       <div class="card">
         <div class="row">
           <h2 style="margin:0;">Admin</h2>
-          <button class="btn ghost small right" id="logoutBtn" type="button" style="display:none;">Logout</button>
+
+          <!-- Dark mode toggle -->
+          <button class="btn ghost small right" id="themeToggle" type="button" aria-label="Toggle theme">
+            🌙
+          </button>
+
+          <button class="btn ghost small" id="logoutBtn" type="button" style="display:none;">
+            Logout
+          </button>
         </div>
 
-        <p class="muted" style="margin-top:10px;">Login to manage posts, pages, and affiliate links.</p>
+        <p class="muted" style="margin-top:10px;">
+          Login to manage posts, pages, and affiliate links.
+        </p>
 
         <!-- Login -->
         <div id="authBox">
@@ -67,7 +100,7 @@
             <input type="email" id="email" placeholder="Email" required />
             <input type="password" id="password" placeholder="Password" required />
             <button class="btn primary" type="submit">Login</button>
-            <p class="muted fine" id="loginMsg" style="margin:8px 0 0;" aria-live="polite"></p>
+            <p class="muted fine" id="loginMsg"></p>
           </form>
         </div>
 
@@ -80,13 +113,13 @@
             <button class="tabBtn" data-tab="profile">Profile</button>
           </div>
 
-          <p class="muted fine" id="statusMsg" style="margin-top:10px;" aria-live="polite"></p>
+          <p class="muted fine" id="statusMsg"></p>
 
           <!-- POSTS -->
           <div class="pane active" id="pane-posts">
             <div class="row">
-              <button class="btn small ghost" id="newPostBtn" type="button">Add New Post</button>
-              <button class="btn small ghost" id="cancelPostBtn" type="button" style="display:none;">Cancel</button>
+              <button class="btn small ghost" id="newPostBtn">Add New Post</button>
+              <button class="btn small ghost" id="cancelPostBtn" style="display:none;">Cancel</button>
             </div>
 
             <div id="postEditorWrap" style="display:none; margin-top:12px;">
@@ -95,21 +128,21 @@
                 <input id="postTags" placeholder="Tags (comma separated)" />
 
                 <div class="row">
-                  <label class="muted fine" for="postStatus">Status:</label>
-                  <select id="postStatus" style="padding:12px; border-radius:14px; border:1.5px solid rgba(0,0,0,.2);">
+                  <label class="muted fine">Status:</label>
+                  <select id="postStatus">
                     <option value="draft">Draft</option>
                     <option value="scheduled">Scheduled</option>
                     <option value="published">Published</option>
                   </select>
 
-                  <label class="muted fine" for="publishAt">Publish time:</label>
-                  <input id="publishAt" type="datetime-local" style="padding:12px; border-radius:14px; border:1.5px solid rgba(0,0,0,.2);" />
+                  <label class="muted fine">Publish time:</label>
+                  <input id="publishAt" type="datetime-local" />
                 </div>
 
                 <div id="editor"></div>
 
-                <button class="btn primary" id="savePostBtn" type="button">Save</button>
-                <p class="muted fine" id="postMsg" aria-live="polite"></p>
+                <button class="btn primary" id="savePostBtn">Save</button>
+                <p class="muted fine" id="postMsg"></p>
               </div>
             </div>
 
@@ -120,38 +153,37 @@
           <!-- PAGES -->
           <div class="pane" id="pane-pages">
             <div class="row">
-              <label class="muted fine">Choose page:</label>
-              <select id="pageSelect" style="padding:12px; border-radius:14px; border:1.5px solid rgba(0,0,0,.2);">
+              <select id="pageSelect">
                 <option value="upcoming">Upcoming</option>
                 <option value="activities">Activities</option>
                 <option value="newsletter">Newsletter</option>
               </select>
 
-              <button class="btn small ghost" id="loadPageBtn" type="button">Load</button>
-              <button class="btn small ghost" id="savePageBtn" type="button">Save</button>
+              <button class="btn small ghost" id="loadPageBtn">Load</button>
+              <button class="btn small ghost" id="savePageBtn">Save</button>
             </div>
 
             <div style="margin-top:12px;">
               <div id="pageEditor"></div>
-              <p class="muted fine" id="pageMsg" aria-live="polite" style="margin-top:8px;"></p>
+              <p class="muted fine" id="pageMsg"></p>
             </div>
           </div>
 
           <!-- AFFILIATE -->
           <div class="pane" id="pane-affiliate">
             <div class="row">
-              <button class="btn small ghost" id="newLinkBtn" type="button">Add New Link</button>
-              <button class="btn small ghost" id="cancelLinkBtn" type="button" style="display:none;">Cancel</button>
+              <button class="btn small ghost" id="newLinkBtn">Add New Link</button>
+              <button class="btn small ghost" id="cancelLinkBtn" style="display:none;">Cancel</button>
             </div>
 
             <div id="linkFormWrap" style="display:none; margin-top:12px;">
               <div class="field">
-                <input id="linkTitle" placeholder="Title (e.g., Little Singing Ear on Amazon)" />
-                <input id="linkUrl" placeholder="URL (affiliate link or regular link)" />
-                <input id="linkCategory" placeholder="Category (Books, Favorites, etc.)" />
-                <input id="linkDesc" placeholder="Short description" />
-                <button class="btn primary" id="saveLinkBtn" type="button">Save Link</button>
-                <p class="muted fine" id="linkMsg" aria-live="polite"></p>
+                <input id="linkTitle" placeholder="Title" />
+                <input id="linkUrl" placeholder="URL" />
+                <input id="linkCategory" placeholder="Category" />
+                <input id="linkDesc" placeholder="Description" />
+                <button class="btn primary" id="saveLinkBtn">Save Link</button>
+                <p class="muted fine" id="linkMsg"></p>
               </div>
             </div>
 
@@ -161,22 +193,20 @@
 
           <!-- PROFILE -->
           <div class="pane" id="pane-profile">
-            <h2 style="margin:0 0 10px;">Author Photo</h2>
-            <p class="muted">Upload a new photo. This updates the About page instantly.</p>
+            <h2>Author Photo</h2>
+            <p class="muted">Upload a new photo for the About page.</p>
 
-            <div class="row" style="margin-top:10px;">
-              <img id="profilePreview" class="previewImg" src="../angelika.png" alt="Profile preview" />
+            <div class="row">
+              <img id="profilePreview" class="previewImg" src="../angelika.png" />
               <div>
                 <input id="profileFile" type="file" accept="image/*" />
-                <div style="margin-top:8px;">
-                  <button class="btn primary" id="uploadProfileBtn" type="button">Upload</button>
-                </div>
-                <p class="muted fine" id="profileMsg" aria-live="polite" style="margin-top:8px;"></p>
+                <button class="btn primary" id="uploadProfileBtn">Upload</button>
+                <p class="muted fine" id="profileMsg"></p>
               </div>
             </div>
           </div>
 
-        </div><!-- /adminBox -->
+        </div>
       </div>
     </div>
   </main>
