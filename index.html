@@ -5,55 +5,61 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Angelika Burgos | Author</title>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="./styles.css" />
 </head>
 
 <body>
-  <!-- NAV -->
   <div id="nav-host"></div>
 
-  <main class="page">
-    <section class="hero">
-      <div class="heroInner">
-        <p class="kicker">Angelika Burgos</p>
-        <h1>Stories Born<br/>in the Middle<br/>of Motherhood</h1>
-        <p class="lead">Gentle, faith-rooted stories inspired by real moments with my children.</p>
+  <section class="hero">
+    <div class="container heroInner">
+      <p class="kicker muted">Angelika Burgos</p>
+      <h1 class="heroTitle">Stories Born<br/>in the Middle<br/>of Motherhood</h1>
+      <p class="heroSub muted">Gentle, faith-rooted stories inspired by real moments with my children.</p>
 
-        <div class="heroActions">
-          <a class="btn" href="./pages/about.html">Meet the Author</a>
-          <a class="btn ghost" href="./blog/index.html">Read the Blog</a>
-        </div>
+      <div class="heroCtas">
+        <a class="btn primary" href="./pages/about.html">Meet the Author</a>
+        <a class="btn ghost" href="./blog/index.html">Read the Blog</a>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <section class="section">
+  <section class="section alt">
+    <div class="container cards2">
       <div class="card">
         <h2>Meet the Author</h2>
-        <p>Learn my story and what I’m writing right now.</p>
+        <p class="muted">Learn my story and what I’m writing right now.</p>
         <a class="btn small" href="./pages/about.html">Go to About</a>
       </div>
 
       <div class="card">
         <h2>Latest Blog Posts</h2>
-        <p>Short reflections, updates, and behind-the-scenes.</p>
-        <a class="btn small ghost" href="./blog/index.html">View Blog</a>
+        <p class="muted">Short reflections, updates, and behind-the-scenes.</p>
+        <a class="btn small" href="./blog/index.html">View Blog</a>
       </div>
-    </section>
-  </main>
+    </div>
+  </section>
 
   <footer class="footer">
-    <div class="container">
-      <p>© Angelika Burgos. All rights reserved.</p>
-      <p class="footerLinks">
+    <div class="container footerInner">
+      <div>© <span id="year"></span> Angelika Burgos. All rights reserved.</div>
+      <div class="footerLinks">
         <a href="./index.html">Home</a>
         <a href="./blog/index.html">Blog</a>
         <a href="./pages/newsletter.html">Newsletter</a>
-      </p>
+      </div>
     </div>
   </footer>
 
-  <!-- IMPORTANT: firebase first (module), then nav.js (classic) -->
-  <script type="module" src="./firebase.js"></script>
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+
+  <script src="./firebase.js"></script>
   <script src="./nav.js"></script>
 </body>
 </html>
