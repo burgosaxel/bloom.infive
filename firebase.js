@@ -1,39 +1,29 @@
-// firebase.js (global helpers for the site)
-// IMPORTANT: put your real config here (project bloom-in-five)
-window.firebaseConfig = {
-  apiKey: "AIzaSyAXv7cIJLaMbFon-3GyMixJdgAFfoob_qE",
-  authDomain: "bloom-in-five.firebaseapp.com",
-  projectId: "bloom-in-five",
-  storageBucket: "bloom-in-five.firebasestorage.app",
-  messagingSenderId: "684423939743",
-  appId: "1:684423939743:web:a37667b6b29154beef44aa",
-  measurementId: "G-R6FJ4K8JWG"
+// /firebase.js  (ES module + optional window globals)
+// Works for: admin portal (imports) + public scripts (window.fb)
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
+
+// ✅ IMPORTANT: Replace these with your REAL Firebase web config
+// Firebase Console → Project settings → Your apps → Web app → Config
+const firebaseConfig = {
+  apiKey: "REPLACE_ME",
+  authDomain: "REPLACE_ME",
+  projectId: "REPLACE_ME",
+  storageBucket: "REPLACE_ME",
+  messagingSenderId: "REPLACE_ME",
+  appId: "REPLACE_ME"
 };
 
-(async () => {
-  // Load Firebase modules
-  const appMod = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js");
-  const authMod = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js");
-  const fsMod   = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js");
-  const stMod   = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js");
+const app = initializeApp(firebaseConfig);
 
-  const app = appMod.initializeApp(window.firebaseConfig);
-  const auth = authMod.getAuth(app);
-  const db = fsMod.getFirestore(app);
-  const storage = stMod.getStorage(app);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
 
-  // Expose to window for other scripts
-  window.fb = { app, auth, db, storage };
-  window.fbFns = {
-    // Firestore
-    collection: fsMod.collection,
-    query: fsMod.query,
-    where: fsMod.where,
-    orderBy: fsMod.orderBy,
-    limit: fsMod.limit,
-    getDocs: fsMod.getDocs,
-    doc: fsMod.doc,
-    getDoc: fsMod.getDoc,
-    Timestamp: fsMod.Timestamp
-  };
-})();
+// Optional: expose for non-module scripts / debugging
+window.fb = { app, auth, db, storage };
+
+export { app, auth, db, storage };
