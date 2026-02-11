@@ -1,12 +1,12 @@
 // admin/admin.js (module)
 // Admin portal: login + manage posts/pages/affiliate/profile
-// Requires ../firebase.js (ES module) with named exports.
+// Requires /firebase.js (root) to export needed items.
 
 import {
   auth, db, storage,
   onAuthStateChanged, signInWithEmailAndPassword, signOut,
   collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc,
-  query, orderBy, limit, where, Timestamp, serverTimestamp,
+  query, orderBy, limit, Timestamp, serverTimestamp,
   ref, uploadBytes, getDownloadURL
 } from "../firebase.js";
 
@@ -14,6 +14,32 @@ const THEME_KEY = "bloomTheme";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+function pickEl(...selectors) {
+  for (const s of selectors) {
+    const el = $(s);
+    if (el) return el;
+  }
+  return null;
+}
+
+function setTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem(THEME_KEY, theme);
+
+  const btn = pickEl("#themeToggle", "#themeBtn");
+  if (btn) {
+    btn.textContent = theme === "dark" ? "☀️" : "🌙";
+    btn.title = theme === "dark" ? "Switch to light" : "Switch to dark";
+    btn.setAttribute("aria-label", btn.title);
+  }
+}
+
+function getTheme() {
+  const saved = localStorage.getItem(THEME_KEY);
+  if (saved === "light" || saved === "dark") return saved;
+  return "dark"; // default you liked
+}
 
 function msg(el, text, kind = "") {
   if (!el) return;
@@ -26,25 +52,11 @@ function show(el, yes) {
   el.style.display = yes ? "" : "none";
 }
 
-// ---------- Theme ----------
-function setTheme(theme) {
-  document.documentElement.setAttribute("data-theme", theme);
-  localStorage.setItem(THEME_KEY, theme);
-
-  const btn = $("#themeBtn"); // optional if you add one later
-  if (btn) {
-    btn.textContent = theme === "dark" ? "☀️" : "🌙";
-    btn.title = theme === "dark" ? "Switch to light" : "Switch to dark";
-  }
+function activateTab(tab) {
+  $$(".tabBtn").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+  $$(".pane").forEach(p => p.classList.toggle("active", p.id === `pane-${tab}`));
 }
 
-function getTheme() {
-  const saved = localStorage.getItem(THEME_KEY);
-  if (saved === "light" || saved === "dark") return saved;
-  return "dark";
-}
-
-// ---------- Helpers ----------
 function toTimestampFromLocalInput(val) {
   if (!val) return null;
   const d = new Date(val);
@@ -77,14 +89,7 @@ function slugifyTitle(t) {
     .replace(/(^-|-$)/g, "");
 }
 
-function escapeHtml(s) {
-  return (s || "").toString()
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
-}
-
-// ---------- Quill editors ----------
+// ---- Editors ----
 let postEditor = null;
 let pageEditor = null;
 
@@ -122,13 +127,17 @@ function initEditors() {
   }
 }
 
-// ---------- Auth ----------
+// ---- Auth ----
 async function onLogin(e) {
   e.preventDefault();
 
-  const email = $("#email")?.value?.trim();
-  const pass = $("#password")?.value || "";
-  const out = $("#loginMsg");
+  // Support both old/new IDs
+  const emailEl = pickEl("#email", "#emailInput");
+  const passEl = pickEl("#password", "#passInput");
+  const out = pickEl("#loginMsg");
+
+  const email = emailEl?.value?.trim();
+  const pass = passEl?.value || "";
 
   if (!email || !pass) {
     msg(out, "Enter email + password.", "bad");
@@ -137,7 +146,7 @@ async function onLogin(e) {
 
   try {
     await signInWithEmailAndPassword(auth, email, pass);
-    msg(out, "Signed in ✅", "ok");
+    msg(out, "Signed in.", "ok");
   } catch (err) {
     console.error(err);
     msg(out, err?.message || "Login failed.", "bad");
@@ -152,35 +161,21 @@ async function onLogout() {
   }
 }
 
-// ---------- Tabs ----------
-function activateTab(tab) {
-  $$(".tabBtn").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
-  $$(".pane").forEach(p => p.classList.toggle("active", p.id === `pane-${tab}`));
-}
-
-// ---------- Posts ----------
+// ---- Posts ----
 let editingPostId = null;
 
 function openPostForm(open) {
   show($("#postEditorWrap"), !!open);
-  show($("#cancelPostBtn"), !!open);
 }
 
 function clearPostForm() {
   editingPostId = null;
   $("#postTitle").value = "";
-  $("#postTags").value = "";
-  $("#postStatus").value = "draft";
+  $("#tags").value = "";
+  $("#status").value = "draft";
   $("#publishAt").value = "";
   if (postEditor) postEditor.root.innerHTML = "";
   msg($("#postMsg"), "");
-}
-
-function computePublished(status, publishAtTs) {
-  const now = new Date();
-  if (status === "published") return true;
-  if (status === "scheduled" && publishAtTs && publishAtTs.toDate() <= now) return true;
-  return false;
 }
 
 async function editPost(id) {
@@ -192,8 +187,8 @@ async function editPost(id) {
   editingPostId = id;
 
   $("#postTitle").value = d.title || "";
-  $("#postTags").value = Array.isArray(d.tags) ? d.tags.join(", ") : "";
-  $("#postStatus").value = d.status || "draft";
+  $("#tags").value = Array.isArray(d.tags) ? d.tags.join(", ") : "";
+  $("#status").value = d.status || "draft";
   $("#publishAt").value = d.publishAt?.toDate ? toLocalInputValue(d.publishAt.toDate()) : "";
   if (postEditor) postEditor.root.innerHTML = d.content || "";
 
@@ -207,17 +202,24 @@ async function deletePost(id) {
   await refreshPosts();
 }
 
+function computePublished(status, publishAtTs) {
+  const now = new Date();
+  if (status === "published") return true;
+  if (status === "scheduled" && publishAtTs && publishAtTs.toDate() <= now) return true;
+  return false;
+}
+
 async function savePost() {
   initEditors();
   const out = $("#postMsg");
 
   const title = $("#postTitle")?.value?.trim() || "";
-  const tags = ($("#postTags")?.value || "")
+  const tags = ($("#tags")?.value || "")
     .split(",")
     .map(s => s.trim())
     .filter(Boolean);
 
-  const status = $("#postStatus")?.value || "draft";
+  const status = $("#status")?.value || "draft";
   const publishAtTs = toTimestampFromLocalInput($("#publishAt")?.value || "");
   const content = postEditor ? postEditor.root.innerHTML : "";
 
@@ -257,7 +259,7 @@ async function savePost() {
 }
 
 async function refreshPosts() {
-  const host = $("#postsList");
+  const host = $("#postList");
   if (!host) return;
 
   host.innerHTML = "<div class='muted'>Loading…</div>";
@@ -275,27 +277,30 @@ async function refreshPosts() {
     const d = docSnap.data() || {};
 
     const row = document.createElement("div");
-    row.className = "item";
+    row.className = "postItem";
 
     const left = document.createElement("div");
     left.style.minWidth = "0";
 
-    const title = document.createElement("div");
-    title.style.fontWeight = "700";
-    title.style.whiteSpace = "nowrap";
-    title.style.overflow = "hidden";
-    title.style.textOverflow = "ellipsis";
-    title.textContent = d.title || "Untitled";
+    const t = document.createElement("div");
+    t.style.fontWeight = "700";
+    t.style.whiteSpace = "nowrap";
+    t.style.overflow = "hidden";
+    t.style.textOverflow = "ellipsis";
+    t.textContent = d.title || "Untitled";
 
     const meta = document.createElement("div");
-    meta.className = "muted fine";
+    meta.className = "muted";
+    meta.style.fontSize = "13px";
     meta.textContent = `${(d.status || "draft")} • ${formatDate(d.publishAt)}`;
 
-    left.appendChild(title);
+    left.appendChild(t);
     left.appendChild(meta);
 
     const right = document.createElement("div");
-    right.className = "actions";
+    right.style.display = "flex";
+    right.style.gap = "8px";
+    right.style.flexShrink = "0";
 
     const editBtn = document.createElement("button");
     editBtn.className = "btn small";
@@ -317,7 +322,7 @@ async function refreshPosts() {
   });
 }
 
-// ---------- Pages ----------
+// ---- Pages ----
 async function loadPage(key) {
   initEditors();
   msg($("#pageMsg"), "");
@@ -330,7 +335,7 @@ async function loadPage(key) {
 async function savePage() {
   initEditors();
   const out = $("#pageMsg");
-  const key = $("#pageSelect")?.value || "upcoming";
+  const key = $("#pageSelect")?.value || "about";
   const content = pageEditor ? pageEditor.root.innerHTML : "";
 
   try {
@@ -342,30 +347,22 @@ async function savePage() {
   }
 }
 
-// ---------- Affiliate ----------
+// ---- Affiliate ----
 let editingLinkId = null;
 
-function openLinkForm(open) {
-  show($("#linkFormWrap"), !!open);
-  show($("#cancelLinkBtn"), !!open);
-}
-
-function clearLinkForm() {
-  editingLinkId = null;
-  $("#linkTitle").value = "";
-  $("#linkUrl").value = "";
-  $("#linkCategory").value = "";
-  $("#linkDesc").value = "";
-  msg($("#linkMsg"), "");
+function escapeHtml(s) {
+  return (s || "").toString()
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
 }
 
 async function refreshLinks() {
-  const host = $("#linksList");
+  const host = $("#affiliateList");
   if (!host) return;
 
   host.innerHTML = "<div class='muted'>Loading…</div>";
 
-  // orderBy serverTimestamp fields can be tricky; use updatedAt if present, fallback to createdAt if needed
   const q = query(collection(db, "affiliateLinks"), orderBy("updatedAt", "desc"), limit(200));
   const snap = await getDocs(q);
 
@@ -379,33 +376,30 @@ async function refreshLinks() {
     const d = docSnap.data() || {};
 
     const row = document.createElement("div");
-    row.className = "item";
+    row.className = "listItem";
 
     const left = document.createElement("div");
     left.style.minWidth = "0";
     left.innerHTML = `
-      <div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-        ${escapeHtml(d.title || "Link")}
-      </div>
-      <div class="muted fine" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-        ${escapeHtml(d.url || "")}
-      </div>
-      <div class="muted fine">${escapeHtml(d.category || "")}</div>
+      <div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(d.title || "Link")}</div>
+      <div class="muted" style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(d.url || "")}</div>
+      <div class="muted" style="font-size:13px;">${escapeHtml(d.category || "")}</div>
     `;
 
     const right = document.createElement("div");
-    right.className = "actions";
+    right.style.display = "flex";
+    right.style.gap = "8px";
+    right.style.flexShrink = "0";
 
     const editBtn = document.createElement("button");
     editBtn.className = "btn small";
     editBtn.textContent = "Edit";
     editBtn.addEventListener("click", () => {
       editingLinkId = docSnap.id;
-      $("#linkTitle").value = d.title || "";
-      $("#linkUrl").value = d.url || "";
-      $("#linkCategory").value = d.category || "";
-      $("#linkDesc").value = d.desc || "";
-      openLinkForm(true);
+      $("#affiliateTitle").value = d.title || "";
+      $("#affiliateUrl").value = d.url || "";
+      $("#affiliateCategory").value = d.category || "";
+      $("#affiliateDesc").value = d.desc || "";
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
 
@@ -429,11 +423,12 @@ async function refreshLinks() {
 }
 
 async function saveLink() {
-  const out = $("#linkMsg");
-  const title = $("#linkTitle")?.value?.trim() || "";
-  const url = $("#linkUrl")?.value?.trim() || "";
-  const category = $("#linkCategory")?.value?.trim() || "";
-  const desc = $("#linkDesc")?.value?.trim() || "";
+  const out = $("#affiliateMsg");
+
+  const title = $("#affiliateTitle")?.value?.trim() || "";
+  const url = $("#affiliateUrl")?.value?.trim() || "";
+  const category = $("#affiliateCategory")?.value?.trim() || "";
+  const desc = $("#affiliateDesc")?.value?.trim() || "";
 
   if (!title || !url) {
     msg(out, "Title + URL required.", "bad");
@@ -441,7 +436,6 @@ async function saveLink() {
   }
 
   const payload = { title, url, category, desc, updatedAt: serverTimestamp() };
-
   try {
     if (editingLinkId) {
       await updateDoc(doc(db, "affiliateLinks", editingLinkId), payload);
@@ -451,8 +445,11 @@ async function saveLink() {
     }
 
     msg(out, "Saved ✅", "ok");
-    openLinkForm(false);
-    clearLinkForm();
+    editingLinkId = null;
+    $("#affiliateTitle").value = "";
+    $("#affiliateUrl").value = "";
+    $("#affiliateCategory").value = "";
+    $("#affiliateDesc").value = "";
     await refreshLinks();
   } catch (err) {
     console.error(err);
@@ -460,7 +457,7 @@ async function saveLink() {
   }
 }
 
-// ---------- Profile ----------
+// ---- Profile ----
 async function uploadProfile() {
   const out = $("#profileMsg");
   msg(out, "");
@@ -472,9 +469,9 @@ async function uploadProfile() {
   }
 
   try {
-    const sRef = ref(storage, `assets/author-${Date.now()}-${file.name}`);
-    await uploadBytes(sRef, file);
-    const url = await getDownloadURL(sRef);
+    const storageRef = ref(storage, `assets/author-${Date.now()}-${file.name}`);
+    await uploadBytes(storageRef, file);
+    const url = await getDownloadURL(storageRef);
 
     await setDoc(doc(db, "site", "profile"), { photoUrl: url, updatedAt: serverTimestamp() }, { merge: true });
 
@@ -496,10 +493,13 @@ async function loadProfile() {
   if (img && d.photoUrl) img.src = d.photoUrl;
 }
 
-// ---------- Boot / Wire UI ----------
+// ---- Boot ----
 function wireUI() {
   setTheme(getTheme());
-  $("#themeBtn")?.addEventListener("click", () => setTheme(getTheme() === "dark" ? "light" : "dark"));
+
+  pickEl("#themeToggle", "#themeBtn")?.addEventListener("click", () => {
+    setTheme(getTheme() === "dark" ? "light" : "dark");
+  });
 
   $("#loginForm")?.addEventListener("submit", onLogin);
   $("#logoutBtn")?.addEventListener("click", onLogout);
@@ -508,46 +508,25 @@ function wireUI() {
   $$(".tabBtn").forEach(btn => btn.addEventListener("click", () => {
     const tab = btn.dataset.tab;
     activateTab(tab);
-
     if (tab === "posts") refreshPosts().catch(console.error);
-    if (tab === "pages") loadPage($("#pageSelect")?.value || "upcoming").catch(console.error);
+    if (tab === "pages") loadPage($("#pageSelect")?.value || "about").catch(console.error);
     if (tab === "affiliate") refreshLinks().catch(console.error);
     if (tab === "profile") loadProfile().catch(console.error);
   }));
 
   // posts
-  $("#newPostBtn")?.addEventListener("click", () => {
-    initEditors();
-    clearPostForm();
-    openPostForm(true);
-  });
-
-  $("#cancelPostBtn")?.addEventListener("click", () => {
-    openPostForm(false);
-    clearPostForm();
-  });
-
-  $("#savePostBtn")?.addEventListener("click", savePost);
+  $("#newPost")?.addEventListener("click", () => { initEditors(); openPostForm(true); clearPostForm(); });
+  $("#savePost")?.addEventListener("click", savePost);
 
   // pages
-  $("#loadPageBtn")?.addEventListener("click", () => loadPage($("#pageSelect")?.value || "upcoming"));
-  $("#savePageBtn")?.addEventListener("click", savePage);
+  $("#pageSelect")?.addEventListener("change", (e) => loadPage(e.target.value));
+  $("#savePage")?.addEventListener("click", savePage);
 
   // affiliate
-  $("#newLinkBtn")?.addEventListener("click", () => {
-    clearLinkForm();
-    openLinkForm(true);
-  });
-
-  $("#cancelLinkBtn")?.addEventListener("click", () => {
-    openLinkForm(false);
-    clearLinkForm();
-  });
-
-  $("#saveLinkBtn")?.addEventListener("click", saveLink);
+  $("#saveAffiliate")?.addEventListener("click", saveLink);
 
   // profile
-  $("#uploadProfileBtn")?.addEventListener("click", uploadProfile);
+  $("#uploadProfile")?.addEventListener("click", uploadProfile);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -556,12 +535,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const authBox = $("#authBox");
   const adminBox = $("#adminBox");
-  const logoutBtn = $("#logoutBtn");
 
   onAuthStateChanged(auth, (user) => {
     show(authBox, !user);
     show(adminBox, !!user);
-    show(logoutBtn, !!user);
 
     if (user) {
       activateTab("posts");

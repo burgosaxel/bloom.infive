@@ -1,4 +1,7 @@
 // firebase.js  (ES module + window globals)
+// Works for:
+// - admin portal (imports from ../firebase.js)
+// - public scripts (nav.js uses window.fb + window.fbFns)
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 
@@ -36,6 +39,7 @@ import {
   deleteObject,
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
 
+// ✅ Your Firebase web config
 const firebaseConfig = {
   apiKey: "AIzaSyAXv7cIJLaMbFon-3GyMixJdgAFfoob_qE",
   authDomain: "bloom-in-five.firebaseapp.com",
@@ -46,19 +50,22 @@ const firebaseConfig = {
   measurementId: "G-R6FJ4K8JWG",
 };
 
+// Init
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-// Globals for nav.js
+// ---- Window globals (nav.js relies on these) ----
 window.fb = { app, auth, db, storage };
 
 window.fbFns = {
+  // Auth
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
 
+  // Firestore
   collection,
   doc,
   getDoc,
@@ -75,23 +82,27 @@ window.fbFns = {
   serverTimestamp,
   Timestamp,
 
-  ref,
+  // Storage
+  ref,                // ✅ what your admin.js uses
+  storageRef: ref,    // ✅ alias for older code expecting storageRef
   uploadBytes,
   getDownloadURL,
   deleteObject,
 };
 
-// Named exports for modules
+// ---- Named exports (admin/admin.js imports these) ----
 export {
   app,
   auth,
   db,
   storage,
 
+  // Auth
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
 
+  // Firestore
   collection,
   doc,
   getDoc,
@@ -108,8 +119,13 @@ export {
   serverTimestamp,
   Timestamp,
 
-  ref,
+  // Storage
+  ref,                // ✅
   uploadBytes,
   getDownloadURL,
   deleteObject,
+
+  // Alias export for compatibility
+  // (so imports like { storageRef } still work)
+  ref as storageRef,
 };
