@@ -48,10 +48,10 @@
     const snap = await getDoc(doc(db, "site", "activities"));
 
     if (!snap.exists()) {
-      el.innerHTML = `<p class="muted">No content yet. Add it from the admin portal.</p>`;
+      el.innerHTML = `<p class="muted">Under construction. Stay tuned!</p>`;
     } else {
       const d = snap.data();
-      el.innerHTML = d.contentHtml || `<p class="muted">No content yet.</p>`;
+      el.innerHTML = d.contentHtml || `<p class="muted">Under construction. Stay tuned!</p>`;
     }
   </script>
 </body>
