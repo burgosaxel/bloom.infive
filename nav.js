@@ -33,6 +33,12 @@
     themeBtn.title = (theme === "dark") ? "Switch to light" : "Switch to dark";
   }
 
+  function setBrandFlowerSrc(mount, prefix, theme) {
+    const el = mount.querySelector("[data-brand-flower]");
+    if (!el) return;
+    el.src = prefix + ((theme === "dark") ? "bloom-flower-dark.png" : "bloom-flower-light.png");
+  }
+
   async function ensureFirebase(prefix) {
     // If already present, we're done
     if (window.fb && window.fbFns) return true;
@@ -61,8 +67,7 @@
     mount.innerHTML = html;
 
     // Brand flower image path must be correct from every page (/pages/*, /blog/*, etc.).
-    const brandFlower = mount.querySelector("[data-brand-flower]");
-    if (brandFlower) brandFlower.src = prefix + "bloom-flower.webp";
+    setBrandFlowerSrc(mount, prefix, getTheme());
 
     // Wire links
     const homeLink = mount.querySelector("[data-home-link]");
@@ -115,6 +120,7 @@
         const next = (getTheme() === "dark") ? "light" : "dark";
         setTheme(next);
         formatThemeIcon(themeBtn, next);
+        setBrandFlowerSrc(mount, prefix, next);
       });
     }
 
