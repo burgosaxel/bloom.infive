@@ -1,5 +1,7 @@
 (function () {
   const THEME_KEY = "bloomTheme"; // "light" | "dark"
+  const ICON_SUN = "\u2600\uFE0F";  // ☀️ (escaped to avoid file encoding issues)
+  const ICON_MOON = "\uD83C\uDF19"; // 🌙 (escaped to avoid file encoding issues)
 
   function getMountEl() {
     return document.getElementById("nav-host") || document.getElementById("navMount");
@@ -27,7 +29,7 @@
   }
 
   function formatThemeIcon(themeBtn, theme) {
-    themeBtn.textContent = (theme === "dark") ? "☀️" : "🌙";
+    themeBtn.textContent = (theme === "dark") ? ICON_SUN : ICON_MOON;
     themeBtn.title = (theme === "dark") ? "Switch to light" : "Switch to dark";
   }
 

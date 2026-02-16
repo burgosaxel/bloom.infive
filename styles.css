@@ -1,5 +1,5 @@
 /* ===========================
-   BLOOM.INFIVE — FULL STYLES
+   BLOOM.INFIVE - FULL STYLES
    (Light + Lux Dark + Nav Fix)
 =========================== */
 
@@ -94,9 +94,33 @@ a:hover{text-decoration:underline}
 }
 
 .brand{
+  /* Brand + sticker */
+  display:flex;
+  align-items:center;
+  gap:10px;
+  line-height:1;
   font-weight:800;
   letter-spacing:.6px;
   color: var(--nav-link);
+  text-decoration:none;
+}
+.brand:hover{ text-decoration:none; }
+.brand:hover .brandText{ text-decoration:underline; }
+.brandText{ display:inline-block; }
+
+/* Brand flower "sticker" */
+.brandSticker{
+  flex:0 0 auto;
+  width:26px;
+  height:26px;
+  transform: translateY(1px);
+  /* Sticker outline that works on both light and dark themes */
+  filter:
+    drop-shadow( 2px  0   0   rgba(255,255,255,.95))
+    drop-shadow(-2px  0   0   rgba(255,255,255,.95))
+    drop-shadow( 0    2px 0   rgba(255,255,255,.95))
+    drop-shadow( 0   -2px 0   rgba(255,255,255,.95))
+    drop-shadow(0 3px 10px rgba(0,0,0,.22));
 }
 
 .navRight{

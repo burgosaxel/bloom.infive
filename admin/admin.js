@@ -11,6 +11,8 @@ import {
 } from "../firebase.js";
 
 const THEME_KEY = "bloomTheme";
+const ICON_SUN = "\u2600\uFE0F";  // ☀️
+const ICON_MOON = "\uD83C\uDF19"; // 🌙
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -30,7 +32,7 @@ function setTheme(theme) {
 
   const btn = pickEl("#themeToggle", "#themeBtn");
   if (btn) {
-    btn.textContent = theme === "dark" ? "☀️" : "🌙";
+    btn.textContent = theme === "dark" ? ICON_SUN : ICON_MOON;
     btn.title = theme === "dark" ? "Switch to light" : "Switch to dark";
     btn.setAttribute("aria-label", btn.title);
   }
@@ -270,7 +272,7 @@ async function refreshPosts() {
   const host = pickEl("#postsList", "#postList");
   if (!host) return;
 
-  host.innerHTML = "<div class='muted'>Loading…</div>";
+  host.innerHTML = "<div class='muted'>Loading...</div>";
 
   const q = query(collection(db, "posts"), orderBy("publishAt", "desc"), limit(60));
   const snap = await getDocs(q);
@@ -619,7 +621,7 @@ async function refreshLinks() {
   const host = pickEl("#linksList", "#affiliateList");
   if (!host) return;
 
-  host.innerHTML = "<div class='muted'>Loading…</div>";
+  host.innerHTML = "<div class='muted'>Loading...</div>";
 
   const q = query(collection(db, "affiliateLinks"), orderBy("updatedAt", "desc"), limit(200));
   const snap = await getDocs(q);

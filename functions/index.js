@@ -50,13 +50,30 @@ async function sendGmail({ to, subject, text, html }) {
   const auth = oauthClient();
   const gmail = google.gmail({ version: "v1", auth });
 
+  function sanitizeHeaderValue(v) {
+    // Prevent header injection / malformed RFC 5322 headers.
+    return (v || "")
+      .toString()
+      .replace(/[\r\n]+/g, " ")
+      .trim();
+  }
+
+  function encodeHeaderValue(v) {
+    const s = sanitizeHeaderValue(v);
+    // RFC 2047 encoded-word for any non-ASCII header values (e.g. emoji).
+    // Keep visible ASCII; encode anything else.
+    if (/^[\x20-\x7E]*$/.test(s)) return s;
+    const b64 = Buffer.from(s, "utf8").toString("base64");
+    return `=?UTF-8?B?${b64}?=`;
+  }
+
   // Build RFC 2822 email
   const boundary = "000000000000000000000";
   const msgParts = [];
 
   msgParts.push(`From: "BLOOM.INFIVE" <${GMAIL_SENDER.value()}>`);
-  msgParts.push(`To: ${to}`);
-  msgParts.push(`Subject: ${subject}`);
+  msgParts.push(`To: ${sanitizeHeaderValue(to)}`);
+  msgParts.push(`Subject: ${encodeHeaderValue(subject)}`);
   msgParts.push("MIME-Version: 1.0");
   msgParts.push(`Content-Type: multipart/alternative; boundary="${boundary}"`);
   msgParts.push("");
@@ -225,28 +242,107 @@ exports.sendWelcomeEmail = onDocumentWritten(
       if (!email || status !== "active" || alreadySent || wasAlreadySent) return;
 
       const subject = "Welcome to BLOOM.INFIVE 💛";
-      const text =
-        `Hi!\n\n` +
-        `Thanks for subscribing to BLOOM.INFIVE.\n` +
-        `You’ll get updates when new posts and releases go live.\n\n` +
-        `Visit: ${SITE_URL.value()}\n\n` +
-        `— Angelika / BLOOM.INFIVE`;
+
+      const text = `Welcome to BLOOM.INFIVE 💛
+
+Qué alegría tenerte aquí! 💛 Gracias por unirte a este espacio donde hablamos de fe, motivación y cómo vivir cada día con propósito, incluso en medio del caos de la vida diaria.
+
+Mi nombre es Angelika, y quiero compartir contigo todo lo que he aprendido caminando con Dios y tratando de equilibrar la maternidad, la familia y mis sueños.
+
+Pronto recibirás inspiración, tips prácticos, reflexiones y algunas sorpresas que tengo preparadas para ti… pero hoy quiero empezar con algo simple:
+
+Un pequeño recordatorio: No tienes que ser perfecta para crecer, para seguir, para florecer. Cada día cuenta, y este es tu espacio seguro para hacerlo a tu ritmo.
+
+Me encantaría que me respondieras a este email contándome un poquito de ti: ¿qué te trajo aquí y qué esperas encontrar en este espacio?
+
+Gracias por estar aquí. Estoy emocionada de acompañarte en este camino.
+
+Con cariño,
+Angelika 🌸
+
+---------------------------------------------------------------------------------
+
+I’m so happy you’re here! 💛 Thank you for joining this space where we talk about faith, motivation, and how to live each day with purpose, even in the middle of life’s chaos.
+
+My name is Angelika, and I’m excited to share with you what I’ve learned walking with God while balancing motherhood, family, and my dreams.
+
+Soon you’ll receive inspiration, practical tips, reflections, and a few surprises I have in store… but today I want to start simple:
+
+A gentle reminder: You don’t have to be perfect to grow, to keep going, or to flourish. Every day counts, and this is your safe space to do it at your own pace.
+
+I’d love for you to reply to this email and share a little about yourself: What brought you here? What are you hoping to find in this space?
+
+Thank you for being here. I’m excited to walk this journey with you.
+
+With love,
+Angelika 🌸
+
+Visit BLOOM.INFIVE
+
+${SITE_URL.value()}
+
+If you didn’t subscribe, you can ignore this email.`;
 
       const html = `
-        <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111;">
-          <h2 style="margin:0 0 8px;">Welcome to BLOOM.INFIVE 💛</h2>
-          <p style="margin:0 0 12px;">
-            Thanks for subscribing! You’ll get updates when new posts and releases go live.
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111;">
+          <h2 style="margin: 0 0 12px;">Welcome to BLOOM.INFIVE 💛</h2>
+
+          <p style="margin: 0 0 12px;">
+            Qué alegría tenerte aquí! 💛 Gracias por unirte a este espacio donde hablamos de fe, motivación y cómo vivir cada día con propósito, incluso en medio del caos de la vida diaria.
           </p>
-          <p style="margin:0 0 18px;">
-            <a href="${SITE_URL.value()}" style="color:#111;font-weight:bold;">Visit BLOOM.INFIVE</a>
+          <p style="margin: 0 0 12px;">
+            Mi nombre es Angelika, y quiero compartir contigo todo lo que he aprendido caminando con Dios y tratando de equilibrar la maternidad, la familia y mis sueños.
           </p>
-          <p style="margin:0;color:#555;font-size:13px;">
+          <p style="margin: 0 0 12px;">
+            Pronto recibirás inspiración, tips prácticos, reflexiones y algunas sorpresas que tengo preparadas para ti… pero hoy quiero empezar con algo simple:
+          </p>
+          <p style="margin: 0 0 12px;">
+            Un pequeño recordatorio: No tienes que ser perfecta para crecer, para seguir, para florecer. Cada día cuenta, y este es tu espacio seguro para hacerlo a tu ritmo.
+          </p>
+          <p style="margin: 0 0 12px;">
+            Me encantaría que me respondieras a este email contándome un poquito de ti: ¿qué te trajo aquí y qué esperas encontrar en este espacio?
+          </p>
+          <p style="margin: 0 0 12px;">
+            Gracias por estar aquí. Estoy emocionada de acompañarte en este camino.
+          </p>
+          <p style="margin: 0 0 18px;">
+            Con cariño,<br />
+            Angelika 🌸
+          </p>
+
+          <hr style="border: 0; border-top: 1px solid #ddd; margin: 18px 0;" />
+
+          <p style="margin: 0 0 12px;">
+            I’m so happy you’re here! 💛 Thank you for joining this space where we talk about faith, motivation, and how to live each day with purpose, even in the middle of life’s chaos.
+          </p>
+          <p style="margin: 0 0 12px;">
+            My name is Angelika, and I’m excited to share with you what I’ve learned walking with God while balancing motherhood, family, and my dreams.
+          </p>
+          <p style="margin: 0 0 12px;">
+            Soon you’ll receive inspiration, practical tips, reflections, and a few surprises I have in store… but today I want to start simple:
+          </p>
+          <p style="margin: 0 0 12px;">
+            A gentle reminder: You don’t have to be perfect to grow, to keep going, or to flourish. Every day counts, and this is your safe space to do it at your own pace.
+          </p>
+          <p style="margin: 0 0 12px;">
+            I’d love for you to reply to this email and share a little about yourself: What brought you here? What are you hoping to find in this space?
+          </p>
+          <p style="margin: 0 0 12px;">
+            Thank you for being here. I’m excited to walk this journey with you.
+          </p>
+          <p style="margin: 0 0 18px;">
+            With love,<br />
+            Angelika 🌸
+          </p>
+
+          <p style="margin: 0 0 10px;">
+            <a href="${SITE_URL.value()}" style="color: #111; font-weight: bold;">Visit BLOOM.INFIVE</a>
+          </p>
+          <p style="margin: 0; color: #555; font-size: 13px;">
             If you didn’t subscribe, you can ignore this email.
           </p>
         </div>
       `;
-
       await sendGmail({ to: email, subject, text, html });
 
       await event.data.after.ref.set(

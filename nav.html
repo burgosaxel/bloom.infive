@@ -1,6 +1,50 @@
 <header class="header">
   <div class="container nav">
-    <a class="brand" data-home-link href="#">BLOOM.INFIVE</a>
+    <a class="brand" data-home-link href="#">
+      <span class="brandText">BLOOM.INFIVE</span>
+      <!-- Inline SVG so it renders on every page without asset paths. Transparent background. -->
+      <svg class="brandSticker" viewBox="0 0 128 128" width="26" height="26" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="bif-petalBlue" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#cfe1ea"/>
+            <stop offset="1" stop-color="#a9c4d0"/>
+          </linearGradient>
+          <linearGradient id="bif-petalPink" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#f6b3b8"/>
+            <stop offset="1" stop-color="#e9959d"/>
+          </linearGradient>
+          <linearGradient id="bif-petalCream" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#fff0dc"/>
+            <stop offset="1" stop-color="#f2d9b8"/>
+          </linearGradient>
+          <linearGradient id="bif-leaf" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#c7d77a"/>
+            <stop offset="1" stop-color="#9fb85c"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Petals -->
+        <g opacity="0.98">
+          <ellipse cx="64" cy="32" rx="20" ry="26" fill="url(#bif-petalCream)"/>
+          <ellipse cx="36" cy="52" rx="22" ry="28" fill="url(#bif-petalBlue)" transform="rotate(-24 36 52)"/>
+          <ellipse cx="92" cy="52" rx="22" ry="28" fill="url(#bif-petalPink)" transform="rotate(24 92 52)"/>
+          <ellipse cx="46" cy="84" rx="22" ry="30" fill="url(#bif-petalPink)" transform="rotate(20 46 84)"/>
+          <ellipse cx="82" cy="84" rx="22" ry="30" fill="url(#bif-petalBlue)" transform="rotate(-20 82 84)"/>
+        </g>
+
+        <!-- Center -->
+        <circle cx="64" cy="58" r="18" fill="#f6cf6f"/>
+        <circle cx="56" cy="54" r="4" fill="#6b4a3a"/>
+        <circle cx="72" cy="52" r="4" fill="#6b4a3a"/>
+        <circle cx="67" cy="62" r="4" fill="#6b4a3a"/>
+        <circle cx="58" cy="64" r="3.5" fill="#6b4a3a"/>
+
+        <!-- Stem + leaves -->
+        <path d="M63 74 C62 88, 62 98, 58 114 C57 118, 61 120, 63 116 C68 104, 70 92, 70 76 Z" fill="#8aa356"/>
+        <path d="M44 96 C34 90, 26 94, 28 104 C30 114, 44 114, 54 106 C58 103, 52 99, 44 96 Z" fill="url(#bif-leaf)"/>
+        <path d="M84 96 C94 90, 102 94, 100 104 C98 114, 84 114, 74 106 C70 103, 76 99, 84 96 Z" fill="url(#bif-leaf)"/>
+      </svg>
+    </a>
 
     <div class="navRight">
       <button class="menuBtn" id="menuBtn" aria-label="Open menu" aria-expanded="false">
@@ -21,7 +65,7 @@
             <a data-link="blogIndex" href="#" role="menuitem">All Posts</a>
             <div class="dropDivider"></div>
             <div id="blogTitlesMount">
-              <a href="#" role="menuitem">Loading…</a>
+              <a href="#" role="menuitem">Loading...</a>
             </div>
           </div>
         </div>
@@ -38,7 +82,7 @@
         <a class="navLink" data-link="newsletter" href="#">Newsletter</a>
       </nav>
 
-      <button class="themeBtn" id="themeBtn" aria-label="Toggle dark mode" title="Toggle theme">☀️</button>
+      <button class="themeBtn" id="themeBtn" aria-label="Toggle dark mode" title="Toggle theme">Theme</button>
     </div>
   </div>
 </header>
