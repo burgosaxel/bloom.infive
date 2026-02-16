@@ -35,8 +35,11 @@ function oauthClient(req) {
   );
 
   // refresh token used server-side to get access tokens
+  // Secrets sometimes end up with trailing newlines when copied/pasted.
+  // Google token endpoint treats that as part of the token and returns invalid_grant.
+  const refreshToken = (GMAIL_REFRESH_TOKEN.value() || "").trim();
   oAuth2.setCredentials({
-    refresh_token: GMAIL_REFRESH_TOKEN.value(),
+    refresh_token: refreshToken,
   });
 
   return oAuth2;
