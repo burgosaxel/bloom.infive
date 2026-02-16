@@ -6,7 +6,7 @@ import {
   auth, db, storage,
   onAuthStateChanged, signInWithEmailAndPassword, signOut,
   collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc,
-  query, orderBy, limit, Timestamp, serverTimestamp,
+  query, where, orderBy, limit, Timestamp, serverTimestamp,
   ref, uploadBytes, getDownloadURL
 } from "../firebase.js";
 
@@ -14,6 +14,7 @@ const THEME_KEY = "bloomTheme";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+const PAGE_KEYS = ["activities", "newsletter"];
 
 function pickEl(...selectors) {
   for (const s of selectors) {
@@ -92,7 +93,6 @@ function slugifyTitle(t) {
 // ---- Editors ----
 let postEditor = null;
 const pageEditors = {};
-const PAGE_KEYS = ["upcoming", "activities", "newsletter"];
 
 function initEditors() {
   if (window.Quill && !postEditor) {
@@ -360,7 +360,227 @@ async function reconcilePostData() {
   if (writes.length) await Promise.all(writes);
 }
 
+async function migrateLegacyUpcomingBooks() {
+  const snap = await getDocs(query(collection(db, "upcomingBooks"), limit(200)));
+  if (snap.empty) return;
+
+  const writes = [];
+  snap.forEach((docSnap) => {
+    const d = docSnap.data() || {};
+    const target = doc(db, "books", docSnap.id);
+    writes.push(
+      setDoc(target, {
+        title: d.title || "Untitled",
+        link: d.link || "",
+        coverUrl: d.coverUrl || "",
+        summary: d.summary || "",
+        status: "upcoming",
+        createdAt: d.createdAt || serverTimestamp(),
+        updatedAt: serverTimestamp()
+      }, { merge: true })
+    );
+  });
+
+  if (writes.length) await Promise.all(writes);
+}
+
 // ---- Pages ----
+let editingUpcomingId = null;
+
+function openUpcomingForm(open) {
+  show($("#upcomingFormWrap"), !!open);
+  show($("#cancelUpcomingBtn"), !!open);
+}
+
+function clearUpcomingForm() {
+  editingUpcomingId = null;
+  $("#upcomingTitle").value = "";
+  $("#upcomingLink").value = "";
+  $("#upcomingCoverUrl").value = "";
+  $("#upcomingSummary").value = "";
+  $("#upcomingStatus").value = "upcoming";
+  msg($("#upcomingMsg"), "");
+}
+
+async function openBookInEditor(id) {
+  const snap = await getDoc(doc(db, "books", id));
+  if (!snap.exists()) return;
+  const d = snap.data() || {};
+  editingUpcomingId = id;
+  $("#upcomingTitle").value = d.title || "";
+  $("#upcomingLink").value = d.link || "";
+  $("#upcomingCoverUrl").value = d.coverUrl || "";
+  $("#upcomingSummary").value = d.summary || "";
+  $("#upcomingStatus").value = d.status || "upcoming";
+  activateTab("upcoming");
+  openUpcomingForm(true);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function refreshUpcomingBooks() {
+  const host = $("#upcomingList");
+  if (!host) return;
+
+  host.innerHTML = "<div class='muted'>Loading...</div>";
+  const snap = await getDocs(
+    query(
+      collection(db, "books"),
+      where("status", "==", "upcoming"),
+      limit(200)
+    )
+  );
+
+  if (snap.empty) {
+    host.innerHTML = "<div class='muted'>No upcoming books yet.</div>";
+    return;
+  }
+
+  host.innerHTML = "";
+  const docs = [...snap.docs].sort((a, b) => {
+    const at = a.data()?.createdAt?.toMillis ? a.data().createdAt.toMillis() : 0;
+    const bt = b.data()?.createdAt?.toMillis ? b.data().createdAt.toMillis() : 0;
+    return bt - at;
+  });
+  docs.forEach((docSnap) => {
+    const d = docSnap.data() || {};
+
+    const row = document.createElement("div");
+    row.className = "listItem";
+
+    const left = document.createElement("div");
+    left.style.minWidth = "0";
+    left.innerHTML = `
+      <div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(d.title || "Untitled")}</div>
+      <div class="muted" style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(d.link || "")}</div>
+      <div class="muted" style="font-size:13px;">${escapeHtml(d.summary || "")}</div>
+    `;
+
+    const right = document.createElement("div");
+    right.style.display = "flex";
+    right.style.gap = "8px";
+    right.style.flexShrink = "0";
+
+    const editBtn = document.createElement("button");
+    editBtn.className = "btn small";
+    editBtn.textContent = "Edit";
+    editBtn.addEventListener("click", () => openBookInEditor(docSnap.id));
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "btn small ghost";
+    delBtn.textContent = "Delete";
+    delBtn.addEventListener("click", async () => {
+      if (!confirm("Delete this upcoming book?")) return;
+      await deleteDoc(doc(db, "books", docSnap.id));
+      await refreshUpcomingBooks();
+      await refreshPublishedBooks();
+    });
+
+    right.appendChild(editBtn);
+    right.appendChild(delBtn);
+    row.appendChild(left);
+    row.appendChild(right);
+    host.appendChild(row);
+  });
+}
+
+async function saveUpcomingBook() {
+  const out = $("#upcomingMsg");
+  const title = $("#upcomingTitle")?.value?.trim() || "";
+  const link = $("#upcomingLink")?.value?.trim() || "";
+  const coverUrl = $("#upcomingCoverUrl")?.value?.trim() || "";
+  const summary = $("#upcomingSummary")?.value?.trim() || "";
+  const status = $("#upcomingStatus")?.value || "upcoming";
+
+  if (!title) {
+    msg(out, "Book title is required.", "bad");
+    return;
+  }
+
+  const payload = { title, link, coverUrl, summary, status, updatedAt: serverTimestamp() };
+
+  try {
+    if (editingUpcomingId) {
+      await updateDoc(doc(db, "books", editingUpcomingId), payload);
+    } else {
+      payload.createdAt = serverTimestamp();
+      await addDoc(collection(db, "books"), payload);
+    }
+    msg(out, "Saved ✅", "ok");
+    openUpcomingForm(false);
+    clearUpcomingForm();
+    await refreshUpcomingBooks();
+    await refreshPublishedBooks();
+  } catch (err) {
+    console.error(err);
+    msg(out, err?.message || "Save failed.", "bad");
+  }
+}
+
+async function refreshPublishedBooks() {
+  const host = $("#publishedBooksList");
+  if (!host) return;
+
+  host.innerHTML = "<div class='muted'>Loading...</div>";
+  const snap = await getDocs(
+    query(
+      collection(db, "books"),
+      where("status", "==", "published"),
+      limit(200)
+    )
+  );
+
+  if (snap.empty) {
+    host.innerHTML = "<div class='muted'>No published books yet.</div>";
+    return;
+  }
+
+  host.innerHTML = "";
+  const docs = [...snap.docs].sort((a, b) => {
+    const at = a.data()?.createdAt?.toMillis ? a.data().createdAt.toMillis() : 0;
+    const bt = b.data()?.createdAt?.toMillis ? b.data().createdAt.toMillis() : 0;
+    return bt - at;
+  });
+  docs.forEach((docSnap) => {
+    const d = docSnap.data() || {};
+    const row = document.createElement("div");
+    row.className = "listItem";
+
+    const left = document.createElement("div");
+    left.style.minWidth = "0";
+    left.innerHTML = `
+      <div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(d.title || "Untitled")}</div>
+      <div class="muted" style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(d.link || "")}</div>
+      <div class="muted" style="font-size:13px;">${escapeHtml(d.summary || "")}</div>
+    `;
+
+    const right = document.createElement("div");
+    right.style.display = "flex";
+    right.style.gap = "8px";
+    right.style.flexShrink = "0";
+
+    const editBtn = document.createElement("button");
+    editBtn.className = "btn small";
+    editBtn.textContent = "Edit";
+    editBtn.addEventListener("click", () => openBookInEditor(docSnap.id));
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "btn small ghost";
+    delBtn.textContent = "Delete";
+    delBtn.addEventListener("click", async () => {
+      if (!confirm("Delete this published book?")) return;
+      await deleteDoc(doc(db, "books", docSnap.id));
+      await refreshPublishedBooks();
+      await refreshUpcomingBooks();
+    });
+
+    right.appendChild(editBtn);
+    right.appendChild(delBtn);
+    row.appendChild(left);
+    row.appendChild(right);
+    host.appendChild(row);
+  });
+}
+
 async function loadPage(key) {
   initEditors();
   const out = $(`#pageMsg-${key}`);
@@ -551,6 +771,8 @@ function wireUI() {
     const tab = btn.dataset.tab;
     activateTab(tab);
     if (tab === "posts") refreshPosts().catch(console.error);
+    if (tab === "upcoming") refreshUpcomingBooks().catch(console.error);
+    if (tab === "publishedBooks") refreshPublishedBooks().catch(console.error);
     if (PAGE_KEYS.includes(tab)) loadPage(tab).catch(console.error);
     if (tab === "affiliate") refreshLinks().catch(console.error);
     if (tab === "profile") loadProfile().catch(console.error);
@@ -565,8 +787,18 @@ function wireUI() {
   pickEl("#savePostBtn", "#savePost")?.addEventListener("click", savePost);
   pickEl("#cancelPostBtn")?.addEventListener("click", () => openPostForm(false));
 
+  // upcoming books
+  $("#newUpcomingBtn")?.addEventListener("click", () => {
+    clearUpcomingForm();
+    openUpcomingForm(true);
+  });
+  $("#saveUpcomingBtn")?.addEventListener("click", saveUpcomingBook);
+  $("#cancelUpcomingBtn")?.addEventListener("click", () => {
+    openUpcomingForm(false);
+    clearUpcomingForm();
+  });
+
   // static pages
-  $("#saveUpcomingBtn")?.addEventListener("click", () => savePage("upcoming"));
   $("#saveActivitiesBtn")?.addEventListener("click", () => savePage("activities"));
   $("#saveNewsletterBtn")?.addEventListener("click", () => savePage("newsletter"));
 
@@ -605,6 +837,7 @@ document.addEventListener("DOMContentLoaded", () => {
       activateTab("posts");
       try {
         await reconcilePostData();
+        await migrateLegacyUpcomingBooks();
       } catch (err) {
         console.error("Post reconciliation failed:", err);
       }

@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Published Books | BLOOM.INFIVE</title>
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+
+<body>
+  <div id="navMount"></div>
+
+  <main>
+    <section class="section">
+      <div class="container">
+        <div class="sectionHead">
+          <h2>Published Books</h2>
+          <p class="muted">Published titles with reader hearts and reviews.</p>
+        </div>
+
+        <div id="publishedCards" class="list"></div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="container footerInner">
+        <p class="muted">&copy; <span id="year"></span> BLOOM.INFIVE. All rights reserved.</p>
+      </div>
+    </footer>
+  </main>
+
+  <script src="../nav.js"></script>
+
+  <script type="module">
+    import { db } from "../firebase.js";
+    import {
+      collection,
+      doc,
+      getDoc,
+      getDocs,
+      setDoc,
+      addDoc,
+      deleteDoc,
+      query,
+      where,
+      orderBy,
+      limit,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    const cardsEl = document.getElementById("publishedCards");
+    const CLIENT_KEY = "bloomBookClientId";
+
+    function esc(s) {
+      return (s || "")
+        .toString()
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    }
+
+    function getClientId() {
+      let id = localStorage.getItem(CLIENT_KEY);
+      if (id) return id;
+      id = `anon_${Math.random().toString(36).slice(2)}_${Date.now()}`;
+      localStorage.setItem(CLIENT_KEY, id);
+      return id;
+    }
+
+    async function getLikeState(bookId, clientId) {
+      const likeDoc = await getDoc(doc(db, "books", bookId, "likes", clientId));
+      const likeSnap = await getDocs(collection(db, "books", bookId, "likes"));
+      return { liked: likeDoc.exists(), count: likeSnap.size };
+    }
+
+    async function getComments(bookId) {
+      const commentsQ = query(
+        collection(db, "books", bookId, "comments"),
+        orderBy("createdAt", "desc"),
+        limit(50)
+      );
+      const snap = await getDocs(commentsQ);
+      return snap.docs.map((d) => d.data() || {});
+    }
+
+    async function renderCard(bookSnap) {
+      const book = bookSnap.data() || {};
+      const id = bookSnap.id;
+      const clientId = getClientId();
+      const { liked, count } = await getLikeState(id, clientId);
+      const comments = await getComments(id);
+
+      const card = document.createElement("article");
+      card.className = "card";
+
+      const cover = book.coverUrl
+        ? `<img src="${esc(book.coverUrl)}" alt="${esc(book.title || "Book cover")}" style="width:100%;max-width:220px;border-radius:12px;border:1px solid var(--control-border);margin-bottom:12px;" />`
+        : "";
+
+      const linkBtn = book.link
+        ? `<a class="btn small ghost" href="${esc(book.link)}" target="_blank" rel="noopener">Book Link</a>`
+        : "";
+
+      card.innerHTML = `
+        ${cover}
+        <h2 style="margin:0 0 8px;">${esc(book.title || "Untitled")}</h2>
+        <p class="muted" style="margin:0 0 12px;">${esc(book.summary || "")}</p>
+        <div class="row" style="margin-bottom:12px;">
+          ${linkBtn}
+          <button class="btn small" data-like-btn>
+            ${liked ? "&#10084;" : "&#9825;"} <span data-like-count>${count}</span>
+          </button>
+        </div>
+
+        <div style="margin-top:8px;">
+          <h3 style="margin:0 0 8px; font-size:16px;">Reviews / Comments</h3>
+          <div data-comments class="list" style="margin-bottom:10px;"></div>
+
+          <form data-comment-form class="form" style="align-items:stretch;">
+            <input type="text" name="name" placeholder="Name (optional)" maxlength="80" style="min-width:180px;" />
+            <textarea name="text" rows="3" placeholder="Write a comment..." maxlength="1000" required style="min-width:260px;"></textarea>
+            <button class="btn small primary" type="submit">Post Comment</button>
+          </form>
+          <p class="muted fine" data-comment-msg></p>
+        </div>
+      `;
+
+      const commentsHost = card.querySelector("[data-comments]");
+      if (!comments.length) {
+        commentsHost.innerHTML = `<p class="muted">No comments yet.</p>`;
+      } else {
+        commentsHost.innerHTML = comments.map((c) => `
+          <div class="listItem" style="padding:10px 12px;">
+            <div>
+              <div style="font-weight:700;">${esc(c.name || "Anonymous")}</div>
+              <div class="muted">${esc(c.text || "")}</div>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      const likeBtn = card.querySelector("[data-like-btn]");
+      const likeCount = card.querySelector("[data-like-count]");
+      likeBtn.addEventListener("click", async () => {
+        const likeRef = doc(db, "books", id, "likes", clientId);
+        const current = await getDoc(likeRef);
+        if (current.exists()) {
+          await deleteDoc(likeRef);
+        } else {
+          await setDoc(likeRef, { createdAt: serverTimestamp() });
+        }
+        const state = await getLikeState(id, clientId);
+        likeBtn.innerHTML = `${state.liked ? "&#10084;" : "&#9825;"} <span data-like-count>${state.count}</span>`;
+        likeCount.textContent = String(state.count);
+      });
+
+      const commentForm = card.querySelector("[data-comment-form]");
+      const commentMsg = card.querySelector("[data-comment-msg]");
+      commentForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const fd = new FormData(commentForm);
+        const name = (fd.get("name") || "").toString().trim().slice(0, 80);
+        const text = (fd.get("text") || "").toString().trim().slice(0, 1000);
+
+        if (!text) {
+          commentMsg.textContent = "Comment cannot be empty.";
+          return;
+        }
+
+        await addDoc(collection(db, "books", id, "comments"), {
+          name: name || "Anonymous",
+          text,
+          createdAt: serverTimestamp()
+        });
+
+        commentMsg.textContent = "Comment posted.";
+        commentForm.reset();
+
+        const updatedComments = await getComments(id);
+        commentsHost.innerHTML = updatedComments.map((c) => `
+          <div class="listItem" style="padding:10px 12px;">
+            <div>
+              <div style="font-weight:700;">${esc(c.name || "Anonymous")}</div>
+              <div class="muted">${esc(c.text || "")}</div>
+            </div>
+          </div>
+        `).join("") || `<p class="muted">No comments yet.</p>`;
+      });
+
+      return card;
+    }
+
+    async function loadPublishedBooks() {
+      cardsEl.innerHTML = `<div class="card"><p class="muted">Loading...</p></div>`;
+
+      const q = query(
+        collection(db, "books"),
+        where("status", "==", "published")
+      );
+
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        cardsEl.innerHTML = `<div class="card"><p class="muted">No published books yet.</p></div>`;
+        return;
+      }
+
+      cardsEl.innerHTML = "";
+      const docs = [...snap.docs].sort((a, b) => {
+        const at = a.data()?.createdAt?.toMillis ? a.data().createdAt.toMillis() : 0;
+        const bt = b.data()?.createdAt?.toMillis ? b.data().createdAt.toMillis() : 0;
+        return bt - at;
+      });
+      for (const bookSnap of docs) {
+        const card = await renderCard(bookSnap);
+        cardsEl.appendChild(card);
+      }
+    }
+
+    loadPublishedBooks().catch((err) => {
+      console.error(err);
+      cardsEl.innerHTML = `<div class="card"><p class="muted">Unable to load published books right now.</p></div>`;
+    });
+  </script>
+</body>
+</html>

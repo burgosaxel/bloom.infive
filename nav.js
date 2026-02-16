@@ -65,6 +65,7 @@
     const map = {
       about: prefix + "pages/about.html",
       upcoming: prefix + "pages/upcoming.html",
+      publishedBooks: prefix + "pages/published.html",
       activities: prefix + "pages/activities.html",
       newsletter: prefix + "pages/newsletter.html",
       blogIndex: prefix + "blog/index.html",

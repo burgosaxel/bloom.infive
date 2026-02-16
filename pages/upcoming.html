@@ -15,20 +15,16 @@
       <div class="container">
         <div class="sectionHead">
           <h2>Upcoming</h2>
-          <p class="muted">What’s coming next.</p>
+          <p class="muted">Books on the way.</p>
         </div>
 
-        <div class="card">
-          <div id="upcomingContent">
-            <p class="muted">Loading…</p>
-          </div>
-        </div>
+        <div id="upcomingCards" class="list"></div>
       </div>
     </section>
 
     <footer class="footer">
       <div class="container footerInner">
-        <p class="muted">© <span id="year"></span> BLOOM.INFIVE. All rights reserved.</p>
+        <p class="muted">&copy; <span id="year"></span> BLOOM.INFIVE. All rights reserved.</p>
       </div>
     </footer>
   </main>
@@ -37,17 +33,61 @@
 
   <script type="module">
     import { db } from "../firebase.js";
-    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+    import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
-    const el = document.getElementById("upcomingContent");
-    const snap = await getDoc(doc(db, "site", "upcoming"));
+    document.getElementById("year").textContent = new Date().getFullYear();
 
-    if (!snap.exists()) {
-      el.innerHTML = `<p class="muted">No content yet. Add it from the admin portal.</p>`;
-    } else {
-      const d = snap.data();
-      el.innerHTML = d.contentHtml || d.content || `<p class="muted">No content yet.</p>`;
+    const cardsEl = document.getElementById("upcomingCards");
+
+    function esc(s) {
+      return (s || "")
+        .toString()
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
     }
+
+    async function loadUpcoming() {
+      cardsEl.innerHTML = `<div class="card"><p class="muted">Loading...</p></div>`;
+
+      const q = query(
+        collection(db, "books"),
+        where("status", "==", "upcoming")
+      );
+
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        cardsEl.innerHTML = `<div class="card"><p class="muted">No upcoming books yet.</p></div>`;
+        return;
+      }
+
+      const docs = [...snap.docs].sort((a, b) => {
+        const at = a.data()?.createdAt?.toMillis ? a.data().createdAt.toMillis() : 0;
+        const bt = b.data()?.createdAt?.toMillis ? b.data().createdAt.toMillis() : 0;
+        return bt - at;
+      });
+
+      cardsEl.innerHTML = docs.map((docSnap) => {
+        const b = docSnap.data() || {};
+        const cover = b.coverUrl
+          ? `<img src="${esc(b.coverUrl)}" alt="${esc(b.title || "Book cover")}" style="width:100%;max-width:220px;border-radius:12px;border:1px solid var(--control-border);margin-bottom:12px;" />`
+          : "";
+
+        return `
+          <article class="card">
+            ${cover}
+            <h2 style="margin:0 0 8px;">${esc(b.title || "Untitled")}</h2>
+            <p class="muted" style="margin:0 0 12px;">${esc(b.summary || "")}</p>
+            ${b.link ? `<a class="btn small ghost" href="${esc(b.link)}" target="_blank" rel="noopener">Book Link</a>` : ""}
+          </article>
+        `;
+      }).join("");
+    }
+
+    loadUpcoming().catch((err) => {
+      console.error(err);
+      cardsEl.innerHTML = `<div class="card"><p class="muted">Unable to load upcoming books right now.</p></div>`;
+    });
   </script>
 </body>
 </html>

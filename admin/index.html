@@ -21,7 +21,6 @@
     .pane.active{ display:block; }
 
     #editor,
-    #pageEditor-upcoming,
     #pageEditor-activities,
     #pageEditor-newsletter {
       background:#fff;
@@ -138,6 +137,7 @@
           <div class="tabs">
             <button class="tabBtn active" data-tab="posts">Blog Posts</button>
             <button class="tabBtn" data-tab="upcoming">Upcoming</button>
+            <button class="tabBtn" data-tab="publishedBooks">Published Books</button>
             <button class="tabBtn" data-tab="activities">Activities</button>
             <button class="tabBtn" data-tab="newsletter">Newsletter</button>
             <button class="tabBtn" data-tab="affiliate">Affiliate</button>
@@ -184,12 +184,36 @@
           <!-- UPCOMING -->
           <div class="pane" id="pane-upcoming">
             <div class="row">
-              <button class="btn small ghost" id="saveUpcomingBtn">Save Upcoming</button>
+              <button class="btn small ghost" id="newUpcomingBtn">Add Upcoming Book</button>
+              <button class="btn small ghost" id="cancelUpcomingBtn" style="display:none;">Cancel</button>
             </div>
-            <div style="margin-top:12px;">
-              <div id="pageEditor-upcoming"></div>
-              <p class="muted fine" id="pageMsg-upcoming"></p>
+
+            <div id="upcomingFormWrap" style="display:none; margin-top:12px;">
+              <div class="field">
+                <input id="upcomingTitle" placeholder="Book title" />
+                <input id="upcomingLink" placeholder="Book link (Amazon, website, etc.)" />
+                <input id="upcomingCoverUrl" placeholder="Cover image URL (optional)" />
+                <textarea id="upcomingSummary" rows="5" placeholder="Short details"></textarea>
+                <select id="upcomingStatus">
+                  <option value="upcoming">Upcoming</option>
+                  <option value="published">Published</option>
+                </select>
+                <button class="btn primary" id="saveUpcomingBtn">Save Upcoming Book</button>
+                <p class="muted fine" id="upcomingMsg"></p>
+              </div>
             </div>
+
+            <h2 style="margin:18px 0 10px;">Upcoming Books</h2>
+            <div id="upcomingList" class="list"></div>
+          </div>
+
+          <!-- PUBLISHED BOOKS -->
+          <div class="pane" id="pane-publishedBooks">
+            <h2 style="margin:0 0 10px;">Published Books</h2>
+            <p class="muted fine" style="margin:0 0 10px;">
+              Edit a published book to update details or move it back to Upcoming.
+            </p>
+            <div id="publishedBooksList" class="list"></div>
           </div>
 
           <!-- ACTIVITIES -->

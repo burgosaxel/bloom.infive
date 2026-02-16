@@ -8,24 +8,47 @@ service cloud.firestore {
 
     // POSTS
     match /posts/{postId} {
-
-      // Public can read only published + scheduled that has reached publishAt
+      // Public can read only published + publishAt in the past
       allow get, list: if resource.data.published == true
                        && resource.data.publishAt != null
                        && resource.data.publishAt <= request.time;
 
-      // Admin (signed in) can read/write everything
+      // Admin can read/write everything
       allow read: if signedIn();
       allow create, update, delete: if signedIn();
     }
 
-    // PAGES (admin uses: pages/{key})
-    match /pages/{pageId} {
-      allow read: if true;
-      allow write: if signedIn();
+    // BOOKS (upcoming + published)
+    match /books/{bookId} {
+      // Public can list/read upcoming and published books
+      allow get, list: if resource.data.status in ["upcoming", "published"];
+
+      // Admin can read/write everything
+      allow read: if signedIn();
+      allow create, update, delete: if signedIn();
+
+      // Hearts for published books
+      match /likes/{likeId} {
+        allow read: if get(/databases/$(database)/documents/books/$(bookId)).data.status == "published";
+        allow create, delete: if get(/databases/$(database)/documents/books/$(bookId)).data.status == "published";
+        allow update: if false;
+      }
+
+      // Reviews/comments for published books
+      match /comments/{commentId} {
+        allow read: if get(/databases/$(database)/documents/books/$(bookId)).data.status == "published";
+        allow create: if get(/databases/$(database)/documents/books/$(bookId)).data.status == "published"
+                      && request.resource.data.keys().hasOnly(["name", "text", "createdAt"])
+                      && request.resource.data.name is string
+                      && request.resource.data.name.size() <= 80
+                      && request.resource.data.text is string
+                      && request.resource.data.text.size() > 0
+                      && request.resource.data.text.size() <= 1000;
+        allow update, delete: if signedIn();
+      }
     }
 
-    // SITE (profile photo url, etc.)
+    // Static pages (activities/newsletter content)
     match /site/{docId} {
       allow read: if true;
       allow write: if signedIn();
@@ -37,11 +60,9 @@ service cloud.firestore {
       allow write: if signedIn();
     }
 
-  	// Newsletter subscribers (backend-only; public cannot write)
-match /subscribers/{subId} {
-  allow read, write: if signedIn(); // only admins in portal
-}
-
-}
-
+    // Newsletter subscribers (admin-only writes)
+    match /subscribers/{subId} {
+      allow read, write: if signedIn();
     }
+  }
+}
