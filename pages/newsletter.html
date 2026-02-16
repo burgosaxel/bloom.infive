@@ -91,7 +91,7 @@
       btn.textContent = "Subscribing...";
 
       try {
-        const subId = encodeURIComponent(email);
+        const subId = `${encodeURIComponent(email)}--${Date.now()}`;
         await setDoc(doc(db, "subscribers", subId), {
           email,
           status: "active",
@@ -102,11 +102,7 @@
         show("You're subscribed. Welcome to BLOOM.INFIVE!", true);
       } catch (err) {
         console.error(err);
-        if (err?.code === "permission-denied") {
-          show("You're already subscribed.");
-        } else {
-          show("Subscription failed. Please try again.");
-        }
+        show("Subscription failed. Please try again.");
       } finally {
         btn.disabled = false;
         btn.textContent = "Subscribe";

@@ -1,7 +1,7 @@
 // functions/index.js (CommonJS) - OAuth-only Gmail sending
 
 const { onRequest } = require("firebase-functions/v2/https");
-const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const logger = require("firebase-functions/logger");
 
@@ -154,7 +154,7 @@ exports.oauthCallback = onRequest(
 // -----------------------------------------
 // Firestore trigger: send welcome on create
 // -----------------------------------------
-exports.sendWelcomeEmail = onDocumentCreated(
+exports.sendWelcomeEmail = onDocumentWritten(
   {
     document: "subscribers/{subId}",
     secrets: [GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN],
@@ -162,14 +162,26 @@ exports.sendWelcomeEmail = onDocumentCreated(
   },
   async (event) => {
     try {
-      const data = event.data?.data();
-      if (!data) return;
+      const before = event.data?.before?.data();
+      const after = event.data?.after?.data();
+      if (!after) return;
 
-      const email = (data.email || "").toString().trim().toLowerCase();
-      const status = data.status || "";
+      const email = (after.email || "").toString().trim().toLowerCase();
+      const status = after.status || "";
+      const alreadySent = !!after.welcomeEmailSentAt;
+      const wasAlreadySent = !!before?.welcomeEmailSentAt;
 
-      // Only send for active subscribers
-      if (!email || status !== "active") return;
+      logger.info("sendWelcomeEmail trigger fired", {
+        subId: event.params?.subId || "",
+        email,
+        status,
+        alreadySent,
+        wasAlreadySent,
+      });
+
+      // Only send once for active subscribers.
+      // This also allows retries when a doc already existed before trigger fixes.
+      if (!email || status !== "active" || alreadySent || wasAlreadySent) return;
 
       const subject = "Welcome to BLOOM.INFIVE 💛";
       const text =
@@ -195,6 +207,13 @@ exports.sendWelcomeEmail = onDocumentCreated(
       `;
 
       await sendGmail({ to: email, subject, text, html });
+
+      await event.data.after.ref.set(
+        {
+          welcomeEmailSentAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
 
       logger.info("Welcome email sent to: " + email);
     } catch (e) {
