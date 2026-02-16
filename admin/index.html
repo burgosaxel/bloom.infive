@@ -70,6 +70,18 @@
     }
 
     .field{ display:grid; gap:8px; margin-top:10px; }
+
+    /* Make admin action buttons high-contrast in dark theme */
+    [data-theme="dark"] .tabBtn,
+    [data-theme="dark"] .btn:not(#themeToggle){
+      background:#fff;
+      color:#111;
+      border-color:rgba(255,255,255,.9);
+    }
+    [data-theme="dark"] .btn:not(#themeToggle):hover,
+    [data-theme="dark"] .tabBtn:hover{
+      filter:brightness(.96);
+    }
   </style>
 </head>
 

@@ -327,6 +327,36 @@ async function refreshPosts() {
   });
 }
 
+async function reconcilePostData() {
+  const snap = await getDocs(query(collection(db, "posts"), limit(200)));
+  if (snap.empty) return;
+
+  const writes = [];
+
+  snap.forEach(docSnap => {
+    const d = docSnap.data() || {};
+    const status = (d.status || "").toString().toLowerCase();
+    const hasPublishAt = !!d.publishAt;
+
+    let desiredPublished = d.published === true;
+    if (status === "published") desiredPublished = true;
+    if (status === "scheduled" && hasPublishAt) desiredPublished = true;
+    if (status === "draft") desiredPublished = false;
+
+    const patch = {};
+    if (d.published !== desiredPublished) patch.published = desiredPublished;
+    if (!d.publishAt && status === "published") patch.publishAt = Timestamp.now();
+    if (!d.contentHtml && d.content) patch.contentHtml = d.content;
+
+    if (Object.keys(patch).length) {
+      patch.updatedAt = serverTimestamp();
+      writes.push(updateDoc(doc(db, "posts", docSnap.id), patch));
+    }
+  });
+
+  if (writes.length) await Promise.all(writes);
+}
+
 // ---- Pages ----
 async function loadPage(key) {
   initEditors();
@@ -564,12 +594,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const authBox = $("#authBox");
   const adminBox = $("#adminBox");
 
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, async (user) => {
     show(authBox, !user);
     show(adminBox, !!user);
 
     if (user) {
       activateTab("posts");
+      try {
+        await reconcilePostData();
+      } catch (err) {
+        console.error("Post reconciliation failed:", err);
+      }
       refreshPosts().catch(console.error);
       loadProfile().catch(console.error);
     }
