@@ -19,24 +19,7 @@
           <p class="muted">Subscribe for new posts, upcoming releases, and updates.</p>
         </div>
 
-        <div class="card" style="position:relative;">
-          <div
-            style="
-              position:absolute;
-              top:14px;
-              right:14px;
-              padding:8px 12px;
-              border-radius:999px;
-              font-size:12px;
-              letter-spacing:0.12em;
-              text-transform:uppercase;
-              background:var(--control-bg);
-              border:1px solid var(--control-border);
-            "
-          >
-            Under Construction
-          </div>
-
+        <div class="card">
           <form id="newsletter-form" class="form" style="align-items:stretch; max-width:760px; margin-top:22px;">
             <input
               id="email"
@@ -44,25 +27,21 @@
               name="email"
               placeholder="you@example.com"
               autocomplete="email"
-              disabled
-              aria-disabled="true"
               style="flex:1;"
+              required
             />
             <button
               id="subscribe-btn"
               class="btn primary"
               type="submit"
-              disabled
-              aria-disabled="true"
-              style="min-width:150px; opacity:.55; cursor:not-allowed;"
+              style="min-width:150px;"
             >
               Subscribe
             </button>
           </form>
 
           <p id="status" class="muted" style="margin-top:14px;">
-            Subscriptions are temporarily paused while we finish the secure email setup.
-            Please check back soon.
+            Join the list to get updates when new content goes live.
           </p>
         </div>
 
@@ -85,12 +64,53 @@
   </main>
 
   <script src="../nav.js"></script>
-  <script>
+  <script type="module">
+    import { db } from "../firebase.js";
+    import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
     document.getElementById("year").textContent = new Date().getFullYear();
-    document.getElementById("newsletter-form").addEventListener("submit", (e) => {
+    const form = document.getElementById("newsletter-form");
+    const emailEl = document.getElementById("email");
+    const statusEl = document.getElementById("status");
+    const btn = document.getElementById("subscribe-btn");
+
+    function show(msg, ok = false) {
+      statusEl.textContent = msg;
+      statusEl.style.color = ok ? "#b7ffcf" : "";
+    }
+
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      document.getElementById("status").textContent =
-        "Under Construction - subscriptions are paused for now.";
+      const email = (emailEl.value || "").trim().toLowerCase();
+      if (!email) {
+        show("Please enter your email.");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Subscribing...";
+
+      try {
+        const subId = encodeURIComponent(email);
+        await setDoc(doc(db, "subscribers", subId), {
+          email,
+          status: "active",
+          source: "site-newsletter",
+          createdAt: serverTimestamp()
+        });
+        form.reset();
+        show("You're subscribed. Welcome to BLOOM.INFIVE!", true);
+      } catch (err) {
+        console.error(err);
+        if (err?.code === "permission-denied") {
+          show("You're already subscribed.");
+        } else {
+          show("Subscription failed. Please try again.");
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Subscribe";
+      }
     });
   </script>
 </body>

@@ -62,7 +62,19 @@ service cloud.firestore {
 
     // Newsletter subscribers (admin-only writes)
     match /subscribers/{subId} {
-      allow read, write: if signedIn();
+      allow read: if signedIn();
+
+      // Public subscribe create (one doc per normalized email id)
+      allow create: if request.resource.data.keys().hasOnly(["email", "status", "source", "createdAt"])
+                    && request.resource.data.email is string
+                    && request.resource.data.email.size() > 3
+                    && request.resource.data.email.size() <= 254
+                    && request.resource.data.email.matches('^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$')
+                    && request.resource.data.status == "active"
+                    && request.resource.data.source == "site-newsletter"
+                    && request.resource.data.createdAt is timestamp;
+
+      allow update, delete: if signedIn();
     }
   }
 }
