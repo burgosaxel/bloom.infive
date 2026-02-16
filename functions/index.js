@@ -141,12 +141,50 @@ exports.oauthCallback = onRequest(
       // Print it ONCE so you can copy/paste into Firebase secret
       logger.warn("COPY THIS REFRESH TOKEN: " + tokens.refresh_token);
 
-      res
-        .status(200)
-        .send("Got refresh token. Check Functions logs and save it as a secret.");
+      // Also show it in the response so setup isn't blocked by log retrieval issues.
+      res.status(200).send(`
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OAuth Success</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; padding: 24px; }
+    code, pre { background: #f4f4f6; padding: 12px; border-radius: 10px; display: block; overflow: auto; }
+    button { padding: 10px 14px; border-radius: 10px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
+  </style>
+  </head>
+  <body>
+    <h2>OAuth OK</h2>
+    <p>Copy this refresh token and save it as the Firebase Functions secret <strong>GMAIL_REFRESH_TOKEN</strong>.</p>
+    <pre id="tok">${tokens.refresh_token}</pre>
+    <button id="copy">Copy</button>
+    <script>
+      document.getElementById('copy').addEventListener('click', async () => {
+        const t = document.getElementById('tok').textContent;
+        try { await navigator.clipboard.writeText(t); alert('Copied'); }
+        catch (e) { prompt('Copy token:', t); }
+      });
+    </script>
+  </body>
+</html>
+      `);
     } catch (e) {
       logger.error(e);
-      res.status(500).send("OAuth callback failed.");
+      const redirectUri =
+        "https://us-central1-bloom-in-five.cloudfunctions.net/oauthCallback";
+      const extra = {
+        message: "OAuth callback failed",
+        clientId: GMAIL_CLIENT_ID.value(),
+        redirectUri,
+        error: e?.message || String(e),
+        // Gaxios (googleapis) error payload, if present (safe: does not include secrets)
+        responseData: e?.response?.data || null,
+      };
+      res.status(500).send(
+        "<pre>" + JSON.stringify(extra, null, 2) + "</pre>"
+      );
     }
   }
 );
