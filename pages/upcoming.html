@@ -46,7 +46,7 @@
       el.innerHTML = `<p class="muted">No content yet. Add it from the admin portal.</p>`;
     } else {
       const d = snap.data();
-      el.innerHTML = d.contentHtml || `<p class="muted">No content yet.</p>`;
+      el.innerHTML = d.contentHtml || d.content || `<p class="muted">No content yet.</p>`;
     }
   </script>
 </body>

@@ -50,7 +50,7 @@
         .replaceAll(">", "&gt;");
     }
 
-    const q = query(collection(db, "affiliateLinks"), orderBy("createdAt", "desc"));
+    const q = query(collection(db, "affiliateLinks"), orderBy("updatedAt", "desc"));
     const snap = await getDocs(q);
 
     if (snap.empty) {
@@ -61,7 +61,7 @@
         return `
           <article class="card">
             <h2 style="margin:0 0 10px;">${esc(x.title || "Link")}</h2>
-            <p class="muted" style="margin:0 0 12px;">${esc(x.description || "")}</p>
+            <p class="muted" style="margin:0 0 12px;">${esc(x.description || x.desc || "")}</p>
             <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
               ${x.category ? `<span class="tag">${esc(x.category)}</span>` : ""}
             </div>

@@ -51,7 +51,7 @@
       el.innerHTML = `<p class="muted">Under construction. Stay tuned!</p>`;
     } else {
       const d = snap.data();
-      el.innerHTML = d.contentHtml || `<p class="muted">Under construction. Stay tuned!</p>`;
+      el.innerHTML = d.contentHtml || d.content || `<p class="muted">Under construction. Stay tuned!</p>`;
     }
   </script>
 </body>

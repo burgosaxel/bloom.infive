@@ -3,121 +3,94 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Newsletter • BLOOM.INFIVE</title>
+  <title>Newsletter | BLOOM.INFIVE</title>
+  <meta name="description" content="Subscribe for updates from BLOOM.INFIVE." />
   <link rel="stylesheet" href="../styles.css" />
 </head>
+
 <body>
+  <div id="navMount"></div>
 
-  <div id="nav-host"></div>
+  <main>
+    <section class="section">
+      <div class="container">
+        <div class="sectionHead">
+          <h2>Newsletter</h2>
+          <p class="muted">Subscribe for new posts, upcoming releases, and updates.</p>
+        </div>
 
-  <main class="section">
-    <div class="container">
-      <h2>Newsletter</h2>
-      <p class="muted">Subscribe for new posts, upcoming releases, and updates.</p>
+        <div class="card" style="position:relative;">
+          <div
+            style="
+              position:absolute;
+              top:14px;
+              right:14px;
+              padding:8px 12px;
+              border-radius:999px;
+              font-size:12px;
+              letter-spacing:0.12em;
+              text-transform:uppercase;
+              background:var(--control-bg);
+              border:1px solid var(--control-border);
+            "
+          >
+            Under Construction
+          </div>
 
-      <div class="card" style="max-width:720px;">
-        <form id="newsletterForm" class="form" autocomplete="on">
-          <label class="srOnly" for="newsletterEmail">Email</label>
-          <input
-            id="newsletterEmail"
-            type="email"
-            inputmode="email"
-            autocomplete="email"
-            placeholder="you@example.com"
-            required
-          />
-          <button class="btn primary" type="submit" id="newsletterBtn">
-            Subscribe
-          </button>
-        </form>
+          <form id="newsletter-form" class="form" style="align-items:stretch; max-width:760px; margin-top:22px;">
+            <input
+              id="email"
+              type="email"
+              name="email"
+              placeholder="you@example.com"
+              autocomplete="email"
+              disabled
+              aria-disabled="true"
+              style="flex:1;"
+            />
+            <button
+              id="subscribe-btn"
+              class="btn primary"
+              type="submit"
+              disabled
+              aria-disabled="true"
+              style="min-width:150px; opacity:.55; cursor:not-allowed;"
+            >
+              Subscribe
+            </button>
+          </form>
 
-        <p id="newsletterMsg" class="muted" style="margin:12px 0 0;"></p>
+          <p id="status" class="muted" style="margin-top:14px;">
+            Subscriptions are temporarily paused while we finish the secure email setup.
+            Please check back soon.
+          </p>
+        </div>
+
+        <p class="muted" style="margin-top:14px;">
+          By subscribing, you agree to receive emails from BLOOM.INFIVE. You can unsubscribe anytime.
+        </p>
       </div>
+    </section>
 
-      <p class="muted" style="margin-top:16px; max-width:720px;">
-        By subscribing, you agree to receive emails from BLOOM.INFIVE. You can unsubscribe anytime.
-      </p>
-    </div>
+    <footer class="footer">
+      <div class="container footerInner">
+        <p class="muted">&copy; <span id="year"></span> BLOOM.INFIVE. All rights reserved.</p>
+        <div class="footerLinks">
+          <a href="../index.html">Home</a>
+          <a href="./about.html">About</a>
+          <a href="./newsletter.html">Newsletter</a>
+        </div>
+      </div>
+    </footer>
   </main>
 
-  <footer class="footer">
-    <div class="container footerInner">
-      <div class="muted">© <span id="year"></span> BLOOM.INFIVE</div>
-      <div class="footerLinks">
-        <a href="../index.html">Home</a>
-        <a href="./about.html">About</a>
-        <a href="./newsletter.html">Newsletter</a>
-      </div>
-    </div>
-  </footer>
-
-  <script type="module" src="../firebase.js"></script>
   <script src="../nav.js"></script>
-
-  <script type="module">
-    import {
-      db, collection, addDoc, getDocs, query, where, serverTimestamp
-    } from "../firebase.js";
-
-    const form = document.getElementById("newsletterForm");
-    const emailInput = document.getElementById("newsletterEmail");
-    const msg = document.getElementById("newsletterMsg");
-    const btn = document.getElementById("newsletterBtn");
-
+  <script>
     document.getElementById("year").textContent = new Date().getFullYear();
-
-    function setMsg(text, ok = false) {
-      msg.textContent = text || "";
-      msg.style.color = ok ? "var(--ink)" : "var(--muted)";
-    }
-
-    function isValidEmail(email) {
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    }
-
-    form.addEventListener("submit", async (e) => {
+    document.getElementById("newsletter-form").addEventListener("submit", (e) => {
       e.preventDefault();
-
-      const email = emailInput.value.trim().toLowerCase();
-      if (!isValidEmail(email)) {
-        setMsg("Please enter a valid email address.");
-        return;
-      }
-
-      btn.disabled = true;
-      btn.textContent = "Saving…";
-      setMsg("");
-
-      try {
-        const q = query(
-          collection(db, "subscribers"),
-          where("email", "==", email)
-        );
-
-        const snap = await getDocs(q);
-
-        if (!snap.empty) {
-          setMsg("You’re already subscribed ✅", true);
-          return;
-        }
-
-        await addDoc(collection(db, "subscribers"), {
-          email,
-          status: "active",
-          source: "site-newsletter",
-          createdAt: serverTimestamp()
-        });
-
-        emailInput.value = "";
-        setMsg("Welcome to BLOOM.INFIVE 💛 Check your inbox!", true);
-
-      } catch (err) {
-        console.error(err);
-        setMsg("Something went wrong. Please try again.");
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "Subscribe";
-      }
+      document.getElementById("status").textContent =
+        "Under Construction - subscriptions are paused for now.";
     });
   </script>
 </body>

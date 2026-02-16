@@ -1,253 +1,204 @@
-"use strict";
+// functions/index.js (CommonJS) - OAuth-only Gmail sending
+
+const { onRequest } = require("firebase-functions/v2/https");
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
+const { setGlobalOptions } = require("firebase-functions/v2");
+const logger = require("firebase-functions/logger");
 
 const admin = require("firebase-admin");
 admin.initializeApp();
 
-const { onRequest } = require("firebase-functions/v2/https");
-const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { defineString, defineSecret } = require("firebase-functions/params");
-const logger = require("firebase-functions/logger");
-
-const nodemailer = require("nodemailer");
 const { google } = require("googleapis");
 
-// -----------------------
-// Params / Secrets (NO functions.config())
-// -----------------------
-const GMAIL_CLIENT_ID = defineString("GMAIL_CLIENT_ID");
+// Region
+setGlobalOptions({ region: "us-central1", maxInstances: 10 });
+
+// ---- Params (non-secrets) ----
+const SITE_URL = defineString("SITE_URL");               // https://bloominfive.blog
+const GMAIL_SENDER = defineString("GMAIL_SENDER");       // info@bloominfive.blog
+const GMAIL_CLIENT_ID = defineString("GMAIL_CLIENT_ID"); // xxx.apps.googleusercontent.com
+
+// ---- Secrets ----
 const GMAIL_CLIENT_SECRET = defineSecret("GMAIL_CLIENT_SECRET");
+const GMAIL_REFRESH_TOKEN = defineSecret("GMAIL_REFRESH_TOKEN");
 
-// This should be your Workspace sender, e.g. info@bloominfive.blog
-const GMAIL_SENDER = defineString("GMAIL_SENDER");
+// Helper: create OAuth2 client
+function oauthClient(req) {
+  const redirectUri =
+    "https://us-central1-bloom-in-five.cloudfunctions.net/oauthCallback";
 
-// Your PUBLIC website base (used in links)
-const SITE_URL = defineString("SITE_URL");
-
-// The callback path (function name) - we keep it consistent:
-const OAUTH_CALLBACK_PATH = "oauthCallback";
-
-// -----------------------
-// Helpers
-// -----------------------
-function functionBaseUrl(req) {
-  // Works for Cloud Functions URL like:
-  // https://us-central1-bloom-in-five.cloudfunctions.net/oauthStart
-  const proto = req.get("x-forwarded-proto") || "https";
-  const host = req.get("x-forwarded-host") || req.get("host");
-  return `${proto}://${host}`;
-}
-
-function buildOAuthClient(redirectUri) {
-  return new google.auth.OAuth2(
+  const oAuth2 = new google.auth.OAuth2(
     GMAIL_CLIENT_ID.value(),
     GMAIL_CLIENT_SECRET.value(),
     redirectUri
   );
+
+  // refresh token used server-side to get access tokens
+  oAuth2.setCredentials({
+    refresh_token: GMAIL_REFRESH_TOKEN.value(),
+  });
+
+  return oAuth2;
 }
 
-async function getStoredRefreshToken() {
-  const snap = await admin.firestore().doc("site/email").get();
-  if (!snap.exists) return null;
-  const data = snap.data() || {};
-  return data.refreshToken || null;
+// Helper: Gmail API send
+async function sendGmail({ to, subject, text, html }) {
+  const auth = oauthClient();
+  const gmail = google.gmail({ version: "v1", auth });
+
+  // Build RFC 2822 email
+  const boundary = "000000000000000000000";
+  const msgParts = [];
+
+  msgParts.push(`From: "BLOOM.INFIVE" <${GMAIL_SENDER.value()}>`);
+  msgParts.push(`To: ${to}`);
+  msgParts.push(`Subject: ${subject}`);
+  msgParts.push("MIME-Version: 1.0");
+  msgParts.push(`Content-Type: multipart/alternative; boundary="${boundary}"`);
+  msgParts.push("");
+  msgParts.push(`--${boundary}`);
+  msgParts.push('Content-Type: text/plain; charset="UTF-8"');
+  msgParts.push("");
+  msgParts.push(text || "");
+  msgParts.push("");
+  msgParts.push(`--${boundary}`);
+  msgParts.push('Content-Type: text/html; charset="UTF-8"');
+  msgParts.push("");
+  msgParts.push(html || "");
+  msgParts.push("");
+  msgParts.push(`--${boundary}--`);
+
+  const raw = Buffer.from(msgParts.join("\r\n"))
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+
+  await gmail.users.messages.send({
+    userId: "me",
+    requestBody: { raw },
+  });
 }
 
-async function saveRefreshToken(refreshToken, meta = {}) {
-  await admin.firestore().doc("site/email").set(
-    {
-      refreshToken,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-      ...meta,
-    },
-    { merge: true }
-  );
-}
+// --------------------
+// OAuth start endpoint
+// --------------------
+exports.oauthStart = onRequest({ secrets: [GMAIL_CLIENT_SECRET] }, async (req, res) => {
+  try {
+    const redirectUri =
+      "https://us-central1-bloom-in-five.cloudfunctions.net/oauthCallback";
 
-async function getAccessTokenFromRefreshToken(oauth2Client, refreshToken) {
-  oauth2Client.setCredentials({ refresh_token: refreshToken });
-  // googleapis returns either string or object depending on version
-  const at = await oauth2Client.getAccessToken();
-  return typeof at === "string" ? at : at?.token;
-}
+    const oAuth2 = new google.auth.OAuth2(
+      GMAIL_CLIENT_ID.value(),
+      GMAIL_CLIENT_SECRET.value(),
+      redirectUri
+    );
 
-function buildWelcomeHtml({ email }) {
-  const site = SITE_URL.value() || "https://bloominfive.blog";
-  const safeEmail = (email || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const url = oAuth2.generateAuthUrl({
+      access_type: "offline",
+      prompt: "consent", // forces refresh_token
+      scope: ["https://www.googleapis.com/auth/gmail.send"],
+    });
 
-  return `
-  <div style="font-family:Arial,Helvetica,sans-serif;line-height:1.5;color:#111;">
-    <h2 style="margin:0 0 12px;">Welcome to BLOOM.INFIVE 🌿</h2>
-    <p style="margin:0 0 10px;">Thanks for subscribing${safeEmail ? `, <b>${safeEmail}</b>` : ""}.</p>
-    <p style="margin:0 0 10px;">You’ll get new posts, upcoming releases, and faith-rooted updates.</p>
-    <p style="margin:16px 0 0;">
-      Visit the site: <a href="${site}">${site}</a>
-    </p>
-    <p style="margin:18px 0 0;color:#555;font-size:12px;">
-      If you didn’t request this, you can ignore this email.
-    </p>
-  </div>`;
-}
-
-// -----------------------
-// 1) Health check
-// -----------------------
-exports.health = onRequest({ region: "us-central1" }, (req, res) => {
-  res.status(200).send("OK");
+    res.redirect(url);
+  } catch (e) {
+    logger.error(e);
+    res.status(500).send("oauthStart failed");
+  }
 });
 
-// -----------------------
-// 2) OAuth Start (admin-only link you open manually)
-// -----------------------
-exports.oauthStart = onRequest(
-  {
-    region: "us-central1",
-    secrets: [GMAIL_CLIENT_SECRET],
-  },
-  async (req, res) => {
-    try {
-      const base = functionBaseUrl(req);
-      const redirectUri = `${base}/${OAUTH_CALLBACK_PATH}`;
-
-      const oauth2Client = buildOAuthClient(redirectUri);
-
-      const url = oauth2Client.generateAuthUrl({
-        access_type: "offline",
-        prompt: "consent",
-        scope: ["https://www.googleapis.com/auth/gmail.send"],
-      });
-
-      res.status(302).set("Location", url).send("Redirecting…");
-    } catch (err) {
-      logger.error(err);
-      res.status(500).send("Failed to start OAuth.");
-    }
-  }
-);
-
-// -----------------------
-// 3) OAuth Callback (saves refresh token to Firestore)
-// -----------------------
+// ----------------------
+// OAuth callback endpoint
+// ----------------------
 exports.oauthCallback = onRequest(
-  {
-    region: "us-central1",
-    secrets: [GMAIL_CLIENT_SECRET],
-  },
+  { secrets: [GMAIL_CLIENT_SECRET] },
   async (req, res) => {
     try {
       const code = req.query.code;
       if (!code) return res.status(400).send("Missing ?code=");
 
-      const base = functionBaseUrl(req);
-      const redirectUri = `${base}/${OAUTH_CALLBACK_PATH}`;
-      const oauth2Client = buildOAuthClient(redirectUri);
+      const redirectUri =
+        "https://us-central1-bloom-in-five.cloudfunctions.net/oauthCallback";
 
-      const { tokens } = await oauth2Client.getToken(String(code));
-      const refreshToken = tokens.refresh_token;
+      const oAuth2 = new google.auth.OAuth2(
+        GMAIL_CLIENT_ID.value(),
+        GMAIL_CLIENT_SECRET.value(),
+        redirectUri
+      );
 
-      if (!refreshToken) {
+      const { tokens } = await oAuth2.getToken(code);
+
+      // IMPORTANT: tokens.refresh_token only appears on first consent (or if prompt:consent)
+      if (!tokens.refresh_token) {
         return res
-          .status(400)
-          .send("No refresh_token returned. Try again with prompt=consent.");
+          .status(200)
+          .send(
+            "No refresh_token returned. Revoke app access in Google Account and try again."
+          );
       }
 
-      await saveRefreshToken(refreshToken, {
-        tokenSource: "oauthCallback",
-      });
+      // Print it ONCE so you can copy/paste into Firebase secret
+      logger.warn("COPY THIS REFRESH TOKEN: " + tokens.refresh_token);
 
       res
         .status(200)
-        .send(
-          "✅ Gmail connected! You can close this tab and test a newsletter signup."
-        );
-    } catch (err) {
-      logger.error(err);
+        .send("Got refresh token. Check Functions logs and save it as a secret.");
+    } catch (e) {
+      logger.error(e);
       res.status(500).send("OAuth callback failed.");
     }
   }
 );
 
-// -----------------------
-// 4) Firestore Trigger: Send welcome email when subscriber created
-// Collection must be: subscribers
-// -----------------------
+// -----------------------------------------
+// Firestore trigger: send welcome on create
+// -----------------------------------------
 exports.sendWelcomeEmail = onDocumentCreated(
   {
-    region: "us-central1",
     document: "subscribers/{subId}",
-    secrets: [GMAIL_CLIENT_SECRET],
+    secrets: [GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN],
+    region: "us-central1",
   },
   async (event) => {
-    const data = event.data?.data() || {};
-    const email = (data.email || "").toString().trim().toLowerCase();
-    if (!email) return;
-
-    // Avoid sending twice if your code re-writes / merges
-    // (optional safety check)
-    if (data.welcomeSent === true) return;
-
-    const sender = GMAIL_SENDER.value();
-    if (!sender) {
-      logger.error("Missing GMAIL_SENDER param.");
-      return;
-    }
-
-    const refreshToken = await getStoredRefreshToken();
-    if (!refreshToken) {
-      logger.error("No refresh token saved. Visit /oauthStart first.");
-      return;
-    }
-
-    // Build OAuth client using the *live* function URL
-    // We can build it without req here by using the known cloudfunctions host format.
-    // Safer: store the redirectUri used during OAuth in Firestore, but this works fine:
-    // https://us-central1-PROJECT.cloudfunctions.net/oauthCallback
-    const redirectUri = `https://us-central1-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/${OAUTH_CALLBACK_PATH}`;
-    const oauth2Client = buildOAuthClient(redirectUri);
-
-    const accessToken = await getAccessTokenFromRefreshToken(
-      oauth2Client,
-      refreshToken
-    );
-    if (!accessToken) {
-      logger.error("Failed to get access token from refresh token.");
-      return;
-    }
-
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        type: "OAuth2",
-        user: sender,
-        clientId: GMAIL_CLIENT_ID.value(),
-        clientSecret: GMAIL_CLIENT_SECRET.value(),
-        refreshToken,
-        accessToken,
-      },
-    });
-
-    const subject = "Welcome to BLOOM.INFIVE 🌿";
-    const html = buildWelcomeHtml({ email });
-
     try {
-      await transporter.sendMail({
-        from: `BLOOM.INFIVE <${sender}>`,
-        to: email,
-        subject,
-        html,
-      });
+      const data = event.data?.data();
+      if (!data) return;
 
-      // Mark sent so we don’t double-send
-      await event.data.ref.set(
-        {
-          welcomeSent: true,
-          welcomeSentAt: admin.firestore.FieldValue.serverTimestamp(),
-        },
-        { merge: true }
-      );
+      const email = (data.email || "").toString().trim().toLowerCase();
+      const status = data.status || "";
 
-      logger.info("Welcome email sent:", email);
-    } catch (err) {
-      logger.error("Failed to send email:", err);
+      // Only send for active subscribers
+      if (!email || status !== "active") return;
+
+      const subject = "Welcome to BLOOM.INFIVE 💛";
+      const text =
+        `Hi!\n\n` +
+        `Thanks for subscribing to BLOOM.INFIVE.\n` +
+        `You’ll get updates when new posts and releases go live.\n\n` +
+        `Visit: ${SITE_URL.value()}\n\n` +
+        `— Angelika / BLOOM.INFIVE`;
+
+      const html = `
+        <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111;">
+          <h2 style="margin:0 0 8px;">Welcome to BLOOM.INFIVE 💛</h2>
+          <p style="margin:0 0 12px;">
+            Thanks for subscribing! You’ll get updates when new posts and releases go live.
+          </p>
+          <p style="margin:0 0 18px;">
+            <a href="${SITE_URL.value()}" style="color:#111;font-weight:bold;">Visit BLOOM.INFIVE</a>
+          </p>
+          <p style="margin:0;color:#555;font-size:13px;">
+            If you didn’t subscribe, you can ignore this email.
+          </p>
+        </div>
+      `;
+
+      await sendGmail({ to: email, subject, text, html });
+
+      logger.info("Welcome email sent to: " + email);
+    } catch (e) {
+      logger.error("sendWelcomeEmail failed:", e);
     }
   }
 );

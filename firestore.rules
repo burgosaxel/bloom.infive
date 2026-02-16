@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // POSTS
+    match /posts/{postId} {
+
+      // Public can read only published + scheduled that has reached publishAt
+      allow get, list: if resource.data.published == true
+                       && resource.data.publishAt != null
+                       && resource.data.publishAt <= request.time;
+
+      // Admin (signed in) can read/write everything
+      allow read: if signedIn();
+      allow create, update, delete: if signedIn();
+    }
+
+    // PAGES (admin uses: pages/{key})
+    match /pages/{pageId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    // SITE (profile photo url, etc.)
+    match /site/{docId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+    // Affiliate links
+    match /affiliateLinks/{linkId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
+  	// Newsletter subscribers (backend-only; public cannot write)
+match /subscribers/{subId} {
+  allow read, write: if signedIn(); // only admins in portal
+}
+
+}
+
+    }

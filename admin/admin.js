@@ -166,13 +166,16 @@ let editingPostId = null;
 
 function openPostForm(open) {
   show($("#postEditorWrap"), !!open);
+  show($("#cancelPostBtn"), !!open);
 }
 
 function clearPostForm() {
   editingPostId = null;
   $("#postTitle").value = "";
-  $("#tags").value = "";
-  $("#status").value = "draft";
+  const tagsEl = pickEl("#postTags", "#tags");
+  const statusEl = pickEl("#postStatus", "#status");
+  if (tagsEl) tagsEl.value = "";
+  if (statusEl) statusEl.value = "draft";
   $("#publishAt").value = "";
   if (postEditor) postEditor.root.innerHTML = "";
   msg($("#postMsg"), "");
@@ -187,10 +190,12 @@ async function editPost(id) {
   editingPostId = id;
 
   $("#postTitle").value = d.title || "";
-  $("#tags").value = Array.isArray(d.tags) ? d.tags.join(", ") : "";
-  $("#status").value = d.status || "draft";
+  const tagsEl = pickEl("#postTags", "#tags");
+  const statusEl = pickEl("#postStatus", "#status");
+  if (tagsEl) tagsEl.value = Array.isArray(d.tags) ? d.tags.join(", ") : "";
+  if (statusEl) statusEl.value = d.status || "draft";
   $("#publishAt").value = d.publishAt?.toDate ? toLocalInputValue(d.publishAt.toDate()) : "";
-  if (postEditor) postEditor.root.innerHTML = d.content || "";
+  if (postEditor) postEditor.root.innerHTML = d.contentHtml || d.content || "";
 
   openPostForm(true);
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -203,9 +208,8 @@ async function deletePost(id) {
 }
 
 function computePublished(status, publishAtTs) {
-  const now = new Date();
   if (status === "published") return true;
-  if (status === "scheduled" && publishAtTs && publishAtTs.toDate() <= now) return true;
+  if (status === "scheduled" && publishAtTs) return true;
   return false;
 }
 
@@ -214,12 +218,12 @@ async function savePost() {
   const out = $("#postMsg");
 
   const title = $("#postTitle")?.value?.trim() || "";
-  const tags = ($("#tags")?.value || "")
+  const tags = (pickEl("#postTags", "#tags")?.value || "")
     .split(",")
     .map(s => s.trim())
     .filter(Boolean);
 
-  const status = $("#status")?.value || "draft";
+  const status = pickEl("#postStatus", "#status")?.value || "draft";
   const publishAtTs = toTimestampFromLocalInput($("#publishAt")?.value || "");
   const content = postEditor ? postEditor.root.innerHTML : "";
 
@@ -236,6 +240,7 @@ async function savePost() {
     published: computePublished(status, publishAtTs || null),
     publishAt: publishAtTs || Timestamp.fromDate(new Date()),
     content,
+    contentHtml: content,
     updatedAt: serverTimestamp()
   };
 
@@ -259,7 +264,7 @@ async function savePost() {
 }
 
 async function refreshPosts() {
-  const host = $("#postList");
+  const host = pickEl("#postsList", "#postList");
   if (!host) return;
 
   host.innerHTML = "<div class='muted'>Loading…</div>";
@@ -327,19 +332,19 @@ async function loadPage(key) {
   initEditors();
   msg($("#pageMsg"), "");
 
-  const snap = await getDoc(doc(db, "pages", key));
+  const snap = await getDoc(doc(db, "site", key));
   const d = snap.exists() ? (snap.data() || {}) : {};
-  if (pageEditor) pageEditor.root.innerHTML = d.content || "";
+  if (pageEditor) pageEditor.root.innerHTML = d.contentHtml || d.content || "";
 }
 
 async function savePage() {
   initEditors();
   const out = $("#pageMsg");
-  const key = $("#pageSelect")?.value || "about";
+  const key = $("#pageSelect")?.value || "upcoming";
   const content = pageEditor ? pageEditor.root.innerHTML : "";
 
   try {
-    await setDoc(doc(db, "pages", key), { content, updatedAt: serverTimestamp() }, { merge: true });
+    await setDoc(doc(db, "site", key), { content, contentHtml: content, updatedAt: serverTimestamp() }, { merge: true });
     msg(out, "Saved ✅", "ok");
   } catch (err) {
     console.error(err);
@@ -358,7 +363,7 @@ function escapeHtml(s) {
 }
 
 async function refreshLinks() {
-  const host = $("#affiliateList");
+  const host = pickEl("#linksList", "#affiliateList");
   if (!host) return;
 
   host.innerHTML = "<div class='muted'>Loading…</div>";
@@ -396,10 +401,12 @@ async function refreshLinks() {
     editBtn.textContent = "Edit";
     editBtn.addEventListener("click", () => {
       editingLinkId = docSnap.id;
-      $("#affiliateTitle").value = d.title || "";
-      $("#affiliateUrl").value = d.url || "";
-      $("#affiliateCategory").value = d.category || "";
-      $("#affiliateDesc").value = d.desc || "";
+      pickEl("#linkTitle", "#affiliateTitle").value = d.title || "";
+      pickEl("#linkUrl", "#affiliateUrl").value = d.url || "";
+      pickEl("#linkCategory", "#affiliateCategory").value = d.category || "";
+      pickEl("#linkDesc", "#affiliateDesc").value = d.description || d.desc || "";
+      show($("#linkFormWrap"), true);
+      show($("#cancelLinkBtn"), true);
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
 
@@ -425,17 +432,17 @@ async function refreshLinks() {
 async function saveLink() {
   const out = $("#affiliateMsg");
 
-  const title = $("#affiliateTitle")?.value?.trim() || "";
-  const url = $("#affiliateUrl")?.value?.trim() || "";
-  const category = $("#affiliateCategory")?.value?.trim() || "";
-  const desc = $("#affiliateDesc")?.value?.trim() || "";
+  const title = pickEl("#linkTitle", "#affiliateTitle")?.value?.trim() || "";
+  const url = pickEl("#linkUrl", "#affiliateUrl")?.value?.trim() || "";
+  const category = pickEl("#linkCategory", "#affiliateCategory")?.value?.trim() || "";
+  const description = pickEl("#linkDesc", "#affiliateDesc")?.value?.trim() || "";
 
   if (!title || !url) {
     msg(out, "Title + URL required.", "bad");
     return;
   }
 
-  const payload = { title, url, category, desc, updatedAt: serverTimestamp() };
+  const payload = { title, url, category, description, desc: description, updatedAt: serverTimestamp() };
   try {
     if (editingLinkId) {
       await updateDoc(doc(db, "affiliateLinks", editingLinkId), payload);
@@ -446,10 +453,12 @@ async function saveLink() {
 
     msg(out, "Saved ✅", "ok");
     editingLinkId = null;
-    $("#affiliateTitle").value = "";
-    $("#affiliateUrl").value = "";
-    $("#affiliateCategory").value = "";
-    $("#affiliateDesc").value = "";
+    pickEl("#linkTitle", "#affiliateTitle").value = "";
+    pickEl("#linkUrl", "#affiliateUrl").value = "";
+    pickEl("#linkCategory", "#affiliateCategory").value = "";
+    pickEl("#linkDesc", "#affiliateDesc").value = "";
+    show($("#linkFormWrap"), false);
+    show($("#cancelLinkBtn"), false);
     await refreshLinks();
   } catch (err) {
     console.error(err);
@@ -509,24 +518,43 @@ function wireUI() {
     const tab = btn.dataset.tab;
     activateTab(tab);
     if (tab === "posts") refreshPosts().catch(console.error);
-    if (tab === "pages") loadPage($("#pageSelect")?.value || "about").catch(console.error);
+    if (tab === "pages") loadPage($("#pageSelect")?.value || "upcoming").catch(console.error);
     if (tab === "affiliate") refreshLinks().catch(console.error);
     if (tab === "profile") loadProfile().catch(console.error);
   }));
 
   // posts
-  $("#newPost")?.addEventListener("click", () => { initEditors(); openPostForm(true); clearPostForm(); });
-  $("#savePost")?.addEventListener("click", savePost);
+  pickEl("#newPostBtn", "#newPost")?.addEventListener("click", () => {
+    initEditors();
+    openPostForm(true);
+    clearPostForm();
+  });
+  pickEl("#savePostBtn", "#savePost")?.addEventListener("click", savePost);
+  pickEl("#cancelPostBtn")?.addEventListener("click", () => openPostForm(false));
 
   // pages
   $("#pageSelect")?.addEventListener("change", (e) => loadPage(e.target.value));
-  $("#savePage")?.addEventListener("click", savePage);
+  pickEl("#savePageBtn", "#savePage")?.addEventListener("click", savePage);
+  $("#loadPageBtn")?.addEventListener("click", () => loadPage($("#pageSelect")?.value || "upcoming"));
 
   // affiliate
-  $("#saveAffiliate")?.addEventListener("click", saveLink);
+  pickEl("#newLinkBtn")?.addEventListener("click", () => {
+    editingLinkId = null;
+    pickEl("#linkTitle", "#affiliateTitle").value = "";
+    pickEl("#linkUrl", "#affiliateUrl").value = "";
+    pickEl("#linkCategory", "#affiliateCategory").value = "";
+    pickEl("#linkDesc", "#affiliateDesc").value = "";
+    show($("#linkFormWrap"), true);
+    show($("#cancelLinkBtn"), true);
+  });
+  pickEl("#saveLinkBtn", "#saveAffiliate")?.addEventListener("click", saveLink);
+  pickEl("#cancelLinkBtn")?.addEventListener("click", () => {
+    show($("#linkFormWrap"), false);
+    show($("#cancelLinkBtn"), false);
+  });
 
   // profile
-  $("#uploadProfile")?.addEventListener("click", uploadProfile);
+  pickEl("#uploadProfileBtn", "#uploadProfile")?.addEventListener("click", uploadProfile);
 }
 
 document.addEventListener("DOMContentLoaded", () => {

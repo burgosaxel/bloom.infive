@@ -55,7 +55,7 @@
         const publishAt = p.publishAt;
 
         const ok =
-          p.status === "published" &&
+          (p.published === true || p.status === "published") &&
           publishAt &&
           publishAt.toMillis() <= now.toMillis();
 
@@ -67,7 +67,7 @@
           titleEl.textContent = p.title || "Untitled";
           const tags = Array.isArray(p.tags) ? p.tags : [];
           metaEl.textContent = tags.join(" • ");
-          contentEl.innerHTML = p.contentHtml || "<p class='muted'>No content.</p>";
+          contentEl.innerHTML = p.contentHtml || p.content || "<p class='muted'>No content.</p>";
         }
       }
     }

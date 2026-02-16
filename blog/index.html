@@ -75,7 +75,7 @@
       postsEl.innerHTML = docs.map(docSnap => {
         const p = docSnap.data();
         const tags = Array.isArray(p.tags) ? p.tags : [];
-        const preview = previewFromHtml(p.contentHtml || "");
+        const preview = previewFromHtml(p.contentHtml || p.content || "");
 
         return `
           <article class="postCard" style="padding:18px;">
@@ -111,7 +111,7 @@
 
       const q = query(
         collection(db, "posts"),
-        where("status", "==", "published"),
+        where("published", "==", true),
         where("publishAt", "<=", now),
         orderBy("publishAt", "desc")
       );
