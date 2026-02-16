@@ -91,7 +91,8 @@ function slugifyTitle(t) {
 
 // ---- Editors ----
 let postEditor = null;
-let pageEditor = null;
+const pageEditors = {};
+const PAGE_KEYS = ["upcoming", "activities", "newsletter"];
 
 function initEditors() {
   if (window.Quill && !postEditor) {
@@ -110,8 +111,10 @@ function initEditors() {
     });
   }
 
-  if (window.Quill && !pageEditor) {
-    pageEditor = new window.Quill("#pageEditor", {
+  PAGE_KEYS.forEach((key) => {
+    const mountSel = `#pageEditor-${key}`;
+    if (!window.Quill || pageEditors[key] || !$(mountSel)) return;
+    pageEditors[key] = new window.Quill(mountSel, {
       theme: "snow",
       modules: {
         toolbar: [
@@ -124,7 +127,7 @@ function initEditors() {
         ]
       }
     });
-  }
+  });
 }
 
 // ---- Auth ----
@@ -360,18 +363,18 @@ async function reconcilePostData() {
 // ---- Pages ----
 async function loadPage(key) {
   initEditors();
-  msg($("#pageMsg"), "");
+  const out = $(`#pageMsg-${key}`);
+  msg(out, "");
 
   const snap = await getDoc(doc(db, "site", key));
   const d = snap.exists() ? (snap.data() || {}) : {};
-  if (pageEditor) pageEditor.root.innerHTML = d.contentHtml || d.content || "";
+  if (pageEditors[key]) pageEditors[key].root.innerHTML = d.contentHtml || d.content || "";
 }
 
-async function savePage() {
+async function savePage(key) {
   initEditors();
-  const out = $("#pageMsg");
-  const key = $("#pageSelect")?.value || "upcoming";
-  const content = pageEditor ? pageEditor.root.innerHTML : "";
+  const out = $(`#pageMsg-${key}`);
+  const content = pageEditors[key] ? pageEditors[key].root.innerHTML : "";
 
   try {
     await setDoc(doc(db, "site", key), { content, contentHtml: content, updatedAt: serverTimestamp() }, { merge: true });
@@ -548,7 +551,7 @@ function wireUI() {
     const tab = btn.dataset.tab;
     activateTab(tab);
     if (tab === "posts") refreshPosts().catch(console.error);
-    if (tab === "pages") loadPage($("#pageSelect")?.value || "upcoming").catch(console.error);
+    if (PAGE_KEYS.includes(tab)) loadPage(tab).catch(console.error);
     if (tab === "affiliate") refreshLinks().catch(console.error);
     if (tab === "profile") loadProfile().catch(console.error);
   }));
@@ -562,10 +565,10 @@ function wireUI() {
   pickEl("#savePostBtn", "#savePost")?.addEventListener("click", savePost);
   pickEl("#cancelPostBtn")?.addEventListener("click", () => openPostForm(false));
 
-  // pages
-  $("#pageSelect")?.addEventListener("change", (e) => loadPage(e.target.value));
-  pickEl("#savePageBtn", "#savePage")?.addEventListener("click", savePage);
-  $("#loadPageBtn")?.addEventListener("click", () => loadPage($("#pageSelect")?.value || "upcoming"));
+  // static pages
+  $("#saveUpcomingBtn")?.addEventListener("click", () => savePage("upcoming"));
+  $("#saveActivitiesBtn")?.addEventListener("click", () => savePage("activities"));
+  $("#saveNewsletterBtn")?.addEventListener("click", () => savePage("newsletter"));
 
   // affiliate
   pickEl("#newLinkBtn")?.addEventListener("click", () => {

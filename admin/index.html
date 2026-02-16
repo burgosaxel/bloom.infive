@@ -20,7 +20,10 @@
     .pane{ display:none; margin-top:14px; }
     .pane.active{ display:block; }
 
-    #editor, #pageEditor {
+    #editor,
+    #pageEditor-upcoming,
+    #pageEditor-activities,
+    #pageEditor-newsletter {
       background:#fff;
       border-radius:14px;
       border:1.5px solid rgba(0,0,0,.2);
@@ -82,6 +85,20 @@
     [data-theme="dark"] .tabBtn:hover{
       filter:brightness(.96);
     }
+    [data-theme="dark"] input,
+    [data-theme="dark"] textarea,
+    [data-theme="dark"] select{
+      background:#fff;
+      color:#111;
+      border-color:rgba(255,255,255,.9);
+    }
+    [data-theme="dark"] input::placeholder,
+    [data-theme="dark"] textarea::placeholder{
+      color:#4a4a4a;
+    }
+    [data-theme="dark"] .ql-editor{
+      color:#111;
+    }
   </style>
 </head>
 
@@ -120,7 +137,9 @@
         <div id="adminBox" style="display:none;">
           <div class="tabs">
             <button class="tabBtn active" data-tab="posts">Blog Posts</button>
-            <button class="tabBtn" data-tab="pages">Pages</button>
+            <button class="tabBtn" data-tab="upcoming">Upcoming</button>
+            <button class="tabBtn" data-tab="activities">Activities</button>
+            <button class="tabBtn" data-tab="newsletter">Newsletter</button>
             <button class="tabBtn" data-tab="affiliate">Affiliate</button>
             <button class="tabBtn" data-tab="profile">Profile</button>
           </div>
@@ -162,22 +181,36 @@
             <div id="postsList" class="list"></div>
           </div>
 
-          <!-- PAGES -->
-          <div class="pane" id="pane-pages">
+          <!-- UPCOMING -->
+          <div class="pane" id="pane-upcoming">
             <div class="row">
-              <select id="pageSelect">
-                <option value="upcoming">Upcoming</option>
-                <option value="activities">Activities</option>
-                <option value="newsletter">Newsletter</option>
-              </select>
-
-              <button class="btn small ghost" id="loadPageBtn">Load</button>
-              <button class="btn small ghost" id="savePageBtn">Save</button>
+              <button class="btn small ghost" id="saveUpcomingBtn">Save Upcoming</button>
             </div>
-
             <div style="margin-top:12px;">
-              <div id="pageEditor"></div>
-              <p class="muted fine" id="pageMsg"></p>
+              <div id="pageEditor-upcoming"></div>
+              <p class="muted fine" id="pageMsg-upcoming"></p>
+            </div>
+          </div>
+
+          <!-- ACTIVITIES -->
+          <div class="pane" id="pane-activities">
+            <div class="row">
+              <button class="btn small ghost" id="saveActivitiesBtn">Save Activities</button>
+            </div>
+            <div style="margin-top:12px;">
+              <div id="pageEditor-activities"></div>
+              <p class="muted fine" id="pageMsg-activities"></p>
+            </div>
+          </div>
+
+          <!-- NEWSLETTER -->
+          <div class="pane" id="pane-newsletter">
+            <div class="row">
+              <button class="btn small ghost" id="saveNewsletterBtn">Save Newsletter</button>
+            </div>
+            <div style="margin-top:12px;">
+              <div id="pageEditor-newsletter"></div>
+              <p class="muted fine" id="pageMsg-newsletter"></p>
             </div>
           </div>
 
