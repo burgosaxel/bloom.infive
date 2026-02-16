@@ -114,6 +114,7 @@ a:hover{text-decoration:underline}
   width:26px;
   height:26px;
   transform: translateY(1px);
+  display:block;
   /* Sticker outline that works on both light and dark themes */
   filter:
     drop-shadow( 2px  0   0   rgba(255,255,255,.95))

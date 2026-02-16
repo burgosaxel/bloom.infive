@@ -60,6 +60,10 @@
     const html = await res.text();
     mount.innerHTML = html;
 
+    // Brand flower image path must be correct from every page (/pages/*, /blog/*, etc.).
+    const brandFlower = mount.querySelector("[data-brand-flower]");
+    if (brandFlower) brandFlower.src = prefix + "bloom-flower.webp";
+
     // Wire links
     const homeLink = mount.querySelector("[data-home-link]");
     if (homeLink) homeLink.href = prefix + "index.html";
