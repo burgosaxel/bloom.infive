@@ -6,7 +6,7 @@ import {
   auth, db, storage,
   onAuthStateChanged, signInWithEmailAndPassword, signOut,
   GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
-  collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc,
+  collection, doc, getDoc, getDocs, getCountFromServer, setDoc, addDoc, updateDoc, deleteDoc,
   query, where, orderBy, limit, Timestamp, serverTimestamp,
   ref, uploadBytes, getDownloadURL
 } from "../firebase.js";
@@ -893,6 +893,18 @@ async function refreshReports() {
   const snap = await getDocs(q);
   const events = snap.docs.map((d) => d.data() || {});
 
+  // Newsletter subscriber counts
+  let subsTotal = 0;
+  let subsActive = 0;
+  let subsUnsub = 0;
+  try {
+    subsTotal = (await getCountFromServer(collection(db, "subscribers"))).data().count || 0;
+    subsActive = (await getCountFromServer(query(collection(db, "subscribers"), where("status", "==", "active")))).data().count || 0;
+    subsUnsub = (await getCountFromServer(query(collection(db, "subscribers"), where("status", "==", "unsubscribed")))).data().count || 0;
+  } catch (e) {
+    console.warn("subscriber counts failed:", e);
+  }
+
   if (!events.length) {
     mount.innerHTML = "<div class='card'><p class='muted'>No analytics events yet.</p></div>";
     return;
@@ -941,6 +953,12 @@ async function refreshReports() {
         <div class="muted fine" style="margin-top:6px;">Book likes: <strong>${bookLikes.length}</strong></div>
         <div class="muted fine">Book comments: <strong>${bookComments.length}</strong></div>
         <div class="muted fine">Blog post reads: <strong>${postViews.length}</strong></div>
+      </div>
+      <div class="card">
+        <div style="font-weight:800;">Newsletter</div>
+        <div class="muted fine" style="margin-top:6px;">Active: <strong>${subsActive}</strong></div>
+        <div class="muted fine">Unsubscribed: <strong>${subsUnsub}</strong></div>
+        <div class="muted fine">Total: <strong>${subsTotal}</strong></div>
       </div>
     </div>
 

@@ -23,6 +23,12 @@
       "**/.*",
       "**/node_modules/**",
       "functions/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/unsubscribe",
+        "function": "unsubscribe"
+      }
     ]
   }
 }

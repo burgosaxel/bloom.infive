@@ -203,14 +203,17 @@ service cloud.firestore {
       allow read: if isAdmin();
 
       // Public subscribe create (one doc per normalized email id)
-      allow create: if request.resource.data.keys().hasOnly(["email", "status", "source", "createdAt"])
+      allow create: if request.resource.data.keys().hasOnly(["email", "status", "source", "createdAt", "unsubToken"])
                     && request.resource.data.email is string
                     && request.resource.data.email.size() > 3
                     && request.resource.data.email.size() <= 254
                     && request.resource.data.email.matches('^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$')
                     && request.resource.data.status == "active"
                     && request.resource.data.source == "site-newsletter"
-                    && request.resource.data.createdAt is timestamp;
+                    && request.resource.data.createdAt is timestamp
+                    && request.resource.data.unsubToken is string
+                    && request.resource.data.unsubToken.size() >= 20
+                    && request.resource.data.unsubToken.size() <= 200;
 
       allow update, delete: if isAdmin();
     }

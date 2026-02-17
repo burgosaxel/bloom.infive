@@ -4,6 +4,7 @@ const { onRequest } = require("firebase-functions/v2/https");
 const { onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const logger = require("firebase-functions/logger");
+const crypto = require("crypto");
 
 const admin = require("firebase-admin");
 admin.initializeApp();
@@ -228,6 +229,7 @@ exports.sendWelcomeEmail = onDocumentWritten(
       const status = after.status || "";
       const alreadySent = !!after.welcomeEmailSentAt;
       const wasAlreadySent = !!before?.welcomeEmailSentAt;
+      const unsubToken = (after.unsubToken || "").toString();
 
       logger.info("sendWelcomeEmail trigger fired", {
         subId: event.params?.subId || "",
@@ -240,6 +242,12 @@ exports.sendWelcomeEmail = onDocumentWritten(
       // Only send once for active subscribers.
       // This also allows retries when a doc already existed before trigger fixes.
       if (!email || status !== "active" || alreadySent || wasAlreadySent) return;
+
+      const base = (SITE_URL.value() || "").toString().replace(/\/+$/g, "");
+      const sid = (event.params?.subId || "").toString();
+      const unsubUrl = (base && sid && unsubToken)
+        ? `${base}/unsubscribe?sid=${encodeURIComponent(sid)}&token=${encodeURIComponent(unsubToken)}`
+        : "";
 
       const subject = "Welcome to BLOOM.INFIVE 💛";
 
@@ -281,7 +289,8 @@ Visit BLOOM.INFIVE
 
 ${SITE_URL.value()}
 
-If you didn’t subscribe, you can ignore this email.`;
+If you didn’t subscribe, you can ignore this email.
+${unsubUrl ? `Unsubscribe: ${unsubUrl}` : ""}`.trim();
 
       const html = `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #111;">
@@ -338,6 +347,13 @@ If you didn’t subscribe, you can ignore this email.`;
           <p style="margin: 0 0 10px;">
             <a href="${SITE_URL.value()}" style="color: #111; font-weight: bold;">Visit BLOOM.INFIVE</a>
           </p>
+          ${unsubUrl ? `
+          <p style="margin: 0 0 14px;">
+            <a href="${unsubUrl}" style="display:inline-block;padding:10px 14px;border-radius:12px;border:1px solid #ddd;color:#111;text-decoration:none;">
+              Unsubscribe
+            </a>
+          </p>
+          ` : ``}
           <p style="margin: 0; color: #555; font-size: 13px;">
             If you didn’t subscribe, you can ignore this email.
           </p>
@@ -358,3 +374,65 @@ If you didn’t subscribe, you can ignore this email.`;
     }
   }
 );
+
+// Public endpoint used by the email unsubscribe button.
+exports.unsubscribe = onRequest(async (req, res) => {
+  try {
+    const sid = (req.query.sid || "").toString();
+    const token = (req.query.token || "").toString();
+
+    if (!sid || !token) {
+      res.status(400).send("Missing sid/token.");
+      return;
+    }
+
+    const ref = admin.firestore().doc(`subscribers/${sid}`);
+    const snap = await ref.get();
+    if (!snap.exists) {
+      res.status(404).send("Subscriber not found.");
+      return;
+    }
+
+    const data = snap.data() || {};
+    const expected = (data.unsubToken || "").toString();
+    if (!expected) {
+      res.status(400).send("Unsubscribe token not available for this subscriber.");
+      return;
+    }
+
+    // Constant-time compare to avoid leaking token info.
+    const ok = expected.length === token.length
+      && crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(token));
+
+    if (!ok) {
+      res.status(403).send("Invalid token.");
+      return;
+    }
+
+    await ref.set(
+      {
+        status: "unsubscribed",
+        unsubscribedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    res.set("Content-Type", "text/html; charset=utf-8");
+    res.status(200).send(`
+      <!doctype html>
+      <html lang="en">
+      <meta charset="utf-8"/>
+      <meta name="viewport" content="width=device-width,initial-scale=1"/>
+      <title>Unsubscribed</title>
+      <body style="font-family:Arial,sans-serif;max-width:720px;margin:40px auto;padding:0 16px;line-height:1.6;">
+        <h2 style="margin:0 0 10px;">You're unsubscribed.</h2>
+        <p style="margin:0 0 18px;">You will no longer receive newsletter emails from BLOOM.INFIVE.</p>
+        <p style="margin:0;"><a href="${(SITE_URL.value() || "").toString()}" style="color:#111;font-weight:700;">Return to the site</a></p>
+      </body>
+      </html>
+    `.trim());
+  } catch (e) {
+    logger.error("unsubscribe failed:", e);
+    res.status(500).send("Unsubscribe failed.");
+  }
+});
