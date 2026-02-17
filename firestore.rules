@@ -129,6 +129,63 @@ service cloud.firestore {
       allow delete: if signedIn() && request.auth.uid == uid;
     }
 
+    // Admin logs: write on admin actions, read in admin UI.
+    match /adminLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+                    && request.resource.data.keys().hasOnly(["actorUid", "actorEmail", "action", "entity", "entityId", "meta", "createdAt"])
+                    && request.resource.data.actorUid == request.auth.uid
+                    && request.resource.data.actorEmail is string
+                    && request.resource.data.actorEmail.size() <= 254
+                    && request.resource.data.action is string
+                    && request.resource.data.action.size() > 0
+                    && request.resource.data.action.size() <= 60
+                    && request.resource.data.entity is string
+                    && request.resource.data.entity.size() > 0
+                    && request.resource.data.entity.size() <= 60
+                    && request.resource.data.entityId is string
+                    && request.resource.data.entityId.size() <= 200
+                    && request.resource.data.meta is string
+                    && request.resource.data.meta.size() <= 1000
+                    && request.resource.data.createdAt is timestamp;
+      allow update, delete: if isAdmin();
+    }
+
+    // Analytics events: public write-only, admin read.
+    match /analyticsEvents/{eventId} {
+      allow read: if isAdmin();
+      allow create: if request.resource.data.keys().hasOnly([
+                      "type","path","referrer","clientId","ua",
+                      "utm_source","utm_medium","utm_campaign",
+                      "page","postId","bookId",
+                      "createdAt"
+                    ])
+                    && request.resource.data.type is string
+                    && request.resource.data.type.size() > 0
+                    && request.resource.data.type.size() <= 40
+                    && request.resource.data.path is string
+                    && request.resource.data.path.size() > 0
+                    && request.resource.data.path.size() <= 200
+                    && request.resource.data.referrer is string
+                    && request.resource.data.referrer.size() <= 300
+                    && request.resource.data.clientId is string
+                    && request.resource.data.clientId.size() > 0
+                    && request.resource.data.clientId.size() <= 120
+                    && request.resource.data.ua is string
+                    && request.resource.data.ua.size() <= 220
+                    && request.resource.data.utm_source is string
+                    && request.resource.data.utm_source.size() <= 80
+                    && request.resource.data.utm_medium is string
+                    && request.resource.data.utm_medium.size() <= 80
+                    && request.resource.data.utm_campaign is string
+                    && request.resource.data.utm_campaign.size() <= 80
+                    && (!("page" in request.resource.data) || (request.resource.data.page is string && request.resource.data.page.size() <= 60))
+                    && (!("postId" in request.resource.data) || (request.resource.data.postId is string && request.resource.data.postId.size() <= 200))
+                    && (!("bookId" in request.resource.data) || (request.resource.data.bookId is string && request.resource.data.bookId.size() <= 200))
+                    && request.resource.data.createdAt is timestamp;
+      allow update, delete: if false;
+    }
+
     // Static pages (activities/newsletter content)
     match /site/{docId} {
       allow read: if true;

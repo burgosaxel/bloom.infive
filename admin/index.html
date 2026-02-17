@@ -171,6 +171,8 @@
             <button class="tabBtn" data-tab="newsletter">Newsletter</button>
             <button class="tabBtn" data-tab="affiliate">Affiliate</button>
             <button class="tabBtn" data-tab="profile">Profile</button>
+            <button class="tabBtn" data-tab="logs">Logs</button>
+            <button class="tabBtn" data-tab="reports">Reports</button>
           </div>
 
           <p class="muted fine" id="statusMsg"></p>
@@ -302,6 +304,24 @@
                 <p class="muted fine" id="profileMsg"></p>
               </div>
             </div>
+          </div>
+
+          <!-- LOGS -->
+          <div class="pane" id="pane-logs">
+            <div class="row">
+              <button class="btn small ghost" id="refreshLogsBtn">Refresh</button>
+            </div>
+            <p class="muted fine" style="margin:10px 0 0;">Recent admin actions.</p>
+            <div id="logsList" class="list"></div>
+          </div>
+
+          <!-- REPORTS -->
+          <div class="pane" id="pane-reports">
+            <div class="row">
+              <button class="btn small ghost" id="refreshReportsBtn">Refresh</button>
+              <span class="muted fine">Last 7 days</span>
+            </div>
+            <div id="reportsMount" style="margin-top:12px;"></div>
           </div>
 
         </div>

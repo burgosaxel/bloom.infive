@@ -46,11 +46,13 @@
 
   <script type="module">
     import { db } from "../firebase.js";
+    import { logPageView } from "../analytics.js";
     import {
       collection, query, where, orderBy, onSnapshot, Timestamp
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
     const postsEl = document.getElementById("posts");
+    logPageView({ page: "blog_index" });
 
     function esc(s){
       return (s || "")

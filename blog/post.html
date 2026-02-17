@@ -31,6 +31,7 @@
 
   <script type="module">
     import { db } from "../firebase.js";
+    import { logEvent, logPageView } from "../analytics.js";
     import { doc, getDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
     const params = new URLSearchParams(location.search);
@@ -44,6 +45,7 @@
       titleEl.textContent = "Post not found.";
       metaEl.textContent = "";
     } else {
+      logPageView({ page: "blog_post", postId: id });
       const snap = await getDoc(doc(db, "posts", id));
 
       if (!snap.exists()) {
@@ -63,11 +65,13 @@
           titleEl.textContent = "Post not available.";
           metaEl.textContent = "";
           contentEl.innerHTML = `<p class="muted">This post isn’t live yet.</p>`;
+          logEvent("post_blocked", { postId: id });
         } else {
           titleEl.textContent = p.title || "Untitled";
           const tags = Array.isArray(p.tags) ? p.tags : [];
           metaEl.textContent = tags.join(" • ");
           contentEl.innerHTML = p.contentHtml || p.content || "<p class='muted'>No content.</p>";
+          logEvent("post_view_ok", { postId: id });
         }
       }
     }

@@ -42,6 +42,7 @@
       onAuthStateChanged,
       signOut
     } from "../firebase.js";
+    import { logEvent, logPageView } from "../analytics.js";
     import {
       collection,
       doc,
@@ -59,6 +60,7 @@
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
     document.getElementById("year").textContent = new Date().getFullYear();
+    logPageView({ page: "published_books" });
 
     const cardsEl = document.getElementById("publishedCards");
     const CLIENT_KEY = "bloomBookClientId";
@@ -302,8 +304,10 @@
         const current = await getDoc(likeRef);
         if (current.exists()) {
           await deleteDoc(likeRef);
+          logEvent("book_unlike", { bookId: id });
         } else {
           await setDoc(likeRef, { createdAt: serverTimestamp() });
+          logEvent("book_like", { bookId: id });
         }
         const state = await getLikeState(id, clientId);
         likeBtn.innerHTML = `${state.liked ? "&#10084;" : "&#9825;"} <span data-like-count>${state.count}</span>`;
@@ -434,6 +438,7 @@
           text,
           createdAt: serverTimestamp(),
         });
+        logEvent("book_comment", { bookId: id });
 
         commentMsg.textContent = "Comment posted.";
         commentForm.reset();

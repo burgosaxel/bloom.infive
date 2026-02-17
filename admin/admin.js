@@ -93,6 +93,35 @@ function slugifyTitle(t) {
     .replace(/(^-|-$)/g, "");
 }
 
+// ---- Admin Logs ----
+function safeMeta(obj) {
+  try {
+    const s = JSON.stringify(obj || {});
+    return s.length > 1000 ? s.slice(0, 1000) : s;
+  } catch {
+    return "";
+  }
+}
+
+async function writeAdminLog(action, entity, entityId, metaObj) {
+  try {
+    const u = auth.currentUser;
+    if (!u) return;
+    await addDoc(collection(db, "adminLogs"), {
+      actorUid: u.uid,
+      actorEmail: (u.email || "").toString().slice(0, 254),
+      action: (action || "").toString().slice(0, 60),
+      entity: (entity || "").toString().slice(0, 60),
+      entityId: (entityId || "").toString().slice(0, 200),
+      meta: safeMeta(metaObj),
+      createdAt: serverTimestamp(),
+    });
+  } catch (e) {
+    // Logging should never break admin workflows.
+    console.warn("adminLogs write failed:", e);
+  }
+}
+
 // ---- Editors ----
 let postEditor = null;
 const pageEditors = {};
@@ -243,6 +272,7 @@ async function editPost(id) {
 async function deletePost(id) {
   if (!confirm("Delete this post?")) return;
   await deleteDoc(doc(db, "posts", id));
+  await writeAdminLog("post_delete", "post", id, {});
   await refreshPosts();
 }
 
@@ -286,10 +316,12 @@ async function savePost() {
   try {
     if (editingPostId) {
       await updateDoc(doc(db, "posts", editingPostId), payload);
+      await writeAdminLog("post_update", "post", editingPostId, { title, status, tagsCount: tags.length });
     } else {
       payload.createdAt = serverTimestamp();
       const refDoc = await addDoc(collection(db, "posts"), payload);
       editingPostId = refDoc.id;
+      await writeAdminLog("post_create", "post", editingPostId, { title, status, tagsCount: tags.length });
     }
 
     msg(out, "Saved ✅", "ok");
@@ -507,6 +539,7 @@ async function refreshUpcomingBooks() {
     delBtn.addEventListener("click", async () => {
       if (!confirm("Delete this upcoming book?")) return;
       await deleteDoc(doc(db, "books", docSnap.id));
+      await writeAdminLog("book_delete", "book", docSnap.id, { title: d.title || "", status: d.status || "" });
       await refreshUpcomingBooks();
       await refreshPublishedBooks();
     });
@@ -537,9 +570,11 @@ async function saveUpcomingBook() {
   try {
     if (editingUpcomingId) {
       await updateDoc(doc(db, "books", editingUpcomingId), payload);
+      await writeAdminLog("book_update", "book", editingUpcomingId, { title, status });
     } else {
       payload.createdAt = serverTimestamp();
-      await addDoc(collection(db, "books"), payload);
+      const refDoc = await addDoc(collection(db, "books"), payload);
+      await writeAdminLog("book_create", "book", refDoc.id, { title, status });
     }
     msg(out, "Saved ✅", "ok");
     openUpcomingForm(false);
@@ -605,6 +640,7 @@ async function refreshPublishedBooks() {
     delBtn.addEventListener("click", async () => {
       if (!confirm("Delete this published book?")) return;
       await deleteDoc(doc(db, "books", docSnap.id));
+      await writeAdminLog("book_delete", "book", docSnap.id, { title: d.title || "", status: d.status || "" });
       await refreshPublishedBooks();
       await refreshUpcomingBooks();
     });
@@ -634,6 +670,7 @@ async function savePage(key) {
 
   try {
     await setDoc(doc(db, "site", key), { content, contentHtml: content, updatedAt: serverTimestamp() }, { merge: true });
+    await writeAdminLog("page_update", "site", key, { bytes: content.length });
     msg(out, "Saved ✅", "ok");
   } catch (err) {
     console.error(err);
@@ -705,6 +742,7 @@ async function refreshLinks() {
     delBtn.addEventListener("click", async () => {
       if (!confirm("Delete this link?")) return;
       await deleteDoc(doc(db, "affiliateLinks", docSnap.id));
+      await writeAdminLog("affiliate_delete", "affiliateLink", docSnap.id, { title: d.title || "" });
       await refreshLinks();
     });
 
@@ -735,9 +773,11 @@ async function saveLink() {
   try {
     if (editingLinkId) {
       await updateDoc(doc(db, "affiliateLinks", editingLinkId), payload);
+      await writeAdminLog("affiliate_update", "affiliateLink", editingLinkId, { title, category });
     } else {
       payload.createdAt = serverTimestamp();
-      await addDoc(collection(db, "affiliateLinks"), payload);
+      const refDoc = await addDoc(collection(db, "affiliateLinks"), payload);
+      await writeAdminLog("affiliate_create", "affiliateLink", refDoc.id, { title, category });
     }
 
     msg(out, "Saved ✅", "ok");
@@ -772,6 +812,7 @@ async function uploadProfile() {
     const url = await getDownloadURL(storageRef);
 
     await setDoc(doc(db, "site", "profile"), { photoUrl: url, updatedAt: serverTimestamp() }, { merge: true });
+    await writeAdminLog("profile_photo_upload", "site", "profile", { bytes: file.size, name: file.name });
 
     const img = $("#profilePreview");
     if (img) img.src = url;
@@ -789,6 +830,163 @@ async function loadProfile() {
   const d = snap.data() || {};
   const img = $("#profilePreview");
   if (img && d.photoUrl) img.src = d.photoUrl;
+}
+
+// ---- Logs / Reports ----
+async function refreshLogs() {
+  const host = $("#logsList");
+  if (!host) return;
+
+  host.innerHTML = "<div class='muted'>Loading...</div>";
+  const snap = await getDocs(query(collection(db, "adminLogs"), orderBy("createdAt", "desc"), limit(200)));
+
+  if (snap.empty) {
+    host.innerHTML = "<div class='muted'>No logs yet.</div>";
+    return;
+  }
+
+  host.innerHTML = "";
+  snap.forEach((docSnap) => {
+    const d = docSnap.data() || {};
+    const row = document.createElement("div");
+    row.className = "listItem";
+    row.innerHTML = `
+      <div style="min-width:0;">
+        <div style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+          ${escapeHtml(d.action || "action")} · ${escapeHtml(d.entity || "")} ${escapeHtml(d.entityId || "")}
+        </div>
+        <div class="muted fine" style="margin-top:4px;">
+          ${escapeHtml(d.actorEmail || "")} · ${escapeHtml(formatDate(d.createdAt) || "")}
+        </div>
+      </div>
+    `;
+    host.appendChild(row);
+  });
+}
+
+function hostFromReferrer(ref) {
+  try {
+    if (!ref) return "";
+    const u = new URL(ref);
+    return u.hostname || "";
+  } catch {
+    return "";
+  }
+}
+
+async function refreshReports() {
+  const mount = $("#reportsMount");
+  if (!mount) return;
+
+  mount.innerHTML = "<div class='card'><p class='muted'>Loading...</p></div>";
+
+  const sinceMs = Date.now() - (7 * 24 * 60 * 60 * 1000);
+  const since = Timestamp.fromMillis(sinceMs);
+
+  const q = query(
+    collection(db, "analyticsEvents"),
+    where("createdAt", ">=", since),
+    orderBy("createdAt", "desc"),
+    limit(5000)
+  );
+
+  const snap = await getDocs(q);
+  const events = snap.docs.map((d) => d.data() || {});
+
+  if (!events.length) {
+    mount.innerHTML = "<div class='card'><p class='muted'>No analytics events yet.</p></div>";
+    return;
+  }
+
+  const pageViews = events.filter((e) => e.type === "page_view");
+  const uniqueClients = new Set(pageViews.map((e) => (e.clientId || "").toString()).filter(Boolean));
+
+  const byPath = new Map();
+  for (const e of pageViews) {
+    const p = (e.path || "").toString();
+    byPath.set(p, (byPath.get(p) || 0) + 1);
+  }
+
+  const byRef = new Map();
+  for (const e of pageViews) {
+    const h = hostFromReferrer((e.referrer || "").toString());
+    if (!h) continue;
+    byRef.set(h, (byRef.get(h) || 0) + 1);
+  }
+
+  const topPages = [...byPath.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const topRefs = [...byRef.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+
+  const postViews = events.filter((e) => e.type === "post_view_ok");
+  const byPost = new Map();
+  for (const e of postViews) {
+    const id = (e.postId || "").toString();
+    if (!id) continue;
+    byPost.set(id, (byPost.get(id) || 0) + 1);
+  }
+  const topPosts = [...byPost.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+
+  const bookLikes = events.filter((e) => e.type === "book_like");
+  const bookComments = events.filter((e) => e.type === "book_comment");
+
+  mount.innerHTML = `
+    <div class="cards2">
+      <div class="card">
+        <div style="font-weight:800;">Visits</div>
+        <div class="muted fine" style="margin-top:6px;">Page views: <strong>${pageViews.length}</strong></div>
+        <div class="muted fine">Unique browsers: <strong>${uniqueClients.size}</strong></div>
+      </div>
+      <div class="card">
+        <div style="font-weight:800;">Engagement</div>
+        <div class="muted fine" style="margin-top:6px;">Book likes: <strong>${bookLikes.length}</strong></div>
+        <div class="muted fine">Book comments: <strong>${bookComments.length}</strong></div>
+        <div class="muted fine">Blog post reads: <strong>${postViews.length}</strong></div>
+      </div>
+    </div>
+
+    <div class="cards2" style="margin-top:14px;">
+      <div class="card">
+        <div style="font-weight:800; margin-bottom:10px;">Top Pages</div>
+        <div class="list">
+          ${topPages.map(([p, c]) => `
+            <div class="listItem" style="padding:10px 12px;">
+              <div style="min-width:0; display:flex; justify-content:space-between; gap:10px; width:100%;">
+                <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(p || "(unknown)")}</div>
+                <div style="font-weight:800;">${c}</div>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-weight:800; margin-bottom:10px;">Top Referrers</div>
+        <div class="list">
+          ${topRefs.map(([h, c]) => `
+            <div class="listItem" style="padding:10px 12px;">
+              <div style="min-width:0; display:flex; justify-content:space-between; gap:10px; width:100%;">
+                <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(h)}</div>
+                <div style="font-weight:800;">${c}</div>
+              </div>
+            </div>
+          `).join("") || `<div class="muted fine">No referrers recorded (direct traffic).</div>`}
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <div style="font-weight:800; margin-bottom:10px;">Top Blog Posts (by reads)</div>
+      <div class="list">
+        ${topPosts.map(([id, c]) => `
+          <div class="listItem" style="padding:10px 12px;">
+            <div style="min-width:0; display:flex; justify-content:space-between; gap:10px; width:100%;">
+              <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(id)}</div>
+              <div style="font-weight:800;">${c}</div>
+            </div>
+          </div>
+        `).join("") || `<div class="muted fine">No post reads yet.</div>`}
+      </div>
+    </div>
+  `;
 }
 
 // ---- Boot ----
@@ -832,6 +1030,8 @@ function wireUI() {
     if (PAGE_KEYS.includes(tab)) loadPage(tab).catch(console.error);
     if (tab === "affiliate") refreshLinks().catch(console.error);
     if (tab === "profile") loadProfile().catch(console.error);
+    if (tab === "logs") refreshLogs().catch(console.error);
+    if (tab === "reports") refreshReports().catch(console.error);
   }));
 
   // posts
@@ -876,6 +1076,10 @@ function wireUI() {
 
   // profile
   pickEl("#uploadProfileBtn", "#uploadProfile")?.addEventListener("click", uploadProfile);
+
+  // logs/reports
+  $("#refreshLogsBtn")?.addEventListener("click", () => refreshLogs().catch(console.error));
+  $("#refreshReportsBtn")?.addEventListener("click", () => refreshReports().catch(console.error));
 }
 
 document.addEventListener("DOMContentLoaded", () => {
