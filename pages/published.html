@@ -32,7 +32,16 @@
   <script src="../nav.js"></script>
 
   <script type="module">
-    import { db } from "../firebase.js";
+    import {
+      auth,
+      db,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signInWithRedirect,
+      getRedirectResult,
+      onAuthStateChanged,
+      signOut
+    } from "../firebase.js";
     import {
       collection,
       doc,
@@ -52,6 +61,23 @@
 
     const cardsEl = document.getElementById("publishedCards");
     const CLIENT_KEY = "bloomBookClientId";
+    let currentUser = null;
+    const commentUiUpdaters = [];
+
+    async function signInForComments() {
+      const provider = new GoogleAuthProvider();
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (e) {
+        // Popup often fails on mobile/in-app browsers; redirect is more reliable.
+        const code = (e && e.code) ? String(e.code) : "";
+        if (code.includes("popup")) {
+          await signInWithRedirect(auth, provider);
+          return;
+        }
+        throw e;
+      }
+    }
 
     function esc(s) {
       return (s || "")
@@ -118,8 +144,9 @@
           <h3 style="margin:0 0 8px; font-size:16px;">Reviews / Comments</h3>
           <div data-comments class="list" style="margin-bottom:10px;"></div>
 
+          <div data-comment-auth style="margin: 0 0 10px;"></div>
+
           <form data-comment-form class="form" style="align-items:stretch;">
-            <input type="text" name="name" placeholder="Name (optional)" maxlength="80" style="min-width:180px;" />
             <textarea name="text" rows="3" placeholder="Write a comment..." maxlength="1000" required style="min-width:260px;"></textarea>
             <button class="btn small primary" type="submit">Post Comment</button>
           </form>
@@ -158,10 +185,59 @@
 
       const commentForm = card.querySelector("[data-comment-form]");
       const commentMsg = card.querySelector("[data-comment-msg]");
+      const commentAuth = card.querySelector("[data-comment-auth]");
+
+      function updateCommentUi() {
+        if (!commentAuth || !commentForm) return;
+        if (!currentUser) {
+          commentAuth.innerHTML = `
+            <button class="btn small ghost" type="button" data-signin-btn>
+              Sign in with Google to comment
+            </button>
+            <span class="muted fine" style="margin-left:8px;">Likes are anonymous.</span>
+          `;
+          commentForm.style.display = "none";
+          const btn = commentAuth.querySelector("[data-signin-btn]");
+          if (btn) {
+            btn.addEventListener("click", async () => {
+              commentMsg.textContent = "";
+              try {
+                await signInForComments();
+              } catch (e) {
+                console.error(e);
+                commentMsg.textContent = "Sign-in failed. Please try again.";
+              }
+            });
+          }
+          return;
+        }
+
+        const name = (currentUser.displayName || currentUser.email || "Signed in").toString();
+        commentAuth.innerHTML = `
+          <span class="muted fine">Commenting as <strong>${esc(name)}</strong></span>
+          <button class="btn small" type="button" data-signout-btn style="margin-left:10px;">Sign out</button>
+        `;
+        commentForm.style.display = "";
+        const signoutBtn = commentAuth.querySelector("[data-signout-btn]");
+        if (signoutBtn) {
+          signoutBtn.addEventListener("click", async () => {
+            try { await signOut(auth); } catch (e) { console.error(e); }
+          });
+        }
+      }
+
+      commentUiUpdaters.push(updateCommentUi);
+      updateCommentUi();
+
       commentForm.addEventListener("submit", async (e) => {
         e.preventDefault();
+
+        if (!currentUser) {
+          commentMsg.textContent = "Please sign in to comment.";
+          return;
+        }
+
         const fd = new FormData(commentForm);
-        const name = (fd.get("name") || "").toString().trim().slice(0, 80);
         const text = (fd.get("text") || "").toString().trim().slice(0, 1000);
 
         if (!text) {
@@ -170,9 +246,11 @@
         }
 
         await addDoc(collection(db, "books", id, "comments"), {
-          name: name || "Anonymous",
+          uid: currentUser.uid,
+          name: (currentUser.displayName || currentUser.email || "Anonymous").toString().trim().slice(0, 80),
           text,
-          createdAt: serverTimestamp()
+          photoURL: (currentUser.photoURL || "").toString().slice(0, 500),
+          createdAt: serverTimestamp(),
         });
 
         commentMsg.textContent = "Comment posted.";
@@ -221,6 +299,15 @@
     loadPublishedBooks().catch((err) => {
       console.error(err);
       cardsEl.innerHTML = `<div class="card"><p class="muted">Unable to load published books right now.</p></div>`;
+    });
+
+    // Auth state: comments require sign-in, likes stay anonymous.
+    getRedirectResult(auth).catch(() => {});
+    onAuthStateChanged(auth, (user) => {
+      currentUser = user || null;
+      commentUiUpdaters.forEach((fn) => {
+        try { fn(); } catch (e) { console.error(e); }
+      });
     });
   </script>
 </body>
