@@ -200,7 +200,9 @@
         btn.addEventListener("click", async () => {
           const id = btn.getAttribute("data-edit-comment");
           if (!id) return;
-          const textEl = commentsHost.querySelector(`[data-comment-text="${CSS.escape(id)}"]`);
+          // Avoid CSS.escape dependency (some mobile browsers don't support it).
+          const item = btn.closest(".listItem");
+          const textEl = item ? item.querySelector("[data-comment-text]") : null;
           if (!textEl) return;
 
           const current = (textEl.textContent || "").toString();
@@ -208,7 +210,7 @@
           wrap.innerHTML = `
             <textarea rows="3" maxlength="1000" style="width:100%; min-width:260px;">${esc(current)}</textarea>
             <div class="row" style="gap:8px; margin-top:10px;">
-              <button class="btn small primary" type="button" data-save>Edit</button>
+              <button class="btn small primary" type="button" data-save>Save</button>
               <button class="btn small ghost" type="button" data-cancel>Cancel</button>
             </div>
           `;

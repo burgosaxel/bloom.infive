@@ -6,6 +6,11 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isAdmin() {
+      return signedIn()
+             && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
     // POSTS
     match /posts/{postId} {
       // Public can read only published + publishAt in the past
@@ -14,8 +19,8 @@ service cloud.firestore {
                        && resource.data.publishAt <= request.time;
 
       // Admin can read/write everything
-      allow read: if signedIn();
-      allow create, update, delete: if signedIn();
+      allow read: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
     // BOOKS (upcoming + published)
@@ -24,8 +29,8 @@ service cloud.firestore {
       allow get, list: if resource.data.status in ["upcoming", "published"];
 
       // Admin can read/write everything
-      allow read: if signedIn();
-      allow create, update, delete: if signedIn();
+      allow read: if isAdmin();
+      allow create, update, delete: if isAdmin();
 
       function isPublishedBook() {
         return get(/databases/$(database)/documents/books/$(bookId)).data.status == "published";
@@ -83,16 +88,24 @@ service cloud.firestore {
                       && validCommentText()
                       && (isNewCommentSchema() || isLegacyCommentSchema());
 
-        // Users can edit/delete their own comments.
-        allow delete: if signedIn() && resource.data.uid == request.auth.uid;
-        allow update: if signedIn()
+        // Users can edit/delete their own comments. Admin can moderate anything.
+        allow delete: if (signedIn() && resource.data.uid == request.auth.uid) || isAdmin();
+        allow update: if isAdmin()
+                      || (signedIn()
                       && resource.data.uid == request.auth.uid
                       // uid + createdAt must not change
                       && request.resource.data.uid == resource.data.uid
                       && request.resource.data.createdAt == resource.data.createdAt
                       && validCommentText()
-                      && (isNewCommentSchema() || isLegacyCommentSchema());
+                      && (isNewCommentSchema() || isLegacyCommentSchema()));
       }
+    }
+
+    // Admin allowlist (managed in Firebase console; clients cannot grant themselves access)
+    match /admins/{uid} {
+      allow list: if false;
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow create, update, delete: if false;
     }
 
     // Comment profiles (private): store first/last/handle without exposing emails.
@@ -119,18 +132,18 @@ service cloud.firestore {
     // Static pages (activities/newsletter content)
     match /site/{docId} {
       allow read: if true;
-      allow write: if signedIn();
+      allow write: if isAdmin();
     }
 
     // Affiliate links
     match /affiliateLinks/{linkId} {
       allow read: if true;
-      allow write: if signedIn();
+      allow write: if isAdmin();
     }
 
     // Newsletter subscribers (admin-only writes)
     match /subscribers/{subId} {
-      allow read: if signedIn();
+      allow read: if isAdmin();
 
       // Public subscribe create (one doc per normalized email id)
       allow create: if request.resource.data.keys().hasOnly(["email", "status", "source", "createdAt"])
@@ -142,7 +155,7 @@ service cloud.firestore {
                     && request.resource.data.source == "site-newsletter"
                     && request.resource.data.createdAt is timestamp;
 
-      allow update, delete: if signedIn();
+      allow update, delete: if isAdmin();
     }
   }
 }

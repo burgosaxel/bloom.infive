@@ -5,6 +5,7 @@
 import {
   auth, db, storage,
   onAuthStateChanged, signInWithEmailAndPassword, signOut,
+  GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
   collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc,
   query, where, orderBy, limit, Timestamp, serverTimestamp,
   ref, uploadBytes, getDownloadURL
@@ -168,6 +169,34 @@ async function onLogout() {
     await signOut(auth);
   } catch (err) {
     console.error(err);
+  }
+}
+
+async function onGoogleLogin() {
+  const out = pickEl("#loginMsg");
+  msg(out, "");
+  const provider = new GoogleAuthProvider();
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (err) {
+    console.error(err);
+    const code = (err && err.code) ? String(err.code) : "";
+    if (code.includes("popup")) {
+      await signInWithRedirect(auth, provider);
+      return;
+    }
+    msg(out, err?.message || "Google login failed.", "bad");
+  }
+}
+
+async function isAdminUser(uid) {
+  if (!uid) return false;
+  try {
+    const snap = await getDoc(doc(db, "admins", uid));
+    return snap.exists();
+  } catch (e) {
+    console.error(e);
+    return false;
   }
 }
 
@@ -771,6 +800,7 @@ function wireUI() {
   });
 
   $("#loginForm")?.addEventListener("submit", onLogin);
+  $("#googleLoginBtn")?.addEventListener("click", onGoogleLogin);
   $("#logoutBtn")?.addEventListener("click", onLogout);
 
   // tabs
@@ -835,10 +865,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const authBox = $("#authBox");
   const adminBox = $("#adminBox");
+  const logoutBtn = $("#logoutBtn");
+  const loginForm = $("#loginForm");
+  const loginMsg = $("#loginMsg");
+
+  // Complete redirect sign-in flows (mobile-friendly).
+  getRedirectResult(auth).catch(() => {});
 
   onAuthStateChanged(auth, async (user) => {
-    show(authBox, !user);
-    show(adminBox, !!user);
+    // Sign out button should be visible whenever a user is signed in.
+    show(logoutBtn, !!user);
+
+    if (!user) {
+      show(authBox, true);
+      show(adminBox, false);
+      if (loginForm) loginForm.style.display = "";
+      msg(loginMsg, "");
+      return;
+    }
+
+    // Require admin allowlist membership.
+    const ok = await isAdminUser(user.uid);
+    if (!ok) {
+      show(authBox, true);
+      show(adminBox, false);
+      if (loginForm) loginForm.style.display = "none";
+      msg(loginMsg, `Not authorized for admin. Your UID is: ${user.uid}`, "bad");
+      return;
+    }
+
+    show(authBox, false);
+    show(adminBox, true);
 
     if (user) {
       activateTab("posts");
