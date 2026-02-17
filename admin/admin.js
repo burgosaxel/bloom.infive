@@ -868,6 +868,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const logoutBtn = $("#logoutBtn");
   const loginForm = $("#loginForm");
   const loginMsg = $("#loginMsg");
+  const authMsg = $("#authMsg");
 
   // Complete redirect sign-in flows (mobile-friendly).
   getRedirectResult(auth).catch(() => {});
@@ -881,6 +882,7 @@ document.addEventListener("DOMContentLoaded", () => {
       show(adminBox, false);
       if (loginForm) loginForm.style.display = "";
       msg(loginMsg, "");
+      msg(authMsg, "");
       return;
     }
 
@@ -890,10 +892,12 @@ document.addEventListener("DOMContentLoaded", () => {
       show(authBox, true);
       show(adminBox, false);
       if (loginForm) loginForm.style.display = "none";
-      msg(loginMsg, `Not authorized for admin. Your UID is: ${user.uid}`, "bad");
+      msg(loginMsg, "");
+      msg(authMsg, `Not authorized for admin. Your UID is: ${user.uid}`, "bad");
       return;
     }
 
+    msg(authMsg, "");
     show(authBox, false);
     show(adminBox, true);
 
