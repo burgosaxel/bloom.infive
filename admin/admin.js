@@ -803,6 +803,25 @@ function wireUI() {
   $("#googleLoginBtn")?.addEventListener("click", onGoogleLogin);
   $("#logoutBtn")?.addEventListener("click", onLogout);
 
+  // Show/hide password toggle
+  const pw = $("#password");
+  const toggle = $("#pwToggle");
+  if (pw && toggle) {
+    const sync = () => {
+      const showing = pw.type === "text";
+      toggle.textContent = showing ? "Hide" : "Show";
+      toggle.title = showing ? "Hide password" : "Show password";
+      toggle.setAttribute("aria-label", toggle.title);
+      toggle.setAttribute("aria-pressed", showing ? "true" : "false");
+    };
+    sync();
+    toggle.addEventListener("click", () => {
+      pw.type = (pw.type === "password") ? "text" : "password";
+      sync();
+      pw.focus();
+    });
+  }
+
   // tabs
   $$(".tabBtn").forEach(btn => btn.addEventListener("click", () => {
     const tab = btn.dataset.tab;

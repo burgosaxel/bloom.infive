@@ -98,6 +98,28 @@
     [data-theme="dark"] .ql-editor{
       color:#111;
     }
+
+    /* Show/hide password */
+    .pwWrap{ position:relative; display:inline-block; }
+    .pwWrap input{ padding-right: 44px; }
+    .pwToggle{
+      position:absolute;
+      right:10px;
+      top:50%;
+      transform: translateY(-50%);
+      width:34px;
+      height:34px;
+      border-radius:12px;
+      border:1px solid rgba(0,0,0,.18);
+      background: rgba(255,255,255,.75);
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-size:14px;
+      line-height:1;
+      padding:0;
+    }
   </style>
 </head>
 
@@ -126,7 +148,12 @@
         <div id="authBox">
           <form class="form" id="loginForm">
             <input type="email" id="email" placeholder="Email" required />
-            <input type="password" id="password" placeholder="Password" required />
+            <span class="pwWrap">
+              <input type="password" id="password" placeholder="Password" required />
+              <button class="pwToggle" id="pwToggle" type="button" aria-label="Show password" aria-pressed="false" title="Show password">
+                Show
+              </button>
+            </span>
             <button class="btn primary" type="submit">Login</button>
             <button class="btn ghost" id="googleLoginBtn" type="button">Login with Google</button>
             <p class="muted fine" id="loginMsg"></p>
