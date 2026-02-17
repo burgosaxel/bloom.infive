@@ -49,6 +49,7 @@
       getDocs,
       setDoc,
       addDoc,
+      updateDoc,
       deleteDoc,
       query,
       where,
@@ -62,7 +63,15 @@
     const cardsEl = document.getElementById("publishedCards");
     const CLIENT_KEY = "bloomBookClientId";
     let currentUser = null;
+    let currentProfile = null; // { firstName, lastName, handle }
     const commentUiUpdaters = [];
+
+    function safeLabelFromComment(c) {
+      let n = (c?.display || c?.name || "Anonymous").toString().trim();
+      // Avoid leaking emails from early comments that used auth.email.
+      if (n.includes("@")) n = "Member";
+      return n || "Anonymous";
+    }
 
     async function signInForComments() {
       const provider = new GoogleAuthProvider();
@@ -77,6 +86,35 @@
         }
         throw e;
       }
+    }
+
+    async function loadCommentProfile() {
+      currentProfile = null;
+      if (!currentUser) return;
+      const ref = doc(db, "commentProfiles", currentUser.uid);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return;
+      const d = snap.data() || {};
+      const firstName = (d.firstName || "").toString().trim().slice(0, 40);
+      const lastName = (d.lastName || "").toString().trim().slice(0, 60);
+      const handle = (d.handle || "").toString().trim().slice(0, 40);
+      if (!firstName || handle.length < 3) return;
+      currentProfile = { firstName, lastName, handle };
+    }
+
+    async function saveCommentProfile({ firstName, lastName, handle }) {
+      if (!currentUser) throw new Error("Not signed in");
+      const f = (firstName || "").toString().trim().slice(0, 40);
+      const l = (lastName || "").toString().trim().slice(0, 60);
+      const h = (handle || "").toString().trim().slice(0, 40);
+      if (!f) throw new Error("First name is required.");
+      if (h.length < 3) throw new Error("User ID must be at least 3 characters.");
+      if (!/^[a-zA-Z0-9_.]+$/.test(h)) throw new Error("User ID can only use letters, numbers, _ and .");
+
+      const ref = doc(db, "commentProfiles", currentUser.uid);
+      const now = serverTimestamp();
+      await setDoc(ref, { firstName: f, lastName: l, handle: h, updatedAt: now, createdAt: now }, { merge: true });
+      currentProfile = { firstName: f, lastName: l, handle: h };
     }
 
     function esc(s) {
@@ -108,7 +146,105 @@
         limit(50)
       );
       const snap = await getDocs(commentsQ);
-      return snap.docs.map((d) => d.data() || {});
+      return snap.docs.map((d) => ({ id: d.id, ...(d.data() || {}) }));
+    }
+
+    function renderComments(commentsHost, comments, bookId) {
+      if (!commentsHost) return;
+      if (!comments.length) {
+        commentsHost.innerHTML = `<p class="muted">No comments yet.</p>`;
+        return;
+      }
+
+      commentsHost.innerHTML = comments.map((c) => {
+        const who = esc(safeLabelFromComment(c));
+        const mine = !!(currentUser && c.uid && c.uid === currentUser.uid);
+        const text = esc((c.text || "").toString());
+
+        const actions = mine ? `
+          <div class="row" style="gap:8px; margin-top:10px;">
+            <button class="btn small ghost" type="button" data-edit-comment="${esc(c.id)}">Edit</button>
+            <button class="btn small ghost" type="button" data-del-comment="${esc(c.id)}">Delete</button>
+          </div>
+        ` : "";
+
+        return `
+          <div class="listItem" style="padding:10px 12px;">
+            <div style="width:100%;">
+              <div style="font-weight:700;">${who}</div>
+              <div class="muted" data-comment-text="${esc(c.id)}">${text}</div>
+              ${actions}
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      // Wire edit/delete buttons (event delegation per card)
+      commentsHost.querySelectorAll("[data-del-comment]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const id = btn.getAttribute("data-del-comment");
+          if (!id) return;
+          if (!confirm("Delete this comment?")) return;
+          try {
+            await deleteDoc(doc(db, "books", bookId, "comments", id));
+            const updated = await getComments(bookId);
+            renderComments(commentsHost, updated, bookId);
+          } catch (e) {
+            console.error(e);
+            alert("Unable to delete comment. Please try again.");
+          }
+        });
+      });
+
+      commentsHost.querySelectorAll("[data-edit-comment]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const id = btn.getAttribute("data-edit-comment");
+          if (!id) return;
+          const textEl = commentsHost.querySelector(`[data-comment-text="${CSS.escape(id)}"]`);
+          if (!textEl) return;
+
+          const current = (textEl.textContent || "").toString();
+          const wrap = document.createElement("div");
+          wrap.innerHTML = `
+            <textarea rows="3" maxlength="1000" style="width:100%; min-width:260px;">${esc(current)}</textarea>
+            <div class="row" style="gap:8px; margin-top:10px;">
+              <button class="btn small primary" type="button" data-save>Edit</button>
+              <button class="btn small ghost" type="button" data-cancel>Cancel</button>
+            </div>
+          `;
+          const ta = wrap.querySelector("textarea");
+          const saveBtn = wrap.querySelector("[data-save]");
+          const cancelBtn = wrap.querySelector("[data-cancel]");
+
+          const originalHtml = textEl.parentElement.innerHTML;
+          // Replace the whole comment body for this item
+          textEl.parentElement.innerHTML = "";
+          textEl.parentElement.appendChild(wrap);
+          ta.focus();
+
+          cancelBtn.addEventListener("click", () => {
+            textEl.parentElement.innerHTML = originalHtml;
+            // Re-render to reattach listeners cleanly
+            getComments(bookId).then((updated) => renderComments(commentsHost, updated, bookId)).catch(() => {});
+          });
+
+          saveBtn.addEventListener("click", async () => {
+            const next = (ta.value || "").toString().trim().slice(0, 1000);
+            if (!next) {
+              alert("Comment cannot be empty.");
+              return;
+            }
+            try {
+              await updateDoc(doc(db, "books", bookId, "comments", id), { text: next, editedAt: serverTimestamp() });
+              const updated = await getComments(bookId);
+              renderComments(commentsHost, updated, bookId);
+            } catch (e) {
+              console.error(e);
+              alert("Unable to edit comment. Please try again.");
+            }
+          });
+        });
+      });
     }
 
     async function renderCard(bookSnap) {
@@ -155,18 +291,7 @@
       `;
 
       const commentsHost = card.querySelector("[data-comments]");
-      if (!comments.length) {
-        commentsHost.innerHTML = `<p class="muted">No comments yet.</p>`;
-      } else {
-        commentsHost.innerHTML = comments.map((c) => `
-          <div class="listItem" style="padding:10px 12px;">
-            <div>
-              <div style="font-weight:700;">${esc(c.name || "Anonymous")}</div>
-              <div class="muted">${esc(c.text || "")}</div>
-            </div>
-          </div>
-        `).join("");
-      }
+      renderComments(commentsHost, comments, id);
 
       const likeBtn = card.querySelector("[data-like-btn]");
       const likeCount = card.querySelector("[data-like-count]");
@@ -212,9 +337,60 @@
           return;
         }
 
-        const name = (currentUser.displayName || currentUser.email || "Signed in").toString();
+        if (!currentProfile) {
+          commentAuth.innerHTML = `
+            <div class="card" style="padding:12px; border-radius:14px; margin-bottom:10px;">
+              <div style="font-weight:800; margin-bottom:8px;">Set up your comment profile</div>
+              <div class="muted fine" style="margin-bottom:10px;">
+                This keeps your email private. Choose a public User ID that will show with your comments.
+              </div>
+              <form data-profile-form class="form" style="align-items:stretch;">
+                <input name="firstName" placeholder="First name" maxlength="40" required style="min-width:160px;" />
+                <input name="lastName" placeholder="Last name" maxlength="60" style="min-width:160px;" />
+                <input name="handle" placeholder="User ID (public)" maxlength="40" required style="min-width:180px;" />
+                <button class="btn small primary" type="submit">Save</button>
+              </form>
+              <div class="muted fine" data-profile-msg style="margin-top:8px;"></div>
+              <button class="btn small" type="button" data-signout-btn style="margin-top:10px;">Sign out</button>
+            </div>
+          `;
+          commentForm.style.display = "none";
+
+          const signoutBtn = commentAuth.querySelector("[data-signout-btn]");
+          if (signoutBtn) {
+            signoutBtn.addEventListener("click", async () => {
+              try { await signOut(auth); } catch (e) { console.error(e); }
+            });
+          }
+
+          const form = commentAuth.querySelector("[data-profile-form]");
+          const out = commentAuth.querySelector("[data-profile-msg]");
+          if (form) {
+            form.addEventListener("submit", async (e) => {
+              e.preventDefault();
+              out.textContent = "";
+              const fd = new FormData(form);
+              try {
+                await saveCommentProfile({
+                  firstName: fd.get("firstName"),
+                  lastName: fd.get("lastName"),
+                  handle: fd.get("handle"),
+                });
+                out.textContent = "Saved. You can comment now.";
+                commentUiUpdaters.forEach((fn) => {
+                  try { fn(); } catch (err) { console.error(err); }
+                });
+              } catch (err) {
+                console.error(err);
+                out.textContent = err?.message || "Unable to save profile.";
+              }
+            });
+          }
+          return;
+        }
+
         commentAuth.innerHTML = `
-          <span class="muted fine">Commenting as <strong>${esc(name)}</strong></span>
+          <span class="muted fine">Commenting as <strong>${esc(currentProfile.handle)}</strong></span>
           <button class="btn small" type="button" data-signout-btn style="margin-left:10px;">Sign out</button>
         `;
         commentForm.style.display = "";
@@ -236,6 +412,10 @@
           commentMsg.textContent = "Please sign in to comment.";
           return;
         }
+        if (!currentProfile) {
+          commentMsg.textContent = "Please set up your comment profile first.";
+          return;
+        }
 
         const fd = new FormData(commentForm);
         const text = (fd.get("text") || "").toString().trim().slice(0, 1000);
@@ -247,9 +427,8 @@
 
         await addDoc(collection(db, "books", id, "comments"), {
           uid: currentUser.uid,
-          name: (currentUser.displayName || currentUser.email || "Anonymous").toString().trim().slice(0, 80),
+          display: currentProfile.handle,
           text,
-          photoURL: (currentUser.photoURL || "").toString().slice(0, 500),
           createdAt: serverTimestamp(),
         });
 
@@ -257,14 +436,7 @@
         commentForm.reset();
 
         const updatedComments = await getComments(id);
-        commentsHost.innerHTML = updatedComments.map((c) => `
-          <div class="listItem" style="padding:10px 12px;">
-            <div>
-              <div style="font-weight:700;">${esc(c.name || "Anonymous")}</div>
-              <div class="muted">${esc(c.text || "")}</div>
-            </div>
-          </div>
-        `).join("") || `<p class="muted">No comments yet.</p>`;
+        renderComments(commentsHost, updatedComments, id);
       });
 
       return card;
@@ -303,8 +475,14 @@
 
     // Auth state: comments require sign-in, likes stay anonymous.
     getRedirectResult(auth).catch(() => {});
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
       currentUser = user || null;
+      try {
+        await loadCommentProfile();
+      } catch (e) {
+        console.error(e);
+        currentProfile = null;
+      }
       commentUiUpdaters.forEach((fn) => {
         try { fn(); } catch (e) { console.error(e); }
       });

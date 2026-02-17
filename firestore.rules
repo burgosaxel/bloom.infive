@@ -27,33 +27,93 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create, update, delete: if signedIn();
 
+      function isPublishedBook() {
+        return get(/databases/$(database)/documents/books/$(bookId)).data.status == "published";
+      }
+
       // Hearts for published books
       match /likes/{likeId} {
-        allow read: if get(/databases/$(database)/documents/books/$(bookId)).data.status == "published";
-        allow create, delete: if get(/databases/$(database)/documents/books/$(bookId)).data.status == "published";
+        allow read: if isPublishedBook();
+        allow create, delete: if isPublishedBook();
         allow update: if false;
       }
 
       // Reviews/comments for published books
       match /comments/{commentId} {
-        allow read: if get(/databases/$(database)/documents/books/$(bookId)).data.status == "published";
-        // Public can read comments, but must be signed in to create.
+        allow read: if isPublishedBook();
+
+        function validCommentText() {
+          return request.resource.data.text is string
+                 && request.resource.data.text.size() > 0
+                 && request.resource.data.text.size() <= 1000;
+        }
+
+        function validEditedAt() {
+          return !("editedAt" in request.resource.data)
+                 || request.resource.data.editedAt is timestamp;
+        }
+
+        function isNewCommentSchema() {
+          // New: pseudonymous display handle, no email.
+          return request.resource.data.keys().hasOnly(["uid", "display", "text", "createdAt", "editedAt"])
+                 && request.resource.data.display is string
+                 && request.resource.data.display.size() > 0
+                 && request.resource.data.display.size() <= 40
+                 && request.resource.data.createdAt is timestamp
+                 && validEditedAt();
+        }
+
+        function isLegacyCommentSchema() {
+          // Legacy: name/photoURL used previously (allow for existing data + edits).
+          return request.resource.data.keys().hasOnly(["uid", "name", "text", "createdAt", "photoURL", "editedAt"])
+                 && request.resource.data.name is string
+                 && request.resource.data.name.size() > 0
+                 && request.resource.data.name.size() <= 80
+                 && request.resource.data.createdAt is timestamp
+                 && (!("photoURL" in request.resource.data)
+                     || (request.resource.data.photoURL is string
+                         && request.resource.data.photoURL.size() <= 500))
+                 && validEditedAt();
+        }
+
+        // Must be signed in to create.
         allow create: if signedIn()
-                      && get(/databases/$(database)/documents/books/$(bookId)).data.status == "published"
-                      && request.resource.data.keys().hasOnly(["uid", "name", "text", "createdAt", "photoURL"])
+                      && isPublishedBook()
                       && request.resource.data.uid == request.auth.uid
-                      && request.resource.data.name is string
-                      && request.resource.data.name.size() > 0
-                      && request.resource.data.name.size() <= 80
-                      && request.resource.data.text is string
-                      && request.resource.data.text.size() > 0
-                      && request.resource.data.text.size() <= 1000
-                      && request.resource.data.createdAt is timestamp
-                      && (!("photoURL" in request.resource.data)
-                          || (request.resource.data.photoURL is string
-                              && request.resource.data.photoURL.size() <= 500));
-        allow update, delete: if signedIn();
+                      && validCommentText()
+                      && (isNewCommentSchema() || isLegacyCommentSchema());
+
+        // Users can edit/delete their own comments.
+        allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+        allow update: if signedIn()
+                      && resource.data.uid == request.auth.uid
+                      // uid + createdAt must not change
+                      && request.resource.data.uid == resource.data.uid
+                      && request.resource.data.createdAt == resource.data.createdAt
+                      && validCommentText()
+                      && (isNewCommentSchema() || isLegacyCommentSchema());
       }
+    }
+
+    // Comment profiles (private): store first/last/handle without exposing emails.
+    match /commentProfiles/{uid} {
+      allow list: if false;
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn()
+                            && request.auth.uid == uid
+                            && request.resource.data.keys().hasOnly(["firstName", "lastName", "handle", "updatedAt", "createdAt"])
+                            && request.resource.data.firstName is string
+                            && request.resource.data.firstName.size() > 0
+                            && request.resource.data.firstName.size() <= 40
+                            && request.resource.data.lastName is string
+                            && request.resource.data.lastName.size() <= 60
+                            && request.resource.data.handle is string
+                            && request.resource.data.handle.size() > 2
+                            && request.resource.data.handle.size() <= 40
+                            && request.resource.data.handle.matches('^[a-zA-Z0-9_\\.]+$')
+                            && request.resource.data.updatedAt is timestamp
+                            && request.resource.data.createdAt is timestamp;
+      allow delete: if signedIn() && request.auth.uid == uid;
     }
 
     // Static pages (activities/newsletter content)

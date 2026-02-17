@@ -287,6 +287,8 @@ h2{
   font-weight:800;
   cursor:pointer;
   background: transparent;
+  color: var(--ink);
+  font: inherit;
 }
 .btn.primary{
   background: color-mix(in srgb, var(--card) 92%, transparent);

@@ -150,10 +150,15 @@ async function onLogin(e) {
   }
 
   try {
-    await signInWithEmailAndPassword(auth, email, pass);
+    await signInWithEmailAndPassword(auth, email.toLowerCase(), pass);
     msg(out, "Signed in.", "ok");
   } catch (err) {
     console.error(err);
+    const code = (err && err.code) ? String(err.code) : "";
+    if (code === "auth/invalid-credential" || code === "auth/wrong-password" || code === "auth/user-not-found") {
+      msg(out, "Login failed: check email/password, and confirm Email/Password sign-in is enabled in Firebase Auth.", "bad");
+      return;
+    }
     msg(out, err?.message || "Login failed.", "bad");
   }
 }
