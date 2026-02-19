@@ -19,6 +19,7 @@ setGlobalOptions({ region: "us-central1", maxInstances: 10 });
 const SITE_URL = defineString("SITE_URL");               // https://bloominfive.blog
 const GMAIL_SENDER = defineString("GMAIL_SENDER");       // info@bloominfive.blog
 const GMAIL_CLIENT_ID = defineString("GMAIL_CLIENT_ID"); // xxx.apps.googleusercontent.com
+const UNSUBSCRIBE_ENDPOINT = "https://us-central1-bloom-in-five.cloudfunctions.net/unsubscribe";
 
 // ---- Secrets ----
 const GMAIL_CLIENT_SECRET = defineSecret("GMAIL_CLIENT_SECRET");
@@ -243,10 +244,9 @@ exports.sendWelcomeEmail = onDocumentWritten(
       // This also allows retries when a doc already existed before trigger fixes.
       if (!email || status !== "active" || alreadySent || wasAlreadySent) return;
 
-      const base = (SITE_URL.value() || "").toString().replace(/\/+$/g, "");
       const sid = (event.params?.subId || "").toString();
-      const unsubUrl = (base && sid && unsubToken)
-        ? `${base}/unsubscribe?sid=${encodeURIComponent(sid)}&token=${encodeURIComponent(unsubToken)}`
+      const unsubUrl = (sid && unsubToken)
+        ? `${UNSUBSCRIBE_ENDPOINT}?sid=${encodeURIComponent(sid)}&token=${encodeURIComponent(unsubToken)}`
         : "";
 
       const subject = "Welcome to BLOOM.INFIVE 💛";
