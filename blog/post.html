@@ -166,16 +166,23 @@
       return { selected, counts };
     }
 
-    function reactionButtonsHtml(state) {
-      return REACTIONS.map((reaction, idx) => {
-        const active = state.selected === reaction;
-        const count = state.counts[reaction] || 0;
-        return `
-          <button class="btn small ${active ? "primary" : "ghost"}" type="button" data-reaction="${idx}">
-            ${reaction} <span>${count}</span>
+    function totalReactions(counts) {
+      return REACTIONS.reduce((sum, r) => sum + (counts[r] || 0), 0);
+    }
+
+    function reactionControlHtml(state) {
+      const active = state.selected || "❤️";
+      const total = totalReactions(state.counts);
+      return `
+        <div style="position:relative;display:inline-block;" data-reaction-wrap>
+          <button class="btn small ${state.selected ? "primary" : "ghost"}" type="button" data-react-main>
+            ${active} <span>${total}</span>
           </button>
-        `;
-      }).join("");
+          <div data-reaction-picker style="display:none;position:absolute;left:0;bottom:calc(100% + 8px);background:var(--card);border:1px solid var(--control-border);border-radius:999px;padding:6px;box-shadow:var(--shadow);white-space:nowrap;z-index:20;">
+            ${REACTIONS.map((reaction, idx) => `<button class="btn small ghost" type="button" data-reaction="${idx}" style="min-width:0;padding:6px 8px;">${reaction}</button>`).join("")}
+          </div>
+        </div>
+      `;
     }
 
     async function getComments(id) {
@@ -315,27 +322,65 @@
 
       async function renderReactions() {
         const state = await getReactionState(id, clientId);
-        reactionsHost.innerHTML = reactionButtonsHtml(state);
-        reactionsHost.querySelectorAll("[data-reaction]").forEach((btn) => {
+        reactionsHost.innerHTML = reactionControlHtml(state);
+
+        const wrap = reactionsHost.querySelector("[data-reaction-wrap]");
+        const mainBtn = reactionsHost.querySelector("[data-react-main]");
+        const picker = reactionsHost.querySelector("[data-reaction-picker]");
+        if (!wrap || !mainBtn || !picker) return;
+
+        let holdTimer = null;
+        let holdTriggered = false;
+
+        const closePicker = () => { picker.style.display = "none"; };
+        const openPicker = () => { picker.style.display = "block"; };
+
+        const applyReaction = async (nextReaction) => {
+          const ref = doc(db, "posts", id, "likes", clientId);
+          const snap = await getDoc(ref);
+          const cur = snap.exists() ? normalizeReaction((snap.data() || {}).reaction) : "";
+
+          if (snap.exists() && cur === nextReaction) {
+            await deleteDoc(ref);
+            logEvent("post_unlike", { postId: id });
+          } else {
+            await setDoc(ref, { reaction: nextReaction, updatedAt: serverTimestamp(), createdAt: serverTimestamp() }, { merge: true });
+            logEvent("post_like", { postId: id });
+          }
+          await renderReactions();
+        };
+
+        mainBtn.addEventListener("pointerdown", () => {
+          holdTriggered = false;
+          holdTimer = setTimeout(() => {
+            holdTriggered = true;
+            openPicker();
+          }, 450);
+        });
+
+        mainBtn.addEventListener("pointerup", async () => {
+          if (holdTimer) clearTimeout(holdTimer);
+          if (holdTriggered) return;
+          await applyReaction("❤️");
+        });
+
+        mainBtn.addEventListener("pointerleave", () => {
+          if (holdTimer) clearTimeout(holdTimer);
+        });
+
+        picker.querySelectorAll("[data-reaction]").forEach((btn) => {
           btn.addEventListener("click", async () => {
             const idx = Number(btn.getAttribute("data-reaction"));
             const nextReaction = REACTIONS[idx];
             if (!nextReaction) return;
-
-            const ref = doc(db, "posts", id, "likes", clientId);
-            const snap = await getDoc(ref);
-            const cur = snap.exists() ? normalizeReaction((snap.data() || {}).reaction) : "";
-
-            if (snap.exists() && cur === nextReaction) {
-              await deleteDoc(ref);
-              logEvent("post_unlike", { postId: id });
-            } else {
-              await setDoc(ref, { reaction: nextReaction, updatedAt: serverTimestamp(), createdAt: serverTimestamp() }, { merge: true });
-              logEvent("post_like", { postId: id });
-            }
-            await renderReactions();
+            closePicker();
+            await applyReaction(nextReaction);
           });
         });
+
+        document.addEventListener("click", (e) => {
+          if (!wrap.contains(e.target)) closePicker();
+        }, { once: true });
       }
 
       await renderReactions();
