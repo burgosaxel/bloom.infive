@@ -267,6 +267,7 @@ service cloud.firestore {
 
       // Public subscribe create (one doc per normalized email id)
       allow create: if request.resource.data.keys().hasOnly(["email", "status", "source", "createdAt", "unsubToken"])
+                    && subId == request.resource.data.email
                     && request.resource.data.email is string
                     && request.resource.data.email.size() > 3
                     && request.resource.data.email.size() <= 254

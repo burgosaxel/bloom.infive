@@ -79,12 +79,6 @@
       statusEl.style.color = ok ? "#b7ffcf" : "";
     }
 
-    function base64UrlFromUtf8(str) {
-      // Stable doc id from email (prevents duplicates).
-      const b64 = btoa(unescape(encodeURIComponent(str)));
-      return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-    }
-
     function randomTokenHex(bytes = 16) {
       const arr = new Uint8Array(bytes);
       crypto.getRandomValues(arr);
@@ -103,7 +97,7 @@
       btn.textContent = "Subscribing...";
 
       try {
-        const subId = base64UrlFromUtf8(email);
+        const subId = email;
         const unsubToken = randomTokenHex(16);
         await setDoc(doc(db, "subscribers", subId), {
           email,
