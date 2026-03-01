@@ -1,4 +1,4 @@
-// admin/admin.js (module)
+﻿// admin/admin.js (module)
 // Admin portal: login + manage posts/pages/affiliate/profile
 // Requires /firebase.js (root) to export needed items.
 
@@ -12,8 +12,8 @@ import {
 } from "../firebase.js";
 
 const THEME_KEY = "bloomTheme";
-const ICON_SUN = "\u2600\uFE0F";  // ☀️
-const ICON_MOON = "\uD83C\uDF19"; // 🌙
+const ICON_SUN = "\u2600\uFE0F";  // â˜€ï¸
+const ICON_MOON = "\uD83C\uDF19"; // ðŸŒ™
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -324,7 +324,7 @@ async function savePost() {
       await writeAdminLog("post_create", "post", editingPostId, { title, status, tagsCount: tags.length });
     }
 
-    msg(out, "Saved ✅", "ok");
+    msg(out, "Saved âœ…", "ok");
     await refreshPosts();
     openPostForm(false);
     clearPostForm();
@@ -368,7 +368,7 @@ async function refreshPosts() {
     const meta = document.createElement("div");
     meta.className = "muted";
     meta.style.fontSize = "13px";
-    meta.textContent = `${(d.status || "draft")} • ${formatDate(d.publishAt)}`;
+    meta.textContent = `${(d.status || "draft")} â€¢ ${formatDate(d.publishAt)}`;
 
     left.appendChild(t);
     left.appendChild(meta);
@@ -576,7 +576,7 @@ async function saveUpcomingBook() {
       const refDoc = await addDoc(collection(db, "books"), payload);
       await writeAdminLog("book_create", "book", refDoc.id, { title, status });
     }
-    msg(out, "Saved ✅", "ok");
+    msg(out, "Saved âœ…", "ok");
     openUpcomingForm(false);
     clearUpcomingForm();
     await refreshUpcomingBooks();
@@ -671,7 +671,7 @@ async function savePage(key) {
   try {
     await setDoc(doc(db, "site", key), { content, contentHtml: content, updatedAt: serverTimestamp() }, { merge: true });
     await writeAdminLog("page_update", "site", key, { bytes: content.length });
-    msg(out, "Saved ✅", "ok");
+    msg(out, "Saved âœ…", "ok");
   } catch (err) {
     console.error(err);
     msg(out, err?.message || "Save failed.", "bad");
@@ -780,7 +780,7 @@ async function saveLink() {
       await writeAdminLog("affiliate_create", "affiliateLink", refDoc.id, { title, category });
     }
 
-    msg(out, "Saved ✅", "ok");
+    msg(out, "Saved âœ…", "ok");
     editingLinkId = null;
     pickEl("#linkTitle", "#affiliateTitle").value = "";
     pickEl("#linkUrl", "#affiliateUrl").value = "";
@@ -817,7 +817,7 @@ async function uploadProfile() {
     const img = $("#profilePreview");
     if (img) img.src = url;
 
-    msg(out, "Uploaded ✅", "ok");
+    msg(out, "Uploaded âœ…", "ok");
   } catch (err) {
     console.error(err);
     msg(out, err?.message || "Upload failed.", "bad");
@@ -845,18 +845,28 @@ async function refreshLogs() {
     return;
   }
 
+  const logs = snap.docs.map((docSnap) => docSnap.data() || {});
+  const postTitleMap = await getPostTitleMap(
+    logs
+      .filter((d) => (d.entity || "").toString() === "post")
+      .map((d) => (d.entityId || "").toString())
+  );
+
   host.innerHTML = "";
-  snap.forEach((docSnap) => {
-    const d = docSnap.data() || {};
+  logs.forEach((d) => {
+    let entityLabel = (d.entityId || "").toString();
+    if ((d.entity || "").toString() === "post" && entityLabel) {
+      entityLabel = postTitleMap.get(entityLabel) || entityLabel;
+    }
     const row = document.createElement("div");
     row.className = "listItem";
     row.innerHTML = `
       <div style="min-width:0;">
         <div style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-          ${escapeHtml(d.action || "action")} · ${escapeHtml(d.entity || "")} ${escapeHtml(d.entityId || "")}
+          ${escapeHtml(d.action || "action")} - ${escapeHtml(d.entity || "")} ${escapeHtml(entityLabel)}
         </div>
         <div class="muted fine" style="margin-top:4px;">
-          ${escapeHtml(d.actorEmail || "")} · ${escapeHtml(formatDate(d.createdAt) || "")}
+          ${escapeHtml(d.actorEmail || "")} - ${escapeHtml(formatDate(d.createdAt) || "")}
         </div>
       </div>
     `;
@@ -872,6 +882,26 @@ function hostFromReferrer(ref) {
   } catch {
     return "";
   }
+}
+
+async function getPostTitleMap(postIds) {
+  const map = new Map();
+  const ids = [...new Set((postIds || []).map((x) => (x || "").toString()).filter(Boolean))];
+  if (!ids.length) return map;
+
+  await Promise.all(ids.map(async (id) => {
+    try {
+      const snap = await getDoc(doc(db, "posts", id));
+      if (!snap.exists()) return;
+      const d = snap.data() || {};
+      const title = (d.title || "").toString().trim();
+      if (title) map.set(id, title);
+    } catch {
+      // Leave ID fallback in UI.
+    }
+  }));
+
+  return map;
 }
 
 async function refreshReports() {
@@ -937,9 +967,12 @@ async function refreshReports() {
     byPost.set(id, (byPost.get(id) || 0) + 1);
   }
   const topPosts = [...byPost.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const postTitleMap = await getPostTitleMap(topPosts.map(([id]) => id));
 
   const bookLikes = events.filter((e) => e.type === "book_like");
   const bookComments = events.filter((e) => e.type === "book_comment");
+  const postLikes = events.filter((e) => e.type === "post_like");
+  const postComments = events.filter((e) => e.type === "post_comment");
 
   mount.innerHTML = `
     <div class="cards2">
@@ -952,6 +985,8 @@ async function refreshReports() {
         <div style="font-weight:800;">Engagement</div>
         <div class="muted fine" style="margin-top:6px;">Book likes: <strong>${bookLikes.length}</strong></div>
         <div class="muted fine">Book comments: <strong>${bookComments.length}</strong></div>
+        <div class="muted fine">Post likes: <strong>${postLikes.length}</strong></div>
+        <div class="muted fine">Post comments: <strong>${postComments.length}</strong></div>
         <div class="muted fine">Blog post reads: <strong>${postViews.length}</strong></div>
       </div>
       <div class="card">
@@ -997,7 +1032,7 @@ async function refreshReports() {
         ${topPosts.map(([id, c]) => `
           <div class="listItem" style="padding:10px 12px;">
             <div style="min-width:0; display:flex; justify-content:space-between; gap:10px; width:100%;">
-              <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(id)}</div>
+              <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(postTitleMap.get(id) || id)}</div>
               <div style="font-weight:800;">${c}</div>
             </div>
           </div>
@@ -1155,3 +1190,4 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+

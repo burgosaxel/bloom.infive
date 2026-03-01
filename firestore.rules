@@ -21,6 +21,71 @@ service cloud.firestore {
       // Admin can read/write everything
       allow read: if isAdmin();
       allow create, update, delete: if isAdmin();
+
+      function isPublishedPost() {
+        return get(/databases/$(database)/documents/posts/$(postId)).data.published == true
+               && get(/databases/$(database)/documents/posts/$(postId)).data.publishAt != null
+               && get(/databases/$(database)/documents/posts/$(postId)).data.publishAt <= request.time;
+      }
+
+      // Hearts for published posts
+      match /likes/{likeId} {
+        allow read: if isPublishedPost();
+        allow create, delete: if isPublishedPost();
+        allow update: if false;
+      }
+
+      // Comments for published posts
+      match /comments/{commentId} {
+        allow read: if isPublishedPost();
+
+        function validCommentText() {
+          return request.resource.data.text is string
+                 && request.resource.data.text.size() > 0
+                 && request.resource.data.text.size() <= 1000;
+        }
+
+        function validEditedAt() {
+          return !("editedAt" in request.resource.data)
+                 || request.resource.data.editedAt is timestamp;
+        }
+
+        function isNewCommentSchema() {
+          return request.resource.data.keys().hasOnly(["uid", "display", "text", "createdAt", "editedAt"])
+                 && request.resource.data.display is string
+                 && request.resource.data.display.size() > 0
+                 && request.resource.data.display.size() <= 40
+                 && request.resource.data.createdAt is timestamp
+                 && validEditedAt();
+        }
+
+        function isLegacyCommentSchema() {
+          return request.resource.data.keys().hasOnly(["uid", "name", "text", "createdAt", "photoURL", "editedAt"])
+                 && request.resource.data.name is string
+                 && request.resource.data.name.size() > 0
+                 && request.resource.data.name.size() <= 80
+                 && request.resource.data.createdAt is timestamp
+                 && (!("photoURL" in request.resource.data)
+                     || (request.resource.data.photoURL is string
+                         && request.resource.data.photoURL.size() <= 500))
+                 && validEditedAt();
+        }
+
+        allow create: if signedIn()
+                      && isPublishedPost()
+                      && request.resource.data.uid == request.auth.uid
+                      && validCommentText()
+                      && (isNewCommentSchema() || isLegacyCommentSchema());
+
+        allow delete: if (signedIn() && resource.data.uid == request.auth.uid) || isAdmin();
+        allow update: if isAdmin()
+                      || (signedIn()
+                      && resource.data.uid == request.auth.uid
+                      && request.resource.data.uid == resource.data.uid
+                      && request.resource.data.createdAt == resource.data.createdAt
+                      && validCommentText()
+                      && (isNewCommentSchema() || isLegacyCommentSchema()));
+      }
     }
 
     // BOOKS (upcoming + published)

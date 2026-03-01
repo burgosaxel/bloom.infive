@@ -252,21 +252,57 @@ exports.sendWelcomeEmail = onDocumentWritten(
       const subject = "Welcome to BLOOM.INFIVE \uD83D\uDC9B";
       const siteUrl = (SITE_URL.value() || "").toString().replace(/\/+$/g, "");
       const blogUrl = siteUrl ? `${siteUrl}/blog/index.html` : "";
-      const instagramUrl = "https://instagram.com/bloominfive.blog";
-      const facebookUrl = "https://facebook.com/bloominfive.blog";
+      const instagramUrl = "https://www.instagram.com/bloom.infive";
+      const pinterestUrl = "http://www.pinterest.com/bloominfive";
       const youtubeUrl = "https://youtube.com/@bloominfive";
+      const ctaUrl = siteUrl || blogUrl;
 
       const text = `
 Welcome to BLOOM.INFIVE \uD83D\uDC9B
 
-Que alegria tenerte aqui. Thank you for joining this space for faith, motivation, and everyday growth in motherhood.
+SPANISH
 
-Visit the blog:
-${blogUrl || siteUrl}
+Que alegria tenerte aqui! Gracias por unirte a este espacio donde hablamos de fe, motivacion y como vivir cada dia con proposito, incluso en medio del caos de la vida diaria.
+
+Mi nombre es Angelika, y quiero compartir contigo todo lo que he aprendido caminando con Dios y tratando de equilibrar la maternidad, la familia y mis suenos.
+
+Pronto recibiras inspiracion, tips practicos, reflexiones y algunas sorpresas que tengo preparadas para ti, pero hoy quiero empezar con algo simple:
+
+Un pequeno recordatorio: No tienes que ser perfecta para crecer, para seguir, para florecer. Cada dia cuenta, y este es tu espacio seguro para hacerlo a tu ritmo.
+
+Me encantaria que me respondieras a este email contandome un poquito de ti: que te trajo aqui y que esperas encontrar en este espacio?
+
+Gracias por estar aqui. Estoy emocionada de acompanarte en este camino.
+
+Con carino,
+Angelika
+
+ENGLISH
+
+I'm so happy you're here! Thank you for joining this space where we talk about faith, motivation, and how to live each day with purpose, even in the middle of life's chaos.
+
+My name is Angelika, and I'm excited to share with you what I've learned walking with God while balancing motherhood, family, and my dreams.
+
+Soon you'll receive inspiration, practical tips, reflections, and a few surprises I have in store, but today I want to start simple:
+
+A gentle reminder: You don't have to be perfect to grow, to keep going, or to flourish. Every day counts, and this is your safe space to do it at your own pace.
+
+I'd love for you to reply to this email and share a little about yourself: What brought you here? What are you hoping to find in this space?
+
+Thank you for being here. I'm excited to walk this journey with you.
+
+With love,
+Angelika
+
+Visit BLOOM.INFIVE:
+${ctaUrl}
+
+Blog:
+${blogUrl}
 
 Follow us:
 Instagram: ${instagramUrl}
-Facebook: ${facebookUrl}
+Pinterest: ${pinterestUrl}
 YouTube: ${youtubeUrl}
 
 You are receiving this email because you subscribed on BLOOM.INFIVE. If you no longer want these emails, unsubscribe here: ${unsubUrl || "(unsubscribe unavailable)"}
@@ -289,14 +325,53 @@ You are receiving this email because you subscribed on BLOOM.INFIVE. If you no l
             <tr>
               <td style="padding:30px 28px 20px;text-align:center;">
                 <p style="margin:0 0 14px;font-size:17px;line-height:1.7;color:#1b1b1b;">
-                  <strong>Que alegria tenerte aqui!</strong> Thank you for joining this space where we share faith, motivation, and practical encouragement.
+                  <strong>Que alegria tenerte aqui!</strong> Gracias por unirte a este espacio donde hablamos de fe, motivacion y como vivir cada dia con proposito, incluso en medio del caos de la vida diaria.
                 </p>
                 <p style="margin:0 0 22px;font-size:16px;line-height:1.7;color:#333;">
-                  I am Angelika, and I am so happy you are here. You will receive new stories, reflections, and updates from BLOOM.INFIVE.
+                  Mi nombre es Angelika, y quiero compartir contigo todo lo que he aprendido caminando con Dios y tratando de equilibrar la maternidad, la familia y mis suenos.
+                </p>
+                <p style="margin:0 0 22px;font-size:16px;line-height:1.7;color:#333;">
+                  Pronto recibiras inspiracion, tips practicos, reflexiones y algunas sorpresas que tengo preparadas para ti, pero hoy quiero empezar con algo simple.
+                </p>
+                <p style="margin:0 0 22px;font-size:16px;line-height:1.7;color:#333;">
+                  Un pequeno recordatorio: No tienes que ser perfecta para crecer, para seguir, para florecer. Cada dia cuenta, y este es tu espacio seguro para hacerlo a tu ritmo.
+                </p>
+                <p style="margin:0 0 22px;font-size:16px;line-height:1.7;color:#333;">
+                  Me encantaria que me respondieras a este email contandome un poquito de ti: que te trajo aqui y que esperas encontrar en este espacio?
+                </p>
+                <p style="margin:0 0 22px;font-size:16px;line-height:1.7;color:#333;">
+                  Gracias por estar aqui. Estoy emocionada de acompanarte en este camino.
+                </p>
+                <p style="margin:0 0 22px;font-size:16px;line-height:1.7;color:#333;">
+                  Con carino,<br/>Angelika
                 </p>
 
-                <a href="${blogUrl || siteUrl}" style="display:inline-block;background:#c5431b;color:#fff;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;font-size:13px;">
-                  Visit The Blog
+                <hr style="border:0;border-top:1px solid #ead9b8;margin:20px 0;" />
+
+                <p style="margin:0 0 14px;font-size:17px;line-height:1.7;color:#1b1b1b;">
+                  <strong>I'm so happy you're here!</strong> Thank you for joining this space where we share faith, motivation, and practical encouragement.
+                </p>
+                <p style="margin:0 0 22px;font-size:16px;line-height:1.7;color:#333;">
+                  My name is Angelika, and I'm excited to share with you what I've learned walking with God while balancing motherhood, family, and my dreams.
+                </p>
+                <p style="margin:0 0 22px;font-size:16px;line-height:1.7;color:#333;">
+                  Soon you'll receive inspiration, practical tips, reflections, and a few surprises I have in store, but today I want to start simple.
+                </p>
+                <p style="margin:0 0 22px;font-size:16px;line-height:1.7;color:#333;">
+                  A gentle reminder: You don't have to be perfect to grow, to keep going, or to flourish. Every day counts, and this is your safe space to do it at your own pace.
+                </p>
+                <p style="margin:0 0 22px;font-size:16px;line-height:1.7;color:#333;">
+                  I'd love for you to reply to this email and share a little about yourself: what brought you here and what are you hoping to find in this space?
+                </p>
+                <p style="margin:0 0 22px;font-size:16px;line-height:1.7;color:#333;">
+                  Thank you for being here. I'm excited to walk this journey with you.
+                </p>
+                <p style="margin:0 0 22px;font-size:16px;line-height:1.7;color:#333;">
+                  With love,<br/>Angelika
+                </p>
+
+                <a href="${ctaUrl}" style="display:inline-block;background:#c5431b;color:#fff;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;font-size:13px;">
+                  Visit BLOOM.INFIVE
                 </a>
               </td>
             </tr>
@@ -306,12 +381,9 @@ You are receiving this email because you subscribed on BLOOM.INFIVE. If you no l
                 <p style="margin:0 0 14px;font-size:14px;line-height:1.8;">
                   <a href="${instagramUrl}" style="color:#0f2a3a;text-decoration:underline;font-weight:700;">Instagram</a>
                   &nbsp;|&nbsp;
-                  <a href="${facebookUrl}" style="color:#0f2a3a;text-decoration:underline;font-weight:700;">Facebook</a>
+                  <a href="${pinterestUrl}" style="color:#0f2a3a;text-decoration:underline;font-weight:700;">Pinterest</a>
                   &nbsp;|&nbsp;
                   <a href="${youtubeUrl}" style="color:#0f2a3a;text-decoration:underline;font-weight:700;">YouTube</a>
-                </p>
-                <p style="margin:0 0 10px;font-size:14px;">
-                  <a href="${blogUrl || siteUrl}" style="color:#0f2a3a;text-decoration:underline;font-weight:700;">Blog</a>
                 </p>
                 <p style="margin:0;color:#4c4c4c;font-size:12px;line-height:1.7;">
                   You are receiving this email because you subscribed on BLOOM.INFIVE.
@@ -340,6 +412,128 @@ You are receiving this email because you subscribed on BLOOM.INFIVE. If you no l
       logger.info("Welcome email sent to: " + email);
     } catch (e) {
       logger.error("sendWelcomeEmail failed:", e);
+    }
+  }
+);
+
+function isLivePost(data) {
+  if (!data) return false;
+  const pub = data.published === true || data.status === "published";
+  if (!pub) return false;
+  const ms = data.publishAt && typeof data.publishAt.toMillis === "function"
+    ? data.publishAt.toMillis()
+    : 0;
+  return ms > 0 && ms <= Date.now();
+}
+
+exports.notifySubscribersOnPostPublished = onDocumentWritten(
+  {
+    document: "posts/{postId}",
+    secrets: [GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN],
+    region: "us-central1",
+  },
+  async (event) => {
+    try {
+      const before = event.data?.before?.data() || null;
+      const after = event.data?.after?.data() || null;
+      const postRef = event.data?.after?.ref || null;
+      const postId = (event.params?.postId || "").toString();
+
+      if (!after || !postRef || !postId) return;
+      if (after.notificationSentAt) return;
+      if (!isLivePost(after) || isLivePost(before)) return;
+
+      let acquired = false;
+      await admin.firestore().runTransaction(async (tx) => {
+        const snap = await tx.get(postRef);
+        const cur = snap.data() || {};
+        if (cur.notificationSentAt || cur.notificationInProgressAt) return;
+        tx.set(postRef, {
+          notificationInProgressAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+        acquired = true;
+      });
+      if (!acquired) return;
+
+      const title = (after.title || "New blog post").toString().trim();
+      const siteUrl = (SITE_URL.value() || "").toString().replace(/\/+$/g, "");
+      const postUrl = siteUrl ? `${siteUrl}/blog/post.html?id=${encodeURIComponent(postId)}` : "";
+      const blogUrl = siteUrl ? `${siteUrl}/blog/` : "";
+      const subject = `New on BLOOM.INFIVE: ${title}`;
+
+      const text = `
+A new blog post is now live on BLOOM.INFIVE.
+
+Title:
+${title}
+
+Read now:
+${postUrl || blogUrl || siteUrl}
+
+You are receiving this email because you subscribed on BLOOM.INFIVE.
+      `.trim();
+
+      const html = `
+<!doctype html>
+<html lang="en">
+  <body style="margin:0;padding:0;background:#f7e6c4;font-family:Arial,Helvetica,sans-serif;color:#111;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7e6c4;padding:24px 0;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#fff;border:1px solid #ead9b8;border-radius:16px;overflow:hidden;">
+            <tr>
+              <td style="background:#084c61;padding:30px 24px;text-align:center;">
+                <h2 style="margin:0;color:#eef6fb;font-size:30px;line-height:1.2;font-weight:800;">New Blog Post</h2>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:26px 26px 30px;text-align:center;">
+                <p style="margin:0 0 10px;font-size:16px;color:#333;">A new post is now live on BLOOM.INFIVE:</p>
+                <p style="margin:0 0 20px;font-size:24px;line-height:1.35;color:#1b1b1b;font-family:Georgia,serif;"><strong>${title.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</strong></p>
+                <a href="${postUrl || blogUrl || siteUrl}" style="display:inline-block;background:#c5431b;color:#fff;text-decoration:none;padding:12px 24px;border-radius:999px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;font-size:13px;">
+                  Read Post
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+      `.trim();
+
+      const activeSubs = await admin.firestore()
+        .collection("subscribers")
+        .where("status", "==", "active")
+        .limit(500)
+        .get();
+
+      let sent = 0;
+      let failed = 0;
+      for (const docSnap of activeSubs.docs) {
+        const d = docSnap.data() || {};
+        const email = (d.email || "").toString().trim().toLowerCase();
+        if (!email) continue;
+        try {
+          await sendGmail({ to: email, subject, text, html });
+          sent += 1;
+        } catch (e) {
+          failed += 1;
+          logger.error("post notification send failed", { postId, email, err: e?.message || String(e) });
+        }
+      }
+
+      await postRef.set({
+        notificationSentAt: admin.firestore.FieldValue.serverTimestamp(),
+        notificationInProgressAt: admin.firestore.FieldValue.delete(),
+        notificationSentCount: sent,
+        notificationFailedCount: failed,
+      }, { merge: true });
+
+      logger.info("Post notification complete", { postId, sent, failed });
+    } catch (e) {
+      logger.error("notifySubscribersOnPostPublished failed", e);
     }
   }
 );

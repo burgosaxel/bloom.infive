@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -18,9 +18,10 @@
           <h2 id="title">Loading...</h2>
           <p class="muted" id="meta"></p>
           <div id="content" style="margin-top:12px;"></div>
+          <div id="engagementMount" style="margin-top:16px;"></div>
 
           <div style="margin-top:14px;">
-            <a class="btn small ghost" href="./index.html">← Back to Blog</a>
+            <a class="btn small ghost" href="./index.html">Back to Blog</a>
           </div>
         </div>
       </div>
@@ -30,51 +31,459 @@
   <script src="../nav.js"></script>
 
   <script type="module">
-    import { db } from "../firebase.js";
+    import {
+      auth,
+      db,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signInWithRedirect,
+      getRedirectResult,
+      onAuthStateChanged,
+      signOut
+    } from "../firebase.js";
     import { logEvent, logPageView } from "../analytics.js";
-    import { doc, getDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+    import {
+      collection,
+      doc,
+      getDoc,
+      getDocs,
+      setDoc,
+      addDoc,
+      updateDoc,
+      deleteDoc,
+      query,
+      orderBy,
+      limit,
+      serverTimestamp,
+      Timestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
+    const CLIENT_KEY = "bloomPostClientId";
     const params = new URLSearchParams(location.search);
-    const id = params.get("id");
+    const postId = params.get("id");
 
     const titleEl = document.getElementById("title");
     const metaEl = document.getElementById("meta");
     const contentEl = document.getElementById("content");
+    const engagementMount = document.getElementById("engagementMount");
+    const commentUiUpdaters = [];
 
-    if (!id) {
-      titleEl.textContent = "Post not found.";
-      metaEl.textContent = "";
-    } else {
-      logPageView({ page: "blog_post", postId: id });
-      const snap = await getDoc(doc(db, "posts", id));
+    let currentUser = null;
+    let currentProfile = null;
 
+    function esc(s) {
+      return (s || "")
+        .toString()
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    }
+
+    function safeLabelFromComment(c) {
+      let n = (c?.display || c?.name || "Anonymous").toString().trim();
+      if (n.includes("@")) n = "Member";
+      return n || "Anonymous";
+    }
+
+    function isPostLive(p) {
+      const now = Timestamp.now();
+      const publishAt = p?.publishAt;
+      return (p?.published === true || p?.status === "published")
+        && !!publishAt
+        && publishAt.toMillis() <= now.toMillis();
+    }
+
+    function getClientId() {
+      let id = localStorage.getItem(CLIENT_KEY);
+      if (id) return id;
+      id = `anon_${Math.random().toString(36).slice(2)}_${Date.now()}`;
+      localStorage.setItem(CLIENT_KEY, id);
+      return id;
+    }
+
+    async function signInForComments() {
+      const provider = new GoogleAuthProvider();
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (e) {
+        const code = (e && e.code) ? String(e.code) : "";
+        if (code.includes("popup")) {
+          await signInWithRedirect(auth, provider);
+          return;
+        }
+        throw e;
+      }
+    }
+
+    async function loadCommentProfile() {
+      currentProfile = null;
+      if (!currentUser) return;
+      const ref = doc(db, "commentProfiles", currentUser.uid);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return;
+      const d = snap.data() || {};
+      const firstName = (d.firstName || "").toString().trim().slice(0, 40);
+      const lastName = (d.lastName || "").toString().trim().slice(0, 60);
+      const handle = (d.handle || "").toString().trim().slice(0, 40);
+      if (!firstName || handle.length < 3) return;
+      currentProfile = { firstName, lastName, handle };
+    }
+
+    async function saveCommentProfile({ firstName, lastName, handle }) {
+      if (!currentUser) throw new Error("Not signed in");
+      const f = (firstName || "").toString().trim().slice(0, 40);
+      const l = (lastName || "").toString().trim().slice(0, 60);
+      const h = (handle || "").toString().trim().slice(0, 40);
+      if (!f) throw new Error("First name is required.");
+      if (h.length < 3) throw new Error("User ID must be at least 3 characters.");
+      if (!/^[a-zA-Z0-9_.]+$/.test(h)) throw new Error("User ID can only use letters, numbers, _ and .");
+
+      const ref = doc(db, "commentProfiles", currentUser.uid);
+      const now = serverTimestamp();
+      await setDoc(ref, { firstName: f, lastName: l, handle: h, updatedAt: now, createdAt: now }, { merge: true });
+      currentProfile = { firstName: f, lastName: l, handle: h };
+    }
+
+    async function getLikeState(id, clientId) {
+      const likeDoc = await getDoc(doc(db, "posts", id, "likes", clientId));
+      const likeSnap = await getDocs(collection(db, "posts", id, "likes"));
+      return { liked: likeDoc.exists(), count: likeSnap.size };
+    }
+
+    async function getComments(id) {
+      const commentsQ = query(
+        collection(db, "posts", id, "comments"),
+        orderBy("createdAt", "desc"),
+        limit(50)
+      );
+      const snap = await getDocs(commentsQ);
+      return snap.docs.map((d) => ({ id: d.id, ...(d.data() || {}) }));
+    }
+
+    function renderComments(commentsHost, comments, id) {
+      if (!commentsHost) return;
+      if (!comments.length) {
+        commentsHost.innerHTML = `<p class="muted">No comments yet.</p>`;
+        return;
+      }
+
+      commentsHost.innerHTML = comments.map((c) => {
+        const who = esc(safeLabelFromComment(c));
+        const mine = !!(currentUser && c.uid && c.uid === currentUser.uid);
+        const text = esc((c.text || "").toString());
+
+        const actions = mine ? `
+          <div class="row" style="gap:8px; margin-top:10px;">
+            <button class="btn small ghost" type="button" data-edit-comment="${esc(c.id)}">Edit</button>
+            <button class="btn small ghost" type="button" data-del-comment="${esc(c.id)}">Delete</button>
+          </div>
+        ` : "";
+
+        return `
+          <div class="listItem" style="padding:10px 12px;">
+            <div style="width:100%;">
+              <div style="font-weight:700;">${who}</div>
+              <div class="muted" data-comment-text="${esc(c.id)}">${text}</div>
+              ${actions}
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      commentsHost.querySelectorAll("[data-del-comment]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const idToDelete = btn.getAttribute("data-del-comment");
+          if (!idToDelete) return;
+          if (!confirm("Delete this comment?")) return;
+          try {
+            await deleteDoc(doc(db, "posts", id, "comments", idToDelete));
+            const updated = await getComments(id);
+            renderComments(commentsHost, updated, id);
+          } catch (e) {
+            console.error(e);
+            alert("Unable to delete comment. Please try again.");
+          }
+        });
+      });
+
+      commentsHost.querySelectorAll("[data-edit-comment]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const idToEdit = btn.getAttribute("data-edit-comment");
+          if (!idToEdit) return;
+          const item = btn.closest(".listItem");
+          const textEl = item ? item.querySelector("[data-comment-text]") : null;
+          if (!textEl) return;
+
+          const current = (textEl.textContent || "").toString();
+          const wrap = document.createElement("div");
+          wrap.innerHTML = `
+            <textarea rows="3" maxlength="1000" style="width:100%; min-width:260px;">${esc(current)}</textarea>
+            <div class="row" style="gap:8px; margin-top:10px;">
+              <button class="btn small primary" type="button" data-save>Save</button>
+              <button class="btn small ghost" type="button" data-cancel>Cancel</button>
+            </div>
+          `;
+          const ta = wrap.querySelector("textarea");
+          const saveBtn = wrap.querySelector("[data-save]");
+          const cancelBtn = wrap.querySelector("[data-cancel]");
+
+          const originalHtml = textEl.parentElement.innerHTML;
+          textEl.parentElement.innerHTML = "";
+          textEl.parentElement.appendChild(wrap);
+          ta.focus();
+
+          cancelBtn.addEventListener("click", () => {
+            textEl.parentElement.innerHTML = originalHtml;
+            getComments(id).then((updated) => renderComments(commentsHost, updated, id)).catch(() => {});
+          });
+
+          saveBtn.addEventListener("click", async () => {
+            const next = (ta.value || "").toString().trim().slice(0, 1000);
+            if (!next) {
+              alert("Comment cannot be empty.");
+              return;
+            }
+            try {
+              await updateDoc(doc(db, "posts", id, "comments", idToEdit), { text: next, editedAt: serverTimestamp() });
+              const updated = await getComments(id);
+              renderComments(commentsHost, updated, id);
+            } catch (e) {
+              console.error(e);
+              alert("Unable to edit comment. Please try again.");
+            }
+          });
+        });
+      });
+    }
+
+    function renderEngagementShell() {
+      engagementMount.innerHTML = `
+        <div class="card" style="padding:14px;">
+          <div class="row" style="margin-bottom:12px;">
+            <button class="btn small" data-like-btn>
+              &#9825; <span data-like-count>0</span>
+            </button>
+            <span class="muted fine">Likes are anonymous.</span>
+          </div>
+          <h3 style="margin:0 0 8px; font-size:16px;">Comments</h3>
+          <div data-comments class="list" style="margin-bottom:10px;"></div>
+          <div data-comment-auth style="margin:0 0 10px;"></div>
+          <form data-comment-form class="form" style="align-items:stretch;">
+            <textarea name="text" rows="3" placeholder="Write a comment..." maxlength="1000" required style="min-width:260px;"></textarea>
+            <button class="btn small primary" type="submit">Post Comment</button>
+          </form>
+          <p class="muted fine" data-comment-msg></p>
+        </div>
+      `;
+    }
+
+    async function wireEngagement(id) {
+      renderEngagementShell();
+      const clientId = getClientId();
+      const commentsHost = engagementMount.querySelector("[data-comments]");
+      const commentAuth = engagementMount.querySelector("[data-comment-auth]");
+      const commentForm = engagementMount.querySelector("[data-comment-form]");
+      const commentMsg = engagementMount.querySelector("[data-comment-msg]");
+      const likeBtn = engagementMount.querySelector("[data-like-btn]");
+
+      const comments = await getComments(id);
+      renderComments(commentsHost, comments, id);
+
+      const likeState = await getLikeState(id, clientId);
+      likeBtn.innerHTML = `${likeState.liked ? "&#10084;" : "&#9825;"} <span data-like-count>${likeState.count}</span>`;
+
+      likeBtn.addEventListener("click", async () => {
+        const likeRef = doc(db, "posts", id, "likes", clientId);
+        const current = await getDoc(likeRef);
+        if (current.exists()) {
+          await deleteDoc(likeRef);
+          logEvent("post_unlike", { postId: id });
+        } else {
+          await setDoc(likeRef, { createdAt: serverTimestamp() });
+          logEvent("post_like", { postId: id });
+        }
+        const next = await getLikeState(id, clientId);
+        likeBtn.innerHTML = `${next.liked ? "&#10084;" : "&#9825;"} <span data-like-count>${next.count}</span>`;
+      });
+
+      function updateCommentUi() {
+        if (!commentAuth || !commentForm) return;
+        if (!currentUser) {
+          commentAuth.innerHTML = `
+            <button class="btn small ghost" type="button" data-signin-btn>
+              Sign in with Google to comment
+            </button>
+          `;
+          commentForm.style.display = "none";
+          const btn = commentAuth.querySelector("[data-signin-btn]");
+          if (btn) {
+            btn.addEventListener("click", async () => {
+              commentMsg.textContent = "";
+              try {
+                await signInForComments();
+              } catch (e) {
+                console.error(e);
+                commentMsg.textContent = "Sign-in failed. Please try again.";
+              }
+            });
+          }
+          return;
+        }
+
+        if (!currentProfile) {
+          commentAuth.innerHTML = `
+            <div class="card" style="padding:12px; border-radius:14px; margin-bottom:10px;">
+              <div style="font-weight:800; margin-bottom:8px;">Set up your comment profile</div>
+              <div class="muted fine" style="margin-bottom:10px;">
+                This keeps your email private. Choose a public User ID that will show with your comments.
+              </div>
+              <form data-profile-form class="form" style="align-items:stretch;">
+                <input name="firstName" placeholder="First name" maxlength="40" required style="min-width:160px;" />
+                <input name="lastName" placeholder="Last name" maxlength="60" style="min-width:160px;" />
+                <input name="handle" placeholder="User ID (public)" maxlength="40" required style="min-width:180px;" />
+                <button class="btn small primary" type="submit">Save</button>
+              </form>
+              <div class="muted fine" data-profile-msg style="margin-top:8px;"></div>
+              <button class="btn small" type="button" data-signout-btn style="margin-top:10px;">Sign out</button>
+            </div>
+          `;
+          commentForm.style.display = "none";
+
+          const signoutBtn = commentAuth.querySelector("[data-signout-btn]");
+          if (signoutBtn) {
+            signoutBtn.addEventListener("click", async () => {
+              try { await signOut(auth); } catch (e) { console.error(e); }
+            });
+          }
+
+          const form = commentAuth.querySelector("[data-profile-form]");
+          const out = commentAuth.querySelector("[data-profile-msg]");
+          if (form) {
+            form.addEventListener("submit", async (e) => {
+              e.preventDefault();
+              out.textContent = "";
+              const fd = new FormData(form);
+              try {
+                await saveCommentProfile({
+                  firstName: fd.get("firstName"),
+                  lastName: fd.get("lastName"),
+                  handle: fd.get("handle"),
+                });
+                out.textContent = "Saved. You can comment now.";
+                commentUiUpdaters.forEach((fn) => {
+                  try { fn(); } catch (err) { console.error(err); }
+                });
+              } catch (err) {
+                console.error(err);
+                out.textContent = err?.message || "Unable to save profile.";
+              }
+            });
+          }
+          return;
+        }
+
+        commentAuth.innerHTML = `
+          <span class="muted fine">Commenting as <strong>${esc(currentProfile.handle)}</strong></span>
+          <button class="btn small" type="button" data-signout-btn style="margin-left:10px;">Sign out</button>
+        `;
+        commentForm.style.display = "";
+        const signoutBtn = commentAuth.querySelector("[data-signout-btn]");
+        if (signoutBtn) {
+          signoutBtn.addEventListener("click", async () => {
+            try { await signOut(auth); } catch (e) { console.error(e); }
+          });
+        }
+      }
+
+      commentUiUpdaters.push(updateCommentUi);
+      updateCommentUi();
+
+      commentForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        if (!currentUser) {
+          commentMsg.textContent = "Please sign in to comment.";
+          return;
+        }
+        if (!currentProfile) {
+          commentMsg.textContent = "Please set up your comment profile first.";
+          return;
+        }
+
+        const fd = new FormData(commentForm);
+        const text = (fd.get("text") || "").toString().trim().slice(0, 1000);
+        if (!text) {
+          commentMsg.textContent = "Comment cannot be empty.";
+          return;
+        }
+
+        await addDoc(collection(db, "posts", id, "comments"), {
+          uid: currentUser.uid,
+          display: currentProfile.handle,
+          text,
+          createdAt: serverTimestamp(),
+        });
+        logEvent("post_comment", { postId: id });
+
+        commentMsg.textContent = "Comment posted.";
+        commentForm.reset();
+        const updatedComments = await getComments(id);
+        renderComments(commentsHost, updatedComments, id);
+      });
+    }
+
+    async function boot() {
+      if (!postId) {
+        titleEl.textContent = "Post not found.";
+        metaEl.textContent = "";
+        return;
+      }
+
+      logPageView({ page: "blog_post", postId });
+      const snap = await getDoc(doc(db, "posts", postId));
       if (!snap.exists()) {
         titleEl.textContent = "Post not found.";
         metaEl.textContent = "";
-      } else {
-        const p = snap.data();
-        const now = Timestamp.now();
-        const publishAt = p.publishAt;
-
-        const ok =
-          (p.published === true || p.status === "published") &&
-          publishAt &&
-          publishAt.toMillis() <= now.toMillis();
-
-        if (!ok) {
-          titleEl.textContent = "Post not available.";
-          metaEl.textContent = "";
-          contentEl.innerHTML = `<p class="muted">This post isn’t live yet.</p>`;
-          logEvent("post_blocked", { postId: id });
-        } else {
-          titleEl.textContent = p.title || "Untitled";
-          const tags = Array.isArray(p.tags) ? p.tags : [];
-          metaEl.textContent = tags.join(" • ");
-          contentEl.innerHTML = p.contentHtml || p.content || "<p class='muted'>No content.</p>";
-          logEvent("post_view_ok", { postId: id });
-        }
+        return;
       }
+
+      const p = snap.data() || {};
+      if (!isPostLive(p)) {
+        titleEl.textContent = "Post not available.";
+        metaEl.textContent = "";
+        contentEl.innerHTML = `<p class="muted">This post is not live yet.</p>`;
+        logEvent("post_blocked", { postId });
+        return;
+      }
+
+      titleEl.textContent = p.title || "Untitled";
+      const tags = Array.isArray(p.tags) ? p.tags : [];
+      metaEl.textContent = tags.join(" - ");
+      contentEl.innerHTML = p.contentHtml || p.content || "<p class='muted'>No content.</p>";
+      logEvent("post_view_ok", { postId });
+
+      await wireEngagement(postId);
+      getRedirectResult(auth).catch(() => {});
+      onAuthStateChanged(auth, async (user) => {
+        currentUser = user || null;
+        try {
+          await loadCommentProfile();
+        } catch (e) {
+          console.error(e);
+          currentProfile = null;
+        }
+        commentUiUpdaters.forEach((fn) => {
+          try { fn(); } catch (e) { console.error(e); }
+        });
+      });
     }
+
+    boot().catch((err) => {
+      console.error(err);
+      titleEl.textContent = "Post not available.";
+      metaEl.textContent = "";
+      contentEl.innerHTML = `<p class="muted">Unable to load this post right now.</p>`;
+    });
   </script>
 </body>
 </html>
