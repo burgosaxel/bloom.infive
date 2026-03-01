@@ -64,6 +64,7 @@
 
     const cardsEl = document.getElementById("publishedCards");
     const CLIENT_KEY = "bloomBookClientId";
+    const REACTIONS = ["❤️", "👏", "😍", "😂", "🔥", "🙏"];
     let currentUser = null;
     let currentProfile = null; // { firstName, lastName, handle }
     const commentUiUpdaters = [];
@@ -135,10 +136,38 @@
       return id;
     }
 
-    async function getLikeState(bookId, clientId) {
-      const likeDoc = await getDoc(doc(db, "books", bookId, "likes", clientId));
-      const likeSnap = await getDocs(collection(db, "books", bookId, "likes"));
-      return { liked: likeDoc.exists(), count: likeSnap.size };
+    function normalizeReaction(v) {
+      const x = (v || "").toString();
+      return REACTIONS.includes(x) ? x : "";
+    }
+
+    async function getReactionState(bookId, clientId) {
+      const reactionDoc = await getDoc(doc(db, "books", bookId, "likes", clientId));
+      const selected = reactionDoc.exists() ? normalizeReaction((reactionDoc.data() || {}).reaction) : "";
+      const snap = await getDocs(collection(db, "books", bookId, "likes"));
+      const counts = Object.fromEntries(REACTIONS.map((r) => [r, 0]));
+
+      snap.forEach((d) => {
+        const raw = (d.data() || {}).reaction;
+        // Legacy records had no reaction field; treat those as heart.
+        const reaction = normalizeReaction(raw) || "❤️";
+        if (counts[reaction] === undefined) return;
+        counts[reaction] += 1;
+      });
+
+      return { selected, counts };
+    }
+
+    function reactionButtonsHtml(state) {
+      return REACTIONS.map((reaction, idx) => {
+        const active = state.selected === reaction;
+        const count = state.counts[reaction] || 0;
+        return `
+          <button class="btn small ${active ? "primary" : "ghost"}" type="button" data-reaction="${idx}">
+            ${reaction} <span>${count}</span>
+          </button>
+        `;
+      }).join("");
     }
 
     async function getComments(bookId) {
@@ -255,7 +284,6 @@
       const book = bookSnap.data() || {};
       const id = bookSnap.id;
       const clientId = getClientId();
-      const { liked, count } = await getLikeState(id, clientId);
       const comments = await getComments(id);
 
       const card = document.createElement("article");
@@ -273,12 +301,11 @@
         ${cover}
         <h2 style="margin:0 0 8px;">${esc(book.title || "Untitled")}</h2>
         <p class="muted" style="margin:0 0 12px;">${esc(book.summary || "")}</p>
-        <div class="row" style="margin-bottom:12px;">
+        <div class="row" style="margin-bottom:8px;">
           ${linkBtn}
-          <button class="btn small" data-like-btn>
-            ${liked ? "&#10084;" : "&#9825;"} <span data-like-count>${count}</span>
-          </button>
         </div>
+        <div class="row" data-reactions style="margin-bottom:12px; gap:8px; flex-wrap:wrap;"></div>
+        <p class="muted fine" style="margin:0 0 12px;">Reactions are anonymous.</p>
 
         <div style="margin-top:8px;">
           <h3 style="margin:0 0 8px; font-size:16px;">Reviews / Comments</h3>
@@ -297,22 +324,34 @@
       const commentsHost = card.querySelector("[data-comments]");
       renderComments(commentsHost, comments, id);
 
-      const likeBtn = card.querySelector("[data-like-btn]");
-      const likeCount = card.querySelector("[data-like-count]");
-      likeBtn.addEventListener("click", async () => {
-        const likeRef = doc(db, "books", id, "likes", clientId);
-        const current = await getDoc(likeRef);
-        if (current.exists()) {
-          await deleteDoc(likeRef);
-          logEvent("book_unlike", { bookId: id });
-        } else {
-          await setDoc(likeRef, { createdAt: serverTimestamp() });
-          logEvent("book_like", { bookId: id });
-        }
-        const state = await getLikeState(id, clientId);
-        likeBtn.innerHTML = `${state.liked ? "&#10084;" : "&#9825;"} <span data-like-count>${state.count}</span>`;
-        likeCount.textContent = String(state.count);
-      });
+      const reactionsHost = card.querySelector("[data-reactions]");
+
+      async function renderReactions() {
+        const state = await getReactionState(id, clientId);
+        reactionsHost.innerHTML = reactionButtonsHtml(state);
+        reactionsHost.querySelectorAll("[data-reaction]").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const idx = Number(btn.getAttribute("data-reaction"));
+            const nextReaction = REACTIONS[idx];
+            if (!nextReaction) return;
+
+            const ref = doc(db, "books", id, "likes", clientId);
+            const snap = await getDoc(ref);
+            const cur = snap.exists() ? normalizeReaction((snap.data() || {}).reaction) : "";
+
+            if (snap.exists() && cur === nextReaction) {
+              await deleteDoc(ref);
+              logEvent("book_unlike", { bookId: id });
+            } else {
+              await setDoc(ref, { reaction: nextReaction, updatedAt: serverTimestamp(), createdAt: serverTimestamp() }, { merge: true });
+              logEvent("book_like", { bookId: id });
+            }
+            await renderReactions();
+          });
+        });
+      }
+
+      await renderReactions();
 
       const commentForm = card.querySelector("[data-comment-form]");
       const commentMsg = card.querySelector("[data-comment-msg]");
@@ -326,7 +365,7 @@
               Sign in with Google to comment
             </button>
             <br/>
-            <span class="muted fine">Likes are anonymous.</span>
+            <span class="muted fine">Reactions are anonymous.</span>
           `;
           commentForm.style.display = "none";
           const btn = commentAuth.querySelector("[data-signin-btn]");

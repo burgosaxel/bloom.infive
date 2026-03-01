@@ -31,8 +31,7 @@ service cloud.firestore {
       // Hearts for published posts
       match /likes/{likeId} {
         allow read: if isPublishedPost();
-        allow create, delete: if isPublishedPost();
-        allow update: if false;
+        allow create, update, delete: if isPublishedPost();
       }
 
       // Comments for published posts
@@ -104,8 +103,7 @@ service cloud.firestore {
       // Hearts for published books
       match /likes/{likeId} {
         allow read: if isPublishedBook();
-        allow create, delete: if isPublishedBook();
-        allow update: if false;
+        allow create, update, delete: if isPublishedBook();
       }
 
       // Reviews/comments for published books

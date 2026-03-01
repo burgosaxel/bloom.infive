@@ -59,6 +59,7 @@
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
     const CLIENT_KEY = "bloomPostClientId";
+    const REACTIONS = ["❤️", "👏", "😍", "😂", "🔥", "🙏"];
     const params = new URLSearchParams(location.search);
     const postId = params.get("id");
 
@@ -144,10 +145,37 @@
       currentProfile = { firstName: f, lastName: l, handle: h };
     }
 
-    async function getLikeState(id, clientId) {
-      const likeDoc = await getDoc(doc(db, "posts", id, "likes", clientId));
-      const likeSnap = await getDocs(collection(db, "posts", id, "likes"));
-      return { liked: likeDoc.exists(), count: likeSnap.size };
+    function normalizeReaction(v) {
+      const x = (v || "").toString();
+      return REACTIONS.includes(x) ? x : "";
+    }
+
+    async function getReactionState(id, clientId) {
+      const reactionDoc = await getDoc(doc(db, "posts", id, "likes", clientId));
+      const selected = reactionDoc.exists() ? normalizeReaction((reactionDoc.data() || {}).reaction) : "";
+      const snap = await getDocs(collection(db, "posts", id, "likes"));
+      const counts = Object.fromEntries(REACTIONS.map((r) => [r, 0]));
+
+      snap.forEach((d) => {
+        const raw = (d.data() || {}).reaction;
+        const reaction = normalizeReaction(raw) || "❤️";
+        if (counts[reaction] === undefined) return;
+        counts[reaction] += 1;
+      });
+
+      return { selected, counts };
+    }
+
+    function reactionButtonsHtml(state) {
+      return REACTIONS.map((reaction, idx) => {
+        const active = state.selected === reaction;
+        const count = state.counts[reaction] || 0;
+        return `
+          <button class="btn small ${active ? "primary" : "ghost"}" type="button" data-reaction="${idx}">
+            ${reaction} <span>${count}</span>
+          </button>
+        `;
+      }).join("");
     }
 
     async function getComments(id) {
@@ -259,12 +287,8 @@
     function renderEngagementShell() {
       engagementMount.innerHTML = `
         <div class="card" style="padding:14px;">
-          <div class="row" style="margin-bottom:12px;">
-            <button class="btn small" data-like-btn>
-              &#9825; <span data-like-count>0</span>
-            </button>
-            <span class="muted fine">Likes are anonymous.</span>
-          </div>
+          <div class="row" data-reactions style="margin-bottom:8px; gap:8px; flex-wrap:wrap;"></div>
+          <p class="muted fine" style="margin:0 0 12px;">Reactions are anonymous.</p>
           <h3 style="margin:0 0 8px; font-size:16px;">Comments</h3>
           <div data-comments class="list" style="margin-bottom:10px;"></div>
           <div data-comment-auth style="margin:0 0 10px;"></div>
@@ -284,27 +308,37 @@
       const commentAuth = engagementMount.querySelector("[data-comment-auth]");
       const commentForm = engagementMount.querySelector("[data-comment-form]");
       const commentMsg = engagementMount.querySelector("[data-comment-msg]");
-      const likeBtn = engagementMount.querySelector("[data-like-btn]");
+      const reactionsHost = engagementMount.querySelector("[data-reactions]");
 
       const comments = await getComments(id);
       renderComments(commentsHost, comments, id);
 
-      const likeState = await getLikeState(id, clientId);
-      likeBtn.innerHTML = `${likeState.liked ? "&#10084;" : "&#9825;"} <span data-like-count>${likeState.count}</span>`;
+      async function renderReactions() {
+        const state = await getReactionState(id, clientId);
+        reactionsHost.innerHTML = reactionButtonsHtml(state);
+        reactionsHost.querySelectorAll("[data-reaction]").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const idx = Number(btn.getAttribute("data-reaction"));
+            const nextReaction = REACTIONS[idx];
+            if (!nextReaction) return;
 
-      likeBtn.addEventListener("click", async () => {
-        const likeRef = doc(db, "posts", id, "likes", clientId);
-        const current = await getDoc(likeRef);
-        if (current.exists()) {
-          await deleteDoc(likeRef);
-          logEvent("post_unlike", { postId: id });
-        } else {
-          await setDoc(likeRef, { createdAt: serverTimestamp() });
-          logEvent("post_like", { postId: id });
-        }
-        const next = await getLikeState(id, clientId);
-        likeBtn.innerHTML = `${next.liked ? "&#10084;" : "&#9825;"} <span data-like-count>${next.count}</span>`;
-      });
+            const ref = doc(db, "posts", id, "likes", clientId);
+            const snap = await getDoc(ref);
+            const cur = snap.exists() ? normalizeReaction((snap.data() || {}).reaction) : "";
+
+            if (snap.exists() && cur === nextReaction) {
+              await deleteDoc(ref);
+              logEvent("post_unlike", { postId: id });
+            } else {
+              await setDoc(ref, { reaction: nextReaction, updatedAt: serverTimestamp(), createdAt: serverTimestamp() }, { merge: true });
+              logEvent("post_like", { postId: id });
+            }
+            await renderReactions();
+          });
+        });
+      }
+
+      await renderReactions();
 
       function updateCommentUi() {
         if (!commentAuth || !commentForm) return;

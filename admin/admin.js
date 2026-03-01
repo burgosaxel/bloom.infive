@@ -983,9 +983,9 @@ async function refreshReports() {
       </div>
       <div class="card">
         <div style="font-weight:800;">Engagement</div>
-        <div class="muted fine" style="margin-top:6px;">Book likes: <strong>${bookLikes.length}</strong></div>
+        <div class="muted fine" style="margin-top:6px;">Book reactions: <strong>${bookLikes.length}</strong></div>
         <div class="muted fine">Book comments: <strong>${bookComments.length}</strong></div>
-        <div class="muted fine">Post likes: <strong>${postLikes.length}</strong></div>
+        <div class="muted fine">Post reactions: <strong>${postLikes.length}</strong></div>
         <div class="muted fine">Post comments: <strong>${postComments.length}</strong></div>
         <div class="muted fine">Blog post reads: <strong>${postViews.length}</strong></div>
       </div>
