@@ -20,8 +20,11 @@
     "public": ".",
     "ignore": [
       "firebase.json",
+      ".git",
+      ".git/**",
       "**/.*",
       "**/node_modules/**",
+      "**/*.log",
       "functions/**"
     ],
     "rewrites": [

@@ -5,7 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Blog Post | BLOOM.INFIVE</title>
   <meta name="description" content="Blog post." />
+  <link rel="canonical" href="https://bloominfive.blog/blog/post.html" />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="BLOOM.INFIVE" />
+  <meta property="og:title" content="Blog Post | BLOOM.INFIVE" />
+  <meta property="og:description" content="Read this post on BLOOM.INFIVE." />
+  <meta property="og:url" content="https://bloominfive.blog/blog/post.html" />
+  <meta property="og:image" content="https://bloominfive.blog/angelika.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Blog Post | BLOOM.INFIVE" />
+  <meta name="twitter:description" content="Read this post on BLOOM.INFIVE." />
+  <meta name="twitter:image" content="https://bloominfive.blog/angelika.png" />
   <link rel="stylesheet" href="../styles.css" />
+  <script id="postJsonLd" type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Blog Post",
+      "author": {
+        "@type": "Person",
+        "name": "Angelika Burgos"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "BLOOM.INFIVE"
+      },
+      "mainEntityOfPage": "https://bloominfive.blog/blog/post.html"
+    }
+  </script>
 </head>
 
 <body>
@@ -68,6 +96,7 @@
     const contentEl = document.getElementById("content");
     const engagementMount = document.getElementById("engagementMount");
     const commentUiUpdaters = [];
+    const siteUrl = "https://bloominfive.blog";
 
     let currentUser = null;
     let currentProfile = null;
@@ -78,6 +107,74 @@
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;");
+    }
+
+    function plainTextFromHtml(html) {
+      const d = document.createElement("div");
+      d.innerHTML = html || "";
+      return (d.textContent || "").replace(/\s+/g, " ").trim();
+    }
+
+    function ensureMetaByName(name, value) {
+      let el = document.querySelector(`meta[name="${name}"]`);
+      if (!el) {
+        el = document.createElement("meta");
+        el.setAttribute("name", name);
+        document.head.appendChild(el);
+      }
+      el.setAttribute("content", value || "");
+    }
+
+    function ensureMetaByProp(prop, value) {
+      let el = document.querySelector(`meta[property="${prop}"]`);
+      if (!el) {
+        el = document.createElement("meta");
+        el.setAttribute("property", prop);
+        document.head.appendChild(el);
+      }
+      el.setAttribute("content", value || "");
+    }
+
+    function ensureCanonical(url) {
+      let el = document.querySelector('link[rel="canonical"]');
+      if (!el) {
+        el = document.createElement("link");
+        el.setAttribute("rel", "canonical");
+        document.head.appendChild(el);
+      }
+      el.setAttribute("href", url);
+    }
+
+    function applyPostSeo(post, id) {
+      const url = `${siteUrl}/blog/post.html?id=${encodeURIComponent(id)}`;
+      const title = (post.title || "Blog Post").toString().trim();
+      const text = plainTextFromHtml(post.contentHtml || post.content || "");
+      const desc = (text || "Read this post on BLOOM.INFIVE.").slice(0, 155);
+      const published = post.publishAt && typeof post.publishAt.toDate === "function"
+        ? post.publishAt.toDate().toISOString()
+        : undefined;
+
+      document.title = `${title} | BLOOM.INFIVE`;
+      ensureCanonical(url);
+      ensureMetaByName("description", desc);
+      ensureMetaByProp("og:title", `${title} | BLOOM.INFIVE`);
+      ensureMetaByProp("og:description", desc);
+      ensureMetaByProp("og:url", url);
+      ensureMetaByName("twitter:title", `${title} | BLOOM.INFIVE`);
+      ensureMetaByName("twitter:description", desc);
+
+      const ld = {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        headline: title,
+        description: desc,
+        mainEntityOfPage: url,
+        author: { "@type": "Person", name: "Angelika Burgos" },
+        publisher: { "@type": "Organization", name: "BLOOM.INFIVE" }
+      };
+      if (published) ld.datePublished = published;
+      const ldEl = document.getElementById("postJsonLd");
+      if (ldEl) ldEl.textContent = JSON.stringify(ld);
     }
 
     function safeLabelFromComment(c) {
@@ -539,6 +636,7 @@
       const tags = Array.isArray(p.tags) ? p.tags : [];
       metaEl.textContent = tags.join(" - ");
       contentEl.innerHTML = p.contentHtml || p.content || "<p class='muted'>No content.</p>";
+      applyPostSeo(p, postId);
       logEvent("post_view_ok", { postId });
 
       await wireEngagement(postId);
