@@ -47,7 +47,7 @@ import {
 // ✅ Your Firebase web config
 const firebaseConfig = {
   apiKey: "AIzaSyAXv7cIJLaMbFon-3GyMixJdgAFfoob_qE",
-  authDomain: "bloom-in-five.firebaseapp.com",
+  authDomain: "bloominfive.blog",
   projectId: "bloom-in-five",
   storageBucket: "bloom-in-five.firebasestorage.app",
   messagingSenderId: "684423939743",
