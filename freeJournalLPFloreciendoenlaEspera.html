@@ -80,11 +80,17 @@
 
     .leadBody h1{
       font-family:"Playfair Display", Georgia, serif;
-      font-size:47px;
-      line-height:.98;
-      margin:0 0 18px;
+      font-size:clamp(28px, 4.1vw, 36px);
+      line-height:1.12;
+      margin:0 auto 22px;
       color:#111b3f;
       letter-spacing:0;
+      text-align:center;
+      max-width:520px;
+    }
+
+    .leadBody h1 span{
+      display:block;
     }
 
     .leadBody p{
@@ -162,7 +168,7 @@
       body{ padding:10px; }
       .heroPhoto{ height:340px; }
       .leadBody{ padding:38px 28px 30px; }
-      .leadBody h1{ font-size:42px; }
+      .leadBody h1{ font-size:28px; }
       .closeBtn{ top:24px; right:22px; }
     }
   </style>
@@ -175,11 +181,9 @@
         <img src="./AnlavFloreciendoenlaEspera.jpeg" alt="Angelika de Bloom.inFive" />
       </div>
       <div class="leadBody">
-        <h1 id="lead-title">Solo necesito tu email!</h1>
+        <h1 id="lead-title">Déjame tu email y te envío gratis mi journal <span>Floreciendo en la Espera</span></h1>
         <p>
-          🤍 Déjame tu email y te envío gratis mi journal <strong>Floreciendo en la Espera</strong>
-          <br>
-          <br>Lo creé pensando en las mujeres que están atravesando temporadas de distancia.
+          Lo creé pensando en las mujeres que están atravesando temporadas de distancia.
           <br>
           <br>Porque sé lo difícil que puede sentirse esperar a alguien que amas mientras sigues sosteniendo tantas responsabilidades cada día.
           <br>
