@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Upcoming | BLOOM.INFIVE</title>
+  <meta name="description" content="See upcoming books and projects from BLOOM.INFIVE." />
+  <link rel="canonical" href="https://bloominfive.blog/pages/upcoming.html" />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="BLOOM.INFIVE" />
+  <meta property="og:title" content="Upcoming | BLOOM.INFIVE" />
+  <meta property="og:description" content="Books on the way from BLOOM.INFIVE." />
+  <meta property="og:url" content="https://bloominfive.blog/pages/upcoming.html" />
+  <meta property="og:image" content="https://bloominfive.blog/angelika.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Upcoming | BLOOM.INFIVE" />
+  <meta name="twitter:description" content="See what books are coming next." />
+  <meta name="twitter:image" content="https://bloominfive.blog/angelika.png" />
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+
+<body>
+  <div id="navMount"></div>
+
+  <main>
+    <section class="section">
+      <div class="container">
+        <div class="sectionHead">
+          <h2>Upcoming</h2>
+          <p class="muted">Books on the way.</p>
+        </div>
+
+        <div id="upcomingCards" class="list"></div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="container footerInner">
+        <p class="muted">&copy; <span id="year"></span> BLOOM.INFIVE. All rights reserved.</p>
+      </div>
+    </footer>
+  </main>
+
+  <script src="../nav.js"></script>
+
+  <script type="module">
+    import { db } from "../firebase.js";
+    import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    const cardsEl = document.getElementById("upcomingCards");
+
+    function esc(s) {
+      return (s || "")
+        .toString()
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    }
+
+    async function loadUpcoming() {
+      cardsEl.innerHTML = `<div class="card"><p class="muted">Loading...</p></div>`;
+
+      const q = query(
+        collection(db, "books"),
+        where("status", "==", "upcoming")
+      );
+
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        cardsEl.innerHTML = `<div class="card"><p class="muted">No upcoming books... yet. But stay tuned!</p></div>`;
+        return;
+      }
+
+      const docs = [...snap.docs].sort((a, b) => {
+        const at = a.data()?.createdAt?.toMillis ? a.data().createdAt.toMillis() : 0;
+        const bt = b.data()?.createdAt?.toMillis ? b.data().createdAt.toMillis() : 0;
+        return bt - at;
+      });
+
+      cardsEl.innerHTML = docs.map((docSnap) => {
+        const b = docSnap.data() || {};
+        const cover = b.coverUrl
+          ? `<img src="${esc(b.coverUrl)}" alt="${esc(b.title || "Book cover")}" style="width:100%;max-width:220px;border-radius:12px;border:1px solid var(--control-border);margin-bottom:12px;" />`
+          : "";
+
+        return `
+          <article class="card">
+            ${cover}
+            <h2 style="margin:0 0 8px;">${esc(b.title || "Untitled")}</h2>
+            <p class="muted" style="margin:0 0 12px;">${esc(b.summary || "")}</p>
+            ${b.link ? `<a class="btn small ghost" href="${esc(b.link)}" target="_blank" rel="noopener">Book Link</a>` : ""}
+          </article>
+        `;
+      }).join("");
+    }
+
+    loadUpcoming().catch((err) => {
+      console.error(err);
+      cardsEl.innerHTML = `<div class="card"><p class="muted">Unable to load upcoming books right now.</p></div>`;
+    });
+  </script>
+</body>
+</html>

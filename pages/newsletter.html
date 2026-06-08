@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Newsletter | BLOOM.INFIVE</title>
+  <meta name="description" content="Subscribe to the BLOOM.INFIVE newsletter for new blog posts, upcoming releases, and updates." />
+  <link rel="canonical" href="https://bloominfive.blog/pages/newsletter.html" />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="BLOOM.INFIVE" />
+  <meta property="og:title" content="Newsletter | BLOOM.INFIVE" />
+  <meta property="og:description" content="Join the newsletter for updates from BLOOM.INFIVE." />
+  <meta property="og:url" content="https://bloominfive.blog/pages/newsletter.html" />
+  <meta property="og:image" content="https://bloominfive.blog/angelika.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Newsletter | BLOOM.INFIVE" />
+  <meta name="twitter:description" content="Subscribe for updates and new posts." />
+  <meta name="twitter:image" content="https://bloominfive.blog/angelika.png" />
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+
+<body>
+  <div id="navMount"></div>
+
+  <main>
+    <section class="section">
+      <div class="container">
+        <div class="sectionHead">
+          <h2>Newsletter</h2>
+          <p class="muted">Subscribe for new posts, upcoming releases, and updates.</p>
+        </div>
+
+        <div class="card">
+          <form id="newsletter-form" class="form" style="align-items:stretch; max-width:760px; margin-top:22px;">
+            <input
+              id="email"
+              type="email"
+              name="email"
+              placeholder="you@example.com"
+              autocomplete="email"
+              style="flex:1;"
+              required
+            />
+            <button
+              id="subscribe-btn"
+              class="btn primary"
+              type="submit"
+              style="min-width:150px;"
+            >
+              Subscribe
+            </button>
+          </form>
+
+          <p id="status" class="muted" style="margin-top:14px;">
+            Join the list to get updates when new content goes live.
+          </p>
+        </div>
+
+        <p class="muted" style="margin-top:14px;">
+          By subscribing, you agree to receive emails from BLOOM.INFIVE. You can unsubscribe anytime.
+        </p>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="container footerInner">
+        <p class="muted">&copy; <span id="year"></span> BLOOM.INFIVE. All rights reserved.</p>
+        <div class="footerLinks">
+          <a href="../index.html">Home</a>
+          <a href="./about.html">About</a>
+          <a href="./newsletter.html">Newsletter</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <script src="../nav.js"></script>
+  <script type="module">
+    import { db } from "../firebase.js";
+    import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    document.getElementById("year").textContent = new Date().getFullYear();
+    const form = document.getElementById("newsletter-form");
+    const emailEl = document.getElementById("email");
+    const statusEl = document.getElementById("status");
+    const btn = document.getElementById("subscribe-btn");
+
+    function show(msg, ok = false) {
+      statusEl.textContent = msg;
+      statusEl.style.color = ok ? "#b7ffcf" : "";
+    }
+
+    function randomTokenHex(bytes = 16) {
+      const arr = new Uint8Array(bytes);
+      crypto.getRandomValues(arr);
+      return Array.from(arr).map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = (emailEl.value || "").trim().toLowerCase();
+      if (!email) {
+        show("Please enter your email.");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Subscribing...";
+
+      try {
+        const subId = email;
+        const unsubToken = randomTokenHex(16);
+        await setDoc(doc(db, "subscribers", subId), {
+          email,
+          status: "active",
+          source: "site-newsletter",
+          createdAt: serverTimestamp(),
+          unsubToken
+        });
+        form.reset();
+        show("You're subscribed. Welcome to BLOOM.INFIVE!", true);
+      } catch (err) {
+        console.error(err);
+        const code = (err && err.code) ? String(err.code) : "";
+        // If the doc already exists, this becomes an update which is blocked by rules.
+        if (code === "permission-denied") {
+          show("It looks like you're already subscribed with this email.", true);
+        } else {
+          show("Subscription failed. Please try again.");
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Subscribe";
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>About | BLOOM.INFIVE</title>
+  <meta name="description" content="Meet Angelika Burgos, the author behind BLOOM.INFIVE, sharing faith-rooted motherhood stories and reflections." />
+  <link rel="canonical" href="https://bloominfive.blog/pages/about.html" />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <meta property="og:type" content="profile" />
+  <meta property="og:site_name" content="BLOOM.INFIVE" />
+  <meta property="og:title" content="About Angelika Burgos | BLOOM.INFIVE" />
+  <meta property="og:description" content="Learn more about Angelika Burgos and her writing journey." />
+  <meta property="og:url" content="https://bloominfive.blog/pages/about.html" />
+  <meta property="og:image" content="https://bloominfive.blog/angelika.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="About Angelika Burgos | BLOOM.INFIVE" />
+  <meta name="twitter:description" content="Learn more about the author of BLOOM.INFIVE." />
+  <meta name="twitter:image" content="https://bloominfive.blog/angelika.png" />
+  <link rel="stylesheet" href="../styles.css" />
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ProfilePage",
+      "mainEntity": {
+        "@type": "Person",
+        "name": "Angelika Burgos",
+        "url": "https://bloominfive.blog/pages/about.html"
+      }
+    }
+  </script>
+</head>
+
+<body>
+  <div id="navMount"></div>
+
+  <main>
+    <section class="section">
+      <div class="container grid2">
+        <div class="authorPhotoWrap">
+          <img id="authorImg" src="../angelika.png" alt="Angelika Burgos, author" class="authorPhoto" />
+        </div>
+
+        <div>
+          <h2>Hi, I’m Angelika Burgos</h2>
+
+          <p class="muted">
+            I'm a wife and mom of three amazing kids who inspire me every single day.
+            I started writing at 14, mostly romance stories, but life pulled me in other directions.
+            Even though I paused my storytelling, I kept journaling, writing notes, reflections,
+            and little daily observations.
+          </p>
+
+          <p class="muted">
+            Until one day, motherhood brought new stories and a fresh perspective.
+            My mom always encouraged me to write a book, believing that life with me around
+            was never ordinary. But only through God’s guidance, writing found its way back
+            into my life.
+          </p>
+
+          <p class="muted">
+            I began turning everyday moments into stories, discovering that writing from the
+            heart and capturing life’s small, but meaningful details, has a depth all its own.
+            Now, I’m lucky enough to enjoy my passion for writing while living the extraordinary
+            adventure of raising my children.
+          </p>
+
+          <p class="muted">
+            Hoping to leave behind stories that linger in the hearts of the readers.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="container footerInner">
+        <p class="muted">© <span id="year"></span> BLOOM.INFIVE. All rights reserved.</p>
+      </div>
+    </footer>
+  </main>
+
+  <script src="../nav.js"></script>
+
+  <script type="module">
+    import { db } from "../firebase.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    const img = document.getElementById("authorImg");
+    const snap = await getDoc(doc(db, "site", "profile"));
+    if (snap.exists()) {
+      const d = snap.data();
+      if (d.photoUrl) img.src = d.photoUrl;
+    }
+  </script>
+</body>
+</html>

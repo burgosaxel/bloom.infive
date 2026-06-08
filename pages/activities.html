@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Activities | BLOOM.INFIVE</title>
+  <meta name="description" content="Discover readings, events, and visit opportunities from BLOOM.INFIVE." />
+  <link rel="canonical" href="https://bloominfive.blog/pages/activities.html" />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="BLOOM.INFIVE" />
+  <meta property="og:title" content="Activities | BLOOM.INFIVE" />
+  <meta property="og:description" content="Readings, events, and visits." />
+  <meta property="og:url" content="https://bloominfive.blog/pages/activities.html" />
+  <meta property="og:image" content="https://bloominfive.blog/angelika.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Activities | BLOOM.INFIVE" />
+  <meta name="twitter:description" content="Readings, events, and author visits." />
+  <meta name="twitter:image" content="https://bloominfive.blog/angelika.png" />
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+
+<body>
+  <div id="navMount"></div>
+
+  <main>
+    <section class="section">
+      <div class="container">
+        <div class="sectionHead">
+          <h2>Activities</h2>
+          <p class="muted">Readings, events, and visits.</p>
+        </div>
+
+        <div class="card">
+          <div id="activitiesContent">
+            <p class="muted">Loading...</p>
+          </div>
+        </div>
+
+        <div class="card" id="request" style="margin-top:14px;">
+          <h2>Request a Visit</h2>
+          <p class="muted">Under construction. Stay tuned!</p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="container footerInner">
+        <p class="muted">© <span id="year"></span> BLOOM.INFIVE. All rights reserved.</p>
+      </div>
+    </footer>
+  </main>
+
+  <script src="../nav.js"></script>
+
+  <script type="module">
+    import { db } from "../firebase.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    const el = document.getElementById("activitiesContent");
+    const snap = await getDoc(doc(db, "site", "activities"));
+
+    if (!snap.exists()) {
+      el.innerHTML = `<p class="muted">Under construction. Stay tuned!</p>`;
+    } else {
+      const d = snap.data();
+      el.innerHTML = d.contentHtml || d.content || `<p class="muted">Under construction. Stay tuned!</p>`;
+    }
+  </script>
+</body>
+</html>

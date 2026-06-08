@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Momly by Ange | Acceso temprano para mamás</title>
+  <meta name="description" content="Momly es una app creada para mamás que cargan mucho. Organiza rutinas, comidas, tareas y momentos familiares con calma, intención y fe." />
+  <link rel="canonical" href="https://bloominfive.blog/momlybyange" />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="BLOOM.INFIVE" />
+  <meta property="og:title" content="Momly: una app creada para mamás que cargan mucho" />
+  <meta property="og:description" content="Organiza rutinas, comidas, tareas y momentos familiares en un solo lugar, con calma, intención y fe." />
+  <meta property="og:url" content="https://bloominfive.blog/momlybyange" />
+  <meta property="og:image" content="https://bloominfive.blog/bloom-flower-light.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Momly: una app creada para mamás que cargan mucho" />
+  <meta name="twitter:description" content="Una herramienta simple, faith-friendly y mom-centered para organizar la vida familiar." />
+  <meta name="twitter:image" content="https://bloominfive.blog/bloom-flower-light.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css" />
+
+  <style>
+    .momlyHero{
+      padding:58px 0 36px;
+    }
+
+    .momlyHeroGrid{
+      display:grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr);
+      gap:28px;
+      align-items:center;
+    }
+
+    .momlyBadge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border:1px solid var(--elev-2);
+      border-radius:999px;
+      background:color-mix(in srgb, var(--card) 72%, transparent);
+      color:var(--muted);
+      font-size:14px;
+      font-weight:800;
+      margin-bottom:18px;
+    }
+
+    .momlyTitle{
+      font-family:"Playfair Display", Georgia, serif;
+      font-size:clamp(42px, 6vw, 76px);
+      line-height:1.02;
+      margin:0;
+      letter-spacing:0;
+      max-width:760px;
+    }
+
+    .momlySub{
+      font-size:18px;
+      max-width:660px;
+      margin:18px 0 26px;
+    }
+
+    .heroPanel{
+      position:relative;
+      min-height:380px;
+      border-radius:22px;
+      background:
+        linear-gradient(145deg, color-mix(in srgb, var(--card) 86%, transparent), color-mix(in srgb, var(--bg2) 80%, transparent)),
+        var(--card);
+      border:1px solid var(--elev-2);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      padding:24px;
+      display:grid;
+      align-content:end;
+    }
+
+    .heroPanel::before{
+      content:"";
+      position:absolute;
+      width:220px;
+      height:220px;
+      border-radius:50%;
+      background:rgba(255,255,255,.42);
+      top:-54px;
+      right:-48px;
+    }
+
+    .heroPanel::after{
+      content:"";
+      position:absolute;
+      width:180px;
+      height:180px;
+      border-radius:50%;
+      background:color-mix(in srgb, var(--bg) 62%, white 38%);
+      left:-42px;
+      bottom:-44px;
+      opacity:.62;
+    }
+
+    .miniPlanner{
+      position:relative;
+      z-index:1;
+      display:grid;
+      gap:12px;
+    }
+
+    .plannerCard{
+      background:color-mix(in srgb, var(--card) 94%, transparent);
+      border:1px solid var(--elev-2);
+      border-radius:16px;
+      padding:14px 16px;
+      box-shadow:0 12px 28px rgba(0,0,0,.08);
+    }
+
+    .plannerTop{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:center;
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:8px;
+    }
+
+    .plannerTitle{
+      font-weight:900;
+      font-size:18px;
+    }
+
+    .softGrid{
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0, 1fr));
+      gap:14px;
+      margin-top:24px;
+    }
+
+    .softCard{
+      min-height:150px;
+      border-radius:18px;
+      border:1px solid var(--elev-2);
+      background:color-mix(in srgb, var(--card) 88%, transparent);
+      box-shadow:var(--shadow);
+      padding:18px;
+    }
+
+    .softCardIcon{
+      width:38px;
+      height:38px;
+      border-radius:14px;
+      display:grid;
+      place-items:center;
+      background:color-mix(in srgb, var(--bg2) 74%, white 26%);
+      color:#111;
+      font-weight:900;
+      margin-bottom:12px;
+    }
+
+    .softCard h3,
+    .previewCard h3{
+      margin:0 0 8px;
+      font-size:18px;
+    }
+
+    .softCard p,
+    .previewCard p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.65;
+      font-size:15px;
+    }
+
+    .problemPanel,
+    .heartPanel,
+    .ctaPanel{
+      border-radius:24px;
+      border:1px solid var(--elev-2);
+      background:color-mix(in srgb, var(--card) 86%, transparent);
+      box-shadow:var(--shadow);
+      padding:28px;
+    }
+
+    .problemWords{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin:18px 0 20px;
+    }
+
+    .problemWords span,
+    .previewList span{
+      display:inline-flex;
+      align-items:center;
+      border-radius:999px;
+      border:1px solid var(--elev-2);
+      padding:8px 11px;
+      background:color-mix(in srgb, var(--bg2) 68%, var(--card) 32%);
+      color:var(--ink);
+      font-size:14px;
+      font-weight:800;
+    }
+
+    .sectionIntro{
+      max-width:700px;
+      margin:0 0 22px;
+      color:var(--muted);
+      font-size:17px;
+      line-height:1.75;
+    }
+
+    .previewGrid{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+      gap:14px;
+      margin-top:20px;
+    }
+
+    .previewCard{
+      border-radius:18px;
+      border:1px solid var(--elev-2);
+      background:color-mix(in srgb, var(--card) 88%, transparent);
+      padding:18px;
+    }
+
+    .previewList{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:18px;
+    }
+
+    .ctaPanel{
+      text-align:center;
+      padding:38px 28px;
+    }
+
+    .ctaPanel h2{
+      font-size:clamp(34px, 5vw, 56px);
+      line-height:1.05;
+    }
+
+    .ctaPanel p{
+      margin:12px auto 22px;
+      max-width:620px;
+      color:var(--muted);
+      line-height:1.75;
+      font-size:17px;
+    }
+
+    @media (max-width: 860px){
+      .momlyHeroGrid{
+        grid-template-columns:1fr;
+      }
+      .heroPanel{
+        min-height:320px;
+      }
+      .softGrid{
+        grid-template-columns:1fr 1fr;
+      }
+    }
+
+    @media (max-width: 620px){
+      .momlyHero{
+        padding:38px 0 22px;
+      }
+      .momlySub{
+        font-size:16px;
+      }
+      .softGrid,
+      .previewGrid{
+        grid-template-columns:1fr;
+      }
+      .problemPanel,
+      .heartPanel,
+      .ctaPanel{
+        padding:22px;
+      }
+      .footerLinks{
+        flex-wrap:wrap;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="nav-host"></div>
+
+  <main>
+    <section class="momlyHero">
+      <div class="container momlyHeroGrid">
+        <div>
+          <div class="momlyBadge">Momly by Ange</div>
+          <h1 class="momlyTitle">Momly: una app creada para mamás que cargan mucho</h1>
+          <p class="momlySub muted">Organiza rutinas, comidas, tareas y momentos familiares en un solo lugar, con calma, intención y fe.</p>
+          <div class="heroCtas">
+            <a class="btn primary momlyCta" data-utm-content="hero_button" href="https://momlybyange.web.app?utm_source=bloominfive&utm_medium=landing_page&utm_campaign=momly_early_access&utm_content=hero_button">Unirme al acceso temprano</a>
+          </div>
+        </div>
+
+        <div class="heroPanel" aria-label="Vista conceptual de organización familiar">
+          <div class="miniPlanner">
+            <div class="plannerCard">
+              <div class="plannerTop"><span>Hoy</span><span>con calma</span></div>
+              <div class="plannerTitle">Rutina de la mañana</div>
+            </div>
+            <div class="plannerCard">
+              <div class="plannerTop"><span>Comidas</span><span>esta semana</span></div>
+              <div class="plannerTitle">Plan simple para la familia</div>
+            </div>
+            <div class="plannerCard">
+              <div class="plannerTop"><span>Recordatorio</span><span>importante</span></div>
+              <div class="plannerTitle">Citas, escuela y hogar</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="problemPanel">
+          <h2>Las mamás cargan mucho</h2>
+          <div class="problemWords" aria-label="Cargas mentales comunes">
+            <span>Rutinas</span>
+            <span>Comidas</span>
+            <span>Tareas</span>
+            <span>Escuela</span>
+            <span>Citas</span>
+            <span>Listas mentales</span>
+            <span>Emociones</span>
+          </div>
+          <p class="sectionIntro">Muchas veces todo vive en la mente de mamá. Momly nace para ayudar a sacar ese peso mental y convertirlo en un sistema simple, práctico y lleno de gracia.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt">
+      <div class="container">
+        <h2>Lo que Momly ayuda a organizar</h2>
+        <p class="sectionIntro">Una forma más suave de mirar la semana, cuidar la casa y sostener a la familia sin sentir que tienes que hacerlo perfecto.</p>
+
+        <div class="softGrid">
+          <article class="softCard">
+            <div class="softCardIcon">1</div>
+            <h3>Rutinas familiares</h3>
+            <p>Para que los días tengan más ritmo, menos corredera y más claridad.</p>
+          </article>
+          <article class="softCard">
+            <div class="softCardIcon">2</div>
+            <h3>Planificación de comidas</h3>
+            <p>Ideas y estructura sencilla para alimentar a tu familia sin vivir improvisando.</p>
+          </article>
+          <article class="softCard">
+            <div class="softCardIcon">3</div>
+            <h3>Organización semanal</h3>
+            <p>Una vista simple para compromisos, tareas, escuela, citas y prioridades.</p>
+          </article>
+          <article class="softCard">
+            <div class="softCardIcon">4</div>
+            <h3>Recordatorios importantes</h3>
+            <p>Pequeñas ayudas para que las cosas importantes no dependan solo de tu memoria.</p>
+          </article>
+          <article class="softCard">
+            <div class="softCardIcon">5</div>
+            <h3>Tareas del hogar</h3>
+            <p>Organiza lo necesario sin convertir la casa en una lista interminable.</p>
+          </article>
+          <article class="softCard">
+            <div class="softCardIcon">6</div>
+            <h3>Más paz en medio del caos</h3>
+            <p>Más estructura sin perfeccionismo, con espacio para la vida real.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="heartPanel">
+          <h2>Creada con el corazón de Bloom.inFive</h2>
+          <p class="sectionIntro">Momly está siendo creada desde el mismo corazón detrás de Bloom.inFive: fe, maternidad real, gracia, intención y organización sin perfeccionismo.</p>
+          <p class="muted">No es una herramienta para exigirte más. Es una invitación a sostener tu vida familiar con un poquito más de claridad, y con mucha más ternura hacia ti misma.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt">
+      <div class="container">
+        <h2>Lo que viene en Momly</h2>
+        <p class="sectionIntro">Estamos construyendo esto con amor para ayudarte más. Estas son algunas áreas que estamos explorando y preparando con intención.</p>
+
+        <div class="previewGrid">
+          <article class="previewCard">
+            <h3>Vida familiar más clara</h3>
+            <p>Rutinas personalizadas, organización familiar y herramientas para simplificar tu día.</p>
+          </article>
+          <article class="previewCard">
+            <h3>Apoyo para mamá</h3>
+            <p>Ideas para mamás, planeación de comidas y recursos inspirados en la fe.</p>
+          </article>
+        </div>
+
+        <div class="previewList" aria-label="Vista previa de áreas de Momly">
+          <span>✓ Rutinas personalizadas</span>
+          <span>✓ Planeación de comidas</span>
+          <span>✓ Organización familiar</span>
+          <span>✓ Ideas para mamás</span>
+          <span>✓ Herramientas para simplificar tu día</span>
+          <span>✓ Recursos inspirados en la fe</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="ctaPanel">
+          <h2>Sé de las primeras en probar Momly 🌸</h2>
+          <p>Únete al acceso temprano y recibe noticias, pruebas beta y recursos especiales para mamás.</p>
+          <a class="btn primary momlyCta" data-utm-content="footer_button" href="https://momlybyange.web.app?utm_source=bloominfive&utm_medium=landing_page&utm_campaign=momly_early_access&utm_content=footer_button">Quiero acceso temprano</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footerInner">
+      <div>© <span id="year"></span> Angelika Burgos. All rights reserved.</div>
+      <div class="footerLinks">
+        <a href="../index.html">Home</a>
+        <a href="../blog/index.html">Blog</a>
+        <a href="../pages/newsletter.html">Newsletter</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../site-config.js"></script>
+  <script>
+    const DEFAULT_MOMLY_WAITLIST_URL = "https://momlybyange.web.app?utm_source=bloominfive&utm_medium=landing_page&utm_campaign=momly_early_access";
+
+    function momlyUrlWithContent(content) {
+      const configured = window.BLOOM_SITE_CONFIG?.MOMLY_WAITLIST_URL || DEFAULT_MOMLY_WAITLIST_URL;
+      try {
+        const url = new URL(configured, window.location.href);
+        url.searchParams.set("utm_source", url.searchParams.get("utm_source") || "bloominfive");
+        url.searchParams.set("utm_medium", url.searchParams.get("utm_medium") || "landing_page");
+        url.searchParams.set("utm_campaign", url.searchParams.get("utm_campaign") || "momly_early_access");
+        url.searchParams.set("utm_content", content);
+        return url.toString();
+      } catch {
+        return DEFAULT_MOMLY_WAITLIST_URL + "&utm_content=" + encodeURIComponent(content);
+      }
+    }
+
+    document.getElementById("year").textContent = new Date().getFullYear();
+    document.querySelectorAll(".momlyCta").forEach((link) => {
+      link.href = momlyUrlWithContent(link.dataset.utmContent || "button");
+    });
+  </script>
+  <script src="../nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,666 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Blog Post | BLOOM.INFIVE</title>
+  <meta name="description" content="Blog post." />
+  <link rel="canonical" href="https://bloominfive.blog/blog/post.html" />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="BLOOM.INFIVE" />
+  <meta property="og:title" content="Blog Post | BLOOM.INFIVE" />
+  <meta property="og:description" content="Read this post on BLOOM.INFIVE." />
+  <meta property="og:url" content="https://bloominfive.blog/blog/post.html" />
+  <meta property="og:image" content="https://bloominfive.blog/angelika.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Blog Post | BLOOM.INFIVE" />
+  <meta name="twitter:description" content="Read this post on BLOOM.INFIVE." />
+  <meta name="twitter:image" content="https://bloominfive.blog/angelika.png" />
+  <link rel="stylesheet" href="../styles.css" />
+  <script id="postJsonLd" type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      "headline": "Blog Post",
+      "author": {
+        "@type": "Person",
+        "name": "Angelika Burgos"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "BLOOM.INFIVE"
+      },
+      "mainEntityOfPage": "https://bloominfive.blog/blog/post.html"
+    }
+  </script>
+</head>
+
+<body>
+  <div id="navMount"></div>
+
+  <main>
+    <section class="section">
+      <div class="container">
+        <div class="card">
+          <h2 id="title">Loading...</h2>
+          <p class="muted" id="meta"></p>
+          <div id="content" style="margin-top:12px;"></div>
+          <div id="engagementMount" style="margin-top:16px;"></div>
+
+          <div style="margin-top:14px;">
+            <a class="btn small ghost" href="./index.html">Back to Blog</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="../nav.js"></script>
+
+  <script type="module">
+    import {
+      auth,
+      db,
+      GoogleAuthProvider,
+      signInWithPopup,
+      signInWithRedirect,
+      getRedirectResult,
+      onAuthStateChanged,
+      signOut
+    } from "../firebase.js";
+    import { logEvent, logPageView } from "../analytics.js";
+    import {
+      collection,
+      doc,
+      getDoc,
+      getDocs,
+      setDoc,
+      addDoc,
+      updateDoc,
+      deleteDoc,
+      query,
+      orderBy,
+      limit,
+      serverTimestamp,
+      Timestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    const CLIENT_KEY = "bloomPostClientId";
+    const REACTIONS = ["❤️", "👏", "😍", "😂", "🔥", "🙏"];
+    const params = new URLSearchParams(location.search);
+    const postId = params.get("id");
+
+    const titleEl = document.getElementById("title");
+    const metaEl = document.getElementById("meta");
+    const contentEl = document.getElementById("content");
+    const engagementMount = document.getElementById("engagementMount");
+    const commentUiUpdaters = [];
+    const siteUrl = "https://bloominfive.blog";
+
+    let currentUser = null;
+    let currentProfile = null;
+
+    function esc(s) {
+      return (s || "")
+        .toString()
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    }
+
+    function plainTextFromHtml(html) {
+      const d = document.createElement("div");
+      d.innerHTML = html || "";
+      return (d.textContent || "").replace(/\s+/g, " ").trim();
+    }
+
+    function ensureMetaByName(name, value) {
+      let el = document.querySelector(`meta[name="${name}"]`);
+      if (!el) {
+        el = document.createElement("meta");
+        el.setAttribute("name", name);
+        document.head.appendChild(el);
+      }
+      el.setAttribute("content", value || "");
+    }
+
+    function ensureMetaByProp(prop, value) {
+      let el = document.querySelector(`meta[property="${prop}"]`);
+      if (!el) {
+        el = document.createElement("meta");
+        el.setAttribute("property", prop);
+        document.head.appendChild(el);
+      }
+      el.setAttribute("content", value || "");
+    }
+
+    function ensureCanonical(url) {
+      let el = document.querySelector('link[rel="canonical"]');
+      if (!el) {
+        el = document.createElement("link");
+        el.setAttribute("rel", "canonical");
+        document.head.appendChild(el);
+      }
+      el.setAttribute("href", url);
+    }
+
+    function applyPostSeo(post, id) {
+      const url = `${siteUrl}/blog/post.html?id=${encodeURIComponent(id)}`;
+      const title = (post.title || "Blog Post").toString().trim();
+      const text = plainTextFromHtml(post.contentHtml || post.content || "");
+      const desc = (text || "Read this post on BLOOM.INFIVE.").slice(0, 155);
+      const published = post.publishAt && typeof post.publishAt.toDate === "function"
+        ? post.publishAt.toDate().toISOString()
+        : undefined;
+
+      document.title = `${title} | BLOOM.INFIVE`;
+      ensureCanonical(url);
+      ensureMetaByName("description", desc);
+      ensureMetaByProp("og:title", `${title} | BLOOM.INFIVE`);
+      ensureMetaByProp("og:description", desc);
+      ensureMetaByProp("og:url", url);
+      ensureMetaByName("twitter:title", `${title} | BLOOM.INFIVE`);
+      ensureMetaByName("twitter:description", desc);
+
+      const ld = {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        headline: title,
+        description: desc,
+        mainEntityOfPage: url,
+        author: { "@type": "Person", name: "Angelika Burgos" },
+        publisher: { "@type": "Organization", name: "BLOOM.INFIVE" }
+      };
+      if (published) ld.datePublished = published;
+      const ldEl = document.getElementById("postJsonLd");
+      if (ldEl) ldEl.textContent = JSON.stringify(ld);
+    }
+
+    function safeLabelFromComment(c) {
+      let n = (c?.display || c?.name || "Anonymous").toString().trim();
+      if (n.includes("@")) n = "Member";
+      return n || "Anonymous";
+    }
+
+    function isPostLive(p) {
+      const now = Timestamp.now();
+      const publishAt = p?.publishAt;
+      return (p?.published === true || p?.status === "published")
+        && !!publishAt
+        && publishAt.toMillis() <= now.toMillis();
+    }
+
+    function getClientId() {
+      let id = localStorage.getItem(CLIENT_KEY);
+      if (id) return id;
+      id = `anon_${Math.random().toString(36).slice(2)}_${Date.now()}`;
+      localStorage.setItem(CLIENT_KEY, id);
+      return id;
+    }
+
+    async function signInForComments() {
+      const provider = new GoogleAuthProvider();
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (e) {
+        const code = (e && e.code) ? String(e.code) : "";
+        if (code.includes("popup")) {
+          await signInWithRedirect(auth, provider);
+          return;
+        }
+        throw e;
+      }
+    }
+
+    async function loadCommentProfile() {
+      currentProfile = null;
+      if (!currentUser) return;
+      const ref = doc(db, "commentProfiles", currentUser.uid);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) return;
+      const d = snap.data() || {};
+      const firstName = (d.firstName || "").toString().trim().slice(0, 40);
+      const lastName = (d.lastName || "").toString().trim().slice(0, 60);
+      const handle = (d.handle || "").toString().trim().slice(0, 40);
+      if (!firstName || handle.length < 3) return;
+      currentProfile = { firstName, lastName, handle };
+    }
+
+    async function saveCommentProfile({ firstName, lastName, handle }) {
+      if (!currentUser) throw new Error("Not signed in");
+      const f = (firstName || "").toString().trim().slice(0, 40);
+      const l = (lastName || "").toString().trim().slice(0, 60);
+      const h = (handle || "").toString().trim().slice(0, 40);
+      if (!f) throw new Error("First name is required.");
+      if (h.length < 3) throw new Error("User ID must be at least 3 characters.");
+      if (!/^[a-zA-Z0-9_.]+$/.test(h)) throw new Error("User ID can only use letters, numbers, _ and .");
+
+      const ref = doc(db, "commentProfiles", currentUser.uid);
+      const now = serverTimestamp();
+      await setDoc(ref, { firstName: f, lastName: l, handle: h, updatedAt: now, createdAt: now }, { merge: true });
+      currentProfile = { firstName: f, lastName: l, handle: h };
+    }
+
+    function normalizeReaction(v) {
+      const x = (v || "").toString();
+      return REACTIONS.includes(x) ? x : "";
+    }
+
+    async function getReactionState(id, clientId) {
+      const reactionDoc = await getDoc(doc(db, "posts", id, "likes", clientId));
+      const selected = reactionDoc.exists() ? normalizeReaction((reactionDoc.data() || {}).reaction) : "";
+      const snap = await getDocs(collection(db, "posts", id, "likes"));
+      const counts = Object.fromEntries(REACTIONS.map((r) => [r, 0]));
+
+      snap.forEach((d) => {
+        const raw = (d.data() || {}).reaction;
+        const reaction = normalizeReaction(raw) || "❤️";
+        if (counts[reaction] === undefined) return;
+        counts[reaction] += 1;
+      });
+
+      return { selected, counts };
+    }
+
+    function totalReactions(counts) {
+      return REACTIONS.reduce((sum, r) => sum + (counts[r] || 0), 0);
+    }
+
+    function reactionControlHtml(state) {
+      const active = state.selected || "❤️";
+      const total = totalReactions(state.counts);
+      return `
+        <div style="position:relative;display:inline-block;" data-reaction-wrap>
+          <button class="btn small ${state.selected ? "primary" : "ghost"}" type="button" data-react-main>
+            ${active} <span>${total}</span>
+          </button>
+          <div data-reaction-picker style="display:none;position:absolute;left:0;bottom:calc(100% + 8px);background:var(--card);border:1px solid var(--control-border);border-radius:999px;padding:6px;box-shadow:var(--shadow);white-space:nowrap;z-index:20;">
+            ${REACTIONS.map((reaction, idx) => `<button class="btn small ghost" type="button" data-reaction="${idx}" style="min-width:0;padding:6px 8px;">${reaction}</button>`).join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    async function getComments(id) {
+      const commentsQ = query(
+        collection(db, "posts", id, "comments"),
+        orderBy("createdAt", "desc"),
+        limit(50)
+      );
+      const snap = await getDocs(commentsQ);
+      return snap.docs.map((d) => ({ id: d.id, ...(d.data() || {}) }));
+    }
+
+    function renderComments(commentsHost, comments, id) {
+      if (!commentsHost) return;
+      if (!comments.length) {
+        commentsHost.innerHTML = `<p class="muted">No comments yet.</p>`;
+        return;
+      }
+
+      commentsHost.innerHTML = comments.map((c) => {
+        const who = esc(safeLabelFromComment(c));
+        const mine = !!(currentUser && c.uid && c.uid === currentUser.uid);
+        const text = esc((c.text || "").toString());
+
+        const actions = mine ? `
+          <div class="row" style="gap:8px; margin-top:10px;">
+            <button class="btn small ghost" type="button" data-edit-comment="${esc(c.id)}">Edit</button>
+            <button class="btn small ghost" type="button" data-del-comment="${esc(c.id)}">Delete</button>
+          </div>
+        ` : "";
+
+        return `
+          <div class="listItem" style="padding:10px 12px;">
+            <div style="width:100%;">
+              <div style="font-weight:700;">${who}</div>
+              <div class="muted" data-comment-text="${esc(c.id)}">${text}</div>
+              ${actions}
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      commentsHost.querySelectorAll("[data-del-comment]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const idToDelete = btn.getAttribute("data-del-comment");
+          if (!idToDelete) return;
+          if (!confirm("Delete this comment?")) return;
+          try {
+            await deleteDoc(doc(db, "posts", id, "comments", idToDelete));
+            const updated = await getComments(id);
+            renderComments(commentsHost, updated, id);
+          } catch (e) {
+            console.error(e);
+            alert("Unable to delete comment. Please try again.");
+          }
+        });
+      });
+
+      commentsHost.querySelectorAll("[data-edit-comment]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const idToEdit = btn.getAttribute("data-edit-comment");
+          if (!idToEdit) return;
+          const item = btn.closest(".listItem");
+          const textEl = item ? item.querySelector("[data-comment-text]") : null;
+          if (!textEl) return;
+
+          const current = (textEl.textContent || "").toString();
+          const wrap = document.createElement("div");
+          wrap.innerHTML = `
+            <textarea rows="3" maxlength="1000" style="width:100%; min-width:260px;">${esc(current)}</textarea>
+            <div class="row" style="gap:8px; margin-top:10px;">
+              <button class="btn small primary" type="button" data-save>Save</button>
+              <button class="btn small ghost" type="button" data-cancel>Cancel</button>
+            </div>
+          `;
+          const ta = wrap.querySelector("textarea");
+          const saveBtn = wrap.querySelector("[data-save]");
+          const cancelBtn = wrap.querySelector("[data-cancel]");
+
+          const originalHtml = textEl.parentElement.innerHTML;
+          textEl.parentElement.innerHTML = "";
+          textEl.parentElement.appendChild(wrap);
+          ta.focus();
+
+          cancelBtn.addEventListener("click", () => {
+            textEl.parentElement.innerHTML = originalHtml;
+            getComments(id).then((updated) => renderComments(commentsHost, updated, id)).catch(() => {});
+          });
+
+          saveBtn.addEventListener("click", async () => {
+            const next = (ta.value || "").toString().trim().slice(0, 1000);
+            if (!next) {
+              alert("Comment cannot be empty.");
+              return;
+            }
+            try {
+              await updateDoc(doc(db, "posts", id, "comments", idToEdit), { text: next, editedAt: serverTimestamp() });
+              const updated = await getComments(id);
+              renderComments(commentsHost, updated, id);
+            } catch (e) {
+              console.error(e);
+              alert("Unable to edit comment. Please try again.");
+            }
+          });
+        });
+      });
+    }
+
+    function renderEngagementShell() {
+      engagementMount.innerHTML = `
+        <div class="card" style="padding:14px;">
+          <div class="row" data-reactions style="margin-bottom:8px; gap:8px; flex-wrap:wrap;"></div>
+          <p class="muted fine" style="margin:0 0 12px;">Reactions are anonymous.</p>
+          <h3 style="margin:0 0 8px; font-size:16px;">Comments</h3>
+          <div data-comments class="list" style="margin-bottom:10px;"></div>
+          <div data-comment-auth style="margin:0 0 10px;"></div>
+          <form data-comment-form class="form" style="align-items:stretch;">
+            <textarea name="text" rows="3" placeholder="Write a comment..." maxlength="1000" required style="min-width:260px;"></textarea>
+            <button class="btn small primary" type="submit">Post Comment</button>
+          </form>
+          <p class="muted fine" data-comment-msg></p>
+        </div>
+      `;
+    }
+
+    async function wireEngagement(id) {
+      renderEngagementShell();
+      const clientId = getClientId();
+      const commentsHost = engagementMount.querySelector("[data-comments]");
+      const commentAuth = engagementMount.querySelector("[data-comment-auth]");
+      const commentForm = engagementMount.querySelector("[data-comment-form]");
+      const commentMsg = engagementMount.querySelector("[data-comment-msg]");
+      const reactionsHost = engagementMount.querySelector("[data-reactions]");
+
+      const comments = await getComments(id);
+      renderComments(commentsHost, comments, id);
+
+      async function renderReactions() {
+        const state = await getReactionState(id, clientId);
+        reactionsHost.innerHTML = reactionControlHtml(state);
+
+        const wrap = reactionsHost.querySelector("[data-reaction-wrap]");
+        const mainBtn = reactionsHost.querySelector("[data-react-main]");
+        const picker = reactionsHost.querySelector("[data-reaction-picker]");
+        if (!wrap || !mainBtn || !picker) return;
+
+        let holdTimer = null;
+        let holdTriggered = false;
+
+        const closePicker = () => { picker.style.display = "none"; };
+        const openPicker = () => { picker.style.display = "block"; };
+
+        const applyReaction = async (nextReaction) => {
+          const ref = doc(db, "posts", id, "likes", clientId);
+          const snap = await getDoc(ref);
+          const cur = snap.exists() ? normalizeReaction((snap.data() || {}).reaction) : "";
+
+          if (snap.exists() && cur === nextReaction) {
+            await deleteDoc(ref);
+            logEvent("post_unlike", { postId: id });
+          } else {
+            await setDoc(ref, { reaction: nextReaction, updatedAt: serverTimestamp(), createdAt: serverTimestamp() }, { merge: true });
+            logEvent("post_like", { postId: id });
+          }
+          await renderReactions();
+        };
+
+        mainBtn.addEventListener("pointerdown", () => {
+          holdTriggered = false;
+          holdTimer = setTimeout(() => {
+            holdTriggered = true;
+            openPicker();
+          }, 450);
+        });
+
+        mainBtn.addEventListener("pointerup", async () => {
+          if (holdTimer) clearTimeout(holdTimer);
+          if (holdTriggered) return;
+          await applyReaction("❤️");
+        });
+
+        mainBtn.addEventListener("pointerleave", () => {
+          if (holdTimer) clearTimeout(holdTimer);
+        });
+
+        picker.querySelectorAll("[data-reaction]").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const idx = Number(btn.getAttribute("data-reaction"));
+            const nextReaction = REACTIONS[idx];
+            if (!nextReaction) return;
+            closePicker();
+            await applyReaction(nextReaction);
+          });
+        });
+
+        document.addEventListener("click", (e) => {
+          if (!wrap.contains(e.target)) closePicker();
+        }, { once: true });
+      }
+
+      await renderReactions();
+
+      function updateCommentUi() {
+        if (!commentAuth || !commentForm) return;
+        if (!currentUser) {
+          commentAuth.innerHTML = `
+            <button class="btn small ghost" type="button" data-signin-btn>
+              Sign in with Google to comment
+            </button>
+          `;
+          commentForm.style.display = "none";
+          const btn = commentAuth.querySelector("[data-signin-btn]");
+          if (btn) {
+            btn.addEventListener("click", async () => {
+              commentMsg.textContent = "";
+              try {
+                await signInForComments();
+              } catch (e) {
+                console.error(e);
+                commentMsg.textContent = "Sign-in failed. Please try again.";
+              }
+            });
+          }
+          return;
+        }
+
+        if (!currentProfile) {
+          commentAuth.innerHTML = `
+            <div class="card" style="padding:12px; border-radius:14px; margin-bottom:10px;">
+              <div style="font-weight:800; margin-bottom:8px;">Set up your comment profile</div>
+              <div class="muted fine" style="margin-bottom:10px;">
+                This keeps your email private. Choose a public User ID that will show with your comments.
+              </div>
+              <form data-profile-form class="form" style="align-items:stretch;">
+                <input name="firstName" placeholder="First name" maxlength="40" required style="min-width:160px;" />
+                <input name="lastName" placeholder="Last name" maxlength="60" style="min-width:160px;" />
+                <input name="handle" placeholder="User ID (public)" maxlength="40" required style="min-width:180px;" />
+                <button class="btn small primary" type="submit">Save</button>
+              </form>
+              <div class="muted fine" data-profile-msg style="margin-top:8px;"></div>
+              <button class="btn small" type="button" data-signout-btn style="margin-top:10px;">Sign out</button>
+            </div>
+          `;
+          commentForm.style.display = "none";
+
+          const signoutBtn = commentAuth.querySelector("[data-signout-btn]");
+          if (signoutBtn) {
+            signoutBtn.addEventListener("click", async () => {
+              try { await signOut(auth); } catch (e) { console.error(e); }
+            });
+          }
+
+          const form = commentAuth.querySelector("[data-profile-form]");
+          const out = commentAuth.querySelector("[data-profile-msg]");
+          if (form) {
+            form.addEventListener("submit", async (e) => {
+              e.preventDefault();
+              out.textContent = "";
+              const fd = new FormData(form);
+              try {
+                await saveCommentProfile({
+                  firstName: fd.get("firstName"),
+                  lastName: fd.get("lastName"),
+                  handle: fd.get("handle"),
+                });
+                out.textContent = "Saved. You can comment now.";
+                commentUiUpdaters.forEach((fn) => {
+                  try { fn(); } catch (err) { console.error(err); }
+                });
+              } catch (err) {
+                console.error(err);
+                out.textContent = err?.message || "Unable to save profile.";
+              }
+            });
+          }
+          return;
+        }
+
+        commentAuth.innerHTML = `
+          <span class="muted fine">Commenting as <strong>${esc(currentProfile.handle)}</strong></span>
+          <button class="btn small" type="button" data-signout-btn style="margin-left:10px;">Sign out</button>
+        `;
+        commentForm.style.display = "";
+        const signoutBtn = commentAuth.querySelector("[data-signout-btn]");
+        if (signoutBtn) {
+          signoutBtn.addEventListener("click", async () => {
+            try { await signOut(auth); } catch (e) { console.error(e); }
+          });
+        }
+      }
+
+      commentUiUpdaters.push(updateCommentUi);
+      updateCommentUi();
+
+      commentForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        if (!currentUser) {
+          commentMsg.textContent = "Please sign in to comment.";
+          return;
+        }
+        if (!currentProfile) {
+          commentMsg.textContent = "Please set up your comment profile first.";
+          return;
+        }
+
+        const fd = new FormData(commentForm);
+        const text = (fd.get("text") || "").toString().trim().slice(0, 1000);
+        if (!text) {
+          commentMsg.textContent = "Comment cannot be empty.";
+          return;
+        }
+
+        await addDoc(collection(db, "posts", id, "comments"), {
+          uid: currentUser.uid,
+          display: currentProfile.handle,
+          text,
+          createdAt: serverTimestamp(),
+        });
+        logEvent("post_comment", { postId: id });
+
+        commentMsg.textContent = "Comment posted.";
+        commentForm.reset();
+        const updatedComments = await getComments(id);
+        renderComments(commentsHost, updatedComments, id);
+      });
+    }
+
+    async function boot() {
+      if (!postId) {
+        titleEl.textContent = "Post not found.";
+        metaEl.textContent = "";
+        return;
+      }
+
+      logPageView({ page: "blog_post", postId });
+      const snap = await getDoc(doc(db, "posts", postId));
+      if (!snap.exists()) {
+        titleEl.textContent = "Post not found.";
+        metaEl.textContent = "";
+        return;
+      }
+
+      const p = snap.data() || {};
+      if (!isPostLive(p)) {
+        titleEl.textContent = "Post not available.";
+        metaEl.textContent = "";
+        contentEl.innerHTML = `<p class="muted">This post is not live yet.</p>`;
+        logEvent("post_blocked", { postId });
+        return;
+      }
+
+      titleEl.textContent = p.title || "Untitled";
+      const tags = Array.isArray(p.tags) ? p.tags : [];
+      metaEl.textContent = tags.join(" - ");
+      contentEl.innerHTML = p.contentHtml || p.content || "<p class='muted'>No content.</p>";
+      applyPostSeo(p, postId);
+      logEvent("post_view_ok", { postId });
+
+      await wireEngagement(postId);
+      getRedirectResult(auth).catch(() => {});
+      onAuthStateChanged(auth, async (user) => {
+        currentUser = user || null;
+        try {
+          await loadCommentProfile();
+        } catch (e) {
+          console.error(e);
+          currentProfile = null;
+        }
+        commentUiUpdaters.forEach((fn) => {
+          try { fn(); } catch (e) { console.error(e); }
+        });
+      });
+    }
+
+    boot().catch((err) => {
+      console.error(err);
+      titleEl.textContent = "Post not available.";
+      metaEl.textContent = "";
+      contentEl.innerHTML = `<p class="muted">Unable to load this post right now.</p>`;
+    });
+  </script>
+</body>
+</html>

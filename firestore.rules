@@ -1,0 +1,296 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+             && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // POSTS
+    match /posts/{postId} {
+      // Public can list published posts. Direct reads still respect publish time.
+      allow list: if resource.data.published == true;
+      allow get: if resource.data.published == true
+                 && resource.data.publishAt <= request.time;
+
+      // Admin can read/write everything
+      allow read: if isAdmin();
+      allow create, update, delete: if isAdmin();
+
+      function isPublishedPost() {
+        return get(/databases/$(database)/documents/posts/$(postId)).data.published == true
+               && get(/databases/$(database)/documents/posts/$(postId)).data.publishAt <= request.time;
+      }
+
+      // Hearts for published posts
+      match /likes/{likeId} {
+        allow read: if isPublishedPost();
+        allow create, update, delete: if isPublishedPost();
+      }
+
+      // Comments for published posts
+      match /comments/{commentId} {
+        allow read: if isPublishedPost();
+
+        function validCommentText() {
+          return request.resource.data.text is string
+                 && request.resource.data.text.size() > 0
+                 && request.resource.data.text.size() <= 1000;
+        }
+
+        function validEditedAt() {
+          return !("editedAt" in request.resource.data)
+                 || request.resource.data.editedAt is timestamp;
+        }
+
+        function isNewCommentSchema() {
+          return request.resource.data.keys().hasOnly(["uid", "display", "text", "createdAt", "editedAt"])
+                 && request.resource.data.display is string
+                 && request.resource.data.display.size() > 0
+                 && request.resource.data.display.size() <= 40
+                 && request.resource.data.createdAt is timestamp
+                 && validEditedAt();
+        }
+
+        function isLegacyCommentSchema() {
+          return request.resource.data.keys().hasOnly(["uid", "name", "text", "createdAt", "photoURL", "editedAt"])
+                 && request.resource.data.name is string
+                 && request.resource.data.name.size() > 0
+                 && request.resource.data.name.size() <= 80
+                 && request.resource.data.createdAt is timestamp
+                 && (!("photoURL" in request.resource.data)
+                     || (request.resource.data.photoURL is string
+                         && request.resource.data.photoURL.size() <= 500))
+                 && validEditedAt();
+        }
+
+        allow create: if signedIn()
+                      && isPublishedPost()
+                      && request.resource.data.uid == request.auth.uid
+                      && validCommentText()
+                      && (isNewCommentSchema() || isLegacyCommentSchema());
+
+        allow delete: if (signedIn() && resource.data.uid == request.auth.uid) || isAdmin();
+        allow update: if isAdmin()
+                      || (signedIn()
+                      && resource.data.uid == request.auth.uid
+                      && request.resource.data.uid == resource.data.uid
+                      && request.resource.data.createdAt == resource.data.createdAt
+                      && validCommentText()
+                      && (isNewCommentSchema() || isLegacyCommentSchema()));
+      }
+    }
+
+    // BOOKS (upcoming + published)
+    match /books/{bookId} {
+      // Public can list/read upcoming and published books
+      allow get, list: if resource.data.status in ["upcoming", "published"];
+
+      // Admin can read/write everything
+      allow read: if isAdmin();
+      allow create, update, delete: if isAdmin();
+
+      function isPublishedBook() {
+        return get(/databases/$(database)/documents/books/$(bookId)).data.status == "published";
+      }
+
+      // Hearts for published books
+      match /likes/{likeId} {
+        allow read: if isPublishedBook();
+        allow create, update, delete: if isPublishedBook();
+      }
+
+      // Reviews/comments for published books
+      match /comments/{commentId} {
+        allow read: if isPublishedBook();
+
+        function validCommentText() {
+          return request.resource.data.text is string
+                 && request.resource.data.text.size() > 0
+                 && request.resource.data.text.size() <= 1000;
+        }
+
+        function validEditedAt() {
+          return !("editedAt" in request.resource.data)
+                 || request.resource.data.editedAt is timestamp;
+        }
+
+        function isNewCommentSchema() {
+          // New: pseudonymous display handle, no email.
+          return request.resource.data.keys().hasOnly(["uid", "display", "text", "createdAt", "editedAt"])
+                 && request.resource.data.display is string
+                 && request.resource.data.display.size() > 0
+                 && request.resource.data.display.size() <= 40
+                 && request.resource.data.createdAt is timestamp
+                 && validEditedAt();
+        }
+
+        function isLegacyCommentSchema() {
+          // Legacy: name/photoURL used previously (allow for existing data + edits).
+          return request.resource.data.keys().hasOnly(["uid", "name", "text", "createdAt", "photoURL", "editedAt"])
+                 && request.resource.data.name is string
+                 && request.resource.data.name.size() > 0
+                 && request.resource.data.name.size() <= 80
+                 && request.resource.data.createdAt is timestamp
+                 && (!("photoURL" in request.resource.data)
+                     || (request.resource.data.photoURL is string
+                         && request.resource.data.photoURL.size() <= 500))
+                 && validEditedAt();
+        }
+
+        // Must be signed in to create.
+        allow create: if signedIn()
+                      && isPublishedBook()
+                      && request.resource.data.uid == request.auth.uid
+                      && validCommentText()
+                      && (isNewCommentSchema() || isLegacyCommentSchema());
+
+        // Users can edit/delete their own comments. Admin can moderate anything.
+        allow delete: if (signedIn() && resource.data.uid == request.auth.uid) || isAdmin();
+        allow update: if isAdmin()
+                      || (signedIn()
+                      && resource.data.uid == request.auth.uid
+                      // uid + createdAt must not change
+                      && request.resource.data.uid == resource.data.uid
+                      && request.resource.data.createdAt == resource.data.createdAt
+                      && validCommentText()
+                      && (isNewCommentSchema() || isLegacyCommentSchema()));
+      }
+    }
+
+    // Admin allowlist (managed in Firebase console; clients cannot grant themselves access)
+    match /admins/{uid} {
+      allow list: if false;
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow create, update, delete: if false;
+    }
+
+    // Comment profiles (private): store first/last/handle without exposing emails.
+    match /commentProfiles/{uid} {
+      allow list: if false;
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn()
+                            && request.auth.uid == uid
+                            && request.resource.data.keys().hasOnly(["firstName", "lastName", "handle", "updatedAt", "createdAt"])
+                            && request.resource.data.firstName is string
+                            && request.resource.data.firstName.size() > 0
+                            && request.resource.data.firstName.size() <= 40
+                            && request.resource.data.lastName is string
+                            && request.resource.data.lastName.size() <= 60
+                            && request.resource.data.handle is string
+                            && request.resource.data.handle.size() > 2
+                            && request.resource.data.handle.size() <= 40
+                            && request.resource.data.handle.matches('^[a-zA-Z0-9_\\.]+$')
+                            && request.resource.data.updatedAt is timestamp
+                            && request.resource.data.createdAt is timestamp;
+      allow delete: if signedIn() && request.auth.uid == uid;
+    }
+
+    // Admin logs: write on admin actions, read in admin UI.
+    match /adminLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin()
+                    && request.resource.data.keys().hasOnly(["actorUid", "actorEmail", "action", "entity", "entityId", "meta", "createdAt"])
+                    && request.resource.data.actorUid == request.auth.uid
+                    && request.resource.data.actorEmail is string
+                    && request.resource.data.actorEmail.size() <= 254
+                    && request.resource.data.action is string
+                    && request.resource.data.action.size() > 0
+                    && request.resource.data.action.size() <= 60
+                    && request.resource.data.entity is string
+                    && request.resource.data.entity.size() > 0
+                    && request.resource.data.entity.size() <= 60
+                    && request.resource.data.entityId is string
+                    && request.resource.data.entityId.size() <= 200
+                    && request.resource.data.meta is string
+                    && request.resource.data.meta.size() <= 1000
+                    && request.resource.data.createdAt is timestamp;
+      allow update, delete: if isAdmin();
+    }
+
+    // Analytics events: public write-only, admin read.
+    match /analyticsEvents/{eventId} {
+      allow read: if isAdmin();
+      allow create: if request.resource.data.keys().hasOnly([
+                      "type","path","referrer","clientId","ua",
+                      "utm_source","utm_medium","utm_campaign",
+                      "page","postId","bookId",
+                      "createdAt"
+                    ])
+                    && request.resource.data.type is string
+                    && request.resource.data.type.size() > 0
+                    && request.resource.data.type.size() <= 40
+                    && request.resource.data.path is string
+                    && request.resource.data.path.size() > 0
+                    && request.resource.data.path.size() <= 200
+                    && request.resource.data.referrer is string
+                    && request.resource.data.referrer.size() <= 300
+                    && request.resource.data.clientId is string
+                    && request.resource.data.clientId.size() > 0
+                    && request.resource.data.clientId.size() <= 120
+                    && request.resource.data.ua is string
+                    && request.resource.data.ua.size() <= 220
+                    && request.resource.data.utm_source is string
+                    && request.resource.data.utm_source.size() <= 80
+                    && request.resource.data.utm_medium is string
+                    && request.resource.data.utm_medium.size() <= 80
+                    && request.resource.data.utm_campaign is string
+                    && request.resource.data.utm_campaign.size() <= 80
+                    && (!("page" in request.resource.data) || (request.resource.data.page is string && request.resource.data.page.size() <= 60))
+                    && (!("postId" in request.resource.data) || (request.resource.data.postId is string && request.resource.data.postId.size() <= 200))
+                    && (!("bookId" in request.resource.data) || (request.resource.data.bookId is string && request.resource.data.bookId.size() <= 200))
+                    && request.resource.data.createdAt is timestamp;
+      allow update, delete: if false;
+    }
+
+    // Static pages (activities/newsletter content)
+    match /site/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Affiliate links
+    match /affiliateLinks/{linkId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Newsletter subscribers (admin-only writes)
+    match /subscribers/{subId} {
+      allow read: if isAdmin();
+
+      // Public subscribe create (one doc per normalized email id)
+      allow create: if request.resource.data.keys().hasOnly(["email", "status", "source", "createdAt", "unsubToken"])
+                    && subId == request.resource.data.email
+                    && request.resource.data.email is string
+                    && request.resource.data.email.size() > 3
+                    && request.resource.data.email.size() <= 254
+                    && request.resource.data.email.matches('^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$')
+                    && request.resource.data.status == "active"
+                    && request.resource.data.source == "site-newsletter"
+                    && request.resource.data.createdAt is timestamp
+                    && request.resource.data.unsubToken is string
+                    && request.resource.data.unsubToken.size() >= 20
+                    && request.resource.data.unsubToken.size() <= 200;
+
+      allow update, delete: if isAdmin();
+    }
+
+    // Lead magnet subscribers are written only by Cloud Functions and visible to admins.
+    match /leadMagnetSubscribers/{subId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    // Function-owned abuse prevention records. No public or admin client writes needed.
+    match /leadMagnetRateLimits/{rateId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+  }
+}

@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin | BLOOM.INFIVE</title>
+  <meta name="robots" content="noindex,nofollow,noarchive" />
+
+  <link rel="stylesheet" href="../styles.css" />
+  <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet" />
+
+  <style>
+    .tabs{ display:flex; gap:10px; flex-wrap:wrap; margin:12px 0 0; }
+    .tabBtn{
+      padding:10px 14px; border-radius:14px;
+      border:1.5px solid rgba(0,0,0,.2);
+      background:#fff; font-weight:600; cursor:pointer;
+    }
+    .tabBtn.active{ border-color: rgba(0,0,0,.55); }
+
+    .pane{ display:none; margin-top:14px; }
+    .pane.active{ display:block; }
+
+    #editor,
+    #pageEditor-activities,
+    #pageEditor-newsletter {
+      background:#fff;
+      border-radius:14px;
+      border:1.5px solid rgba(0,0,0,.2);
+      overflow:hidden;
+    }
+
+    .ql-toolbar{
+      border:0 !important;
+      border-bottom:1px solid rgba(0,0,0,.12) !important;
+    }
+    .ql-container{ border:0 !important; font-size:16px; }
+    .ql-editor{ min-height:220px; }
+
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .right{ margin-left:auto; }
+    .list{ display:grid; gap:10px; margin-top:12px; }
+
+    .item{
+      background:#fff;
+      border:1px solid rgba(0,0,0,.08);
+      border-radius:18px;
+      padding:14px 16px;
+      box-shadow:0 10px 30px rgba(0,0,0,.06);
+      display:flex;
+      gap:12px;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+
+    .actions{ display:flex; gap:10px; }
+    .fine{ font-size:13px; }
+
+    .statusPill{
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(0,0,0,.18);
+      background:rgba(255,255,255,.55);
+      font-size:13px;
+    }
+
+    .previewImg{
+      width:90px;
+      height:90px;
+      border-radius:18px;
+      object-fit:cover;
+      border:1px solid rgba(0,0,0,.12);
+    }
+
+    .field{ display:grid; gap:8px; margin-top:10px; }
+
+    .modalOverlay{
+      position:fixed;
+      inset:0;
+      z-index:1000;
+      display:none;
+      align-items:flex-start;
+      justify-content:center;
+      background:rgba(0,0,0,.55);
+      padding:32px 16px;
+      overflow:auto;
+    }
+    .modalOverlay.active{ display:flex; }
+    .modalPanel{
+      width:min(920px, 100%);
+      background:#fff;
+      color:#111;
+      border-radius:18px;
+      border:1px solid rgba(0,0,0,.18);
+      box-shadow:0 22px 70px rgba(0,0,0,.28);
+      padding:18px;
+    }
+    .modalHeader{
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      justify-content:space-between;
+      border-bottom:1px solid rgba(0,0,0,.12);
+      padding-bottom:12px;
+      margin-bottom:12px;
+    }
+    .settingsGrid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+    .settingsGrid .wide{ grid-column:1 / -1; }
+    .settingsField{
+      display:grid;
+      gap:5px;
+    }
+    .settingsField label{
+      font-weight:800;
+      font-size:13px;
+    }
+    .settingsField input,
+    .settingsField textarea{
+      width:100%;
+      box-sizing:border-box;
+      display:block;
+      border:1px solid rgba(0,0,0,.16);
+      border-radius:14px;
+      background:#fff;
+      color:#111;
+      padding:12px 14px;
+      font:inherit;
+      box-shadow:inset 0 1px 0 rgba(0,0,0,.03);
+    }
+    .settingsField input:focus,
+    .settingsField textarea:focus{
+      outline:2px solid rgba(15,42,58,.25);
+      border-color:rgba(15,42,58,.55);
+    }
+    .emailSettingsCard{
+      border:1px solid rgba(0,0,0,.12);
+      border-radius:14px;
+      padding:12px;
+      margin-top:12px;
+      background:#faf7ef;
+    }
+    .emailSettingsCard h3{
+      margin:0 0 10px;
+      font-size:16px;
+    }
+    .emailSettingsCard textarea{
+      min-height:170px;
+      resize:vertical;
+    }
+    @media (max-width: 760px){
+      .settingsGrid{ grid-template-columns:1fr; }
+    }
+
+    /* Make admin action buttons high-contrast in dark theme */
+    [data-theme="dark"] .tabBtn,
+    [data-theme="dark"] .btn:not(#themeToggle){
+      background:#fff;
+      color:#111;
+      border-color:rgba(255,255,255,.9);
+    }
+    [data-theme="dark"] .btn:not(#themeToggle):hover,
+    [data-theme="dark"] .tabBtn:hover{
+      filter:brightness(.96);
+    }
+    [data-theme="dark"] input,
+    [data-theme="dark"] textarea,
+    [data-theme="dark"] select{
+      background:#fff;
+      color:#111;
+      border-color:rgba(255,255,255,.9);
+    }
+    [data-theme="dark"] input::placeholder,
+    [data-theme="dark"] textarea::placeholder{
+      color:#4a4a4a;
+    }
+    [data-theme="dark"] .ql-editor{
+      color:#111;
+    }
+
+    /* Show/hide password */
+    .pwWrap{ position:relative; display:inline-block; }
+    .pwWrap input{ padding-right: 44px; }
+    .pwToggle{
+      position:absolute;
+      right:10px;
+      top:50%;
+      transform: translateY(-50%);
+      width:34px;
+      height:34px;
+      border-radius:12px;
+      border:1px solid rgba(0,0,0,.18);
+      background: rgba(255,255,255,.75);
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-size:14px;
+      line-height:1;
+      padding:0;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="section">
+    <div class="container">
+      <div class="card">
+        <div class="row">
+          <h2 style="margin:0;">Admin</h2>
+
+          <!-- Dark mode toggle -->
+          <button class="btn ghost small right" id="themeToggle" type="button" aria-label="Toggle theme">
+            Theme
+          </button>
+
+          <button class="btn ghost small" id="logoutBtn" type="button" style="display:none;">
+            Logout
+          </button>
+        </div>
+
+        <p class="muted" style="margin-top:10px;">
+          Login to manage posts, pages, and affiliate links.
+        </p>
+
+        <!-- Login -->
+        <div id="authBox">
+          <form class="form" id="loginForm">
+            <input type="email" id="email" placeholder="Email" required />
+            <span class="pwWrap">
+              <input type="password" id="password" placeholder="Password" required />
+              <button class="pwToggle" id="pwToggle" type="button" aria-label="Show password" aria-pressed="false" title="Show password">
+                Show
+              </button>
+            </span>
+            <button class="btn primary" type="submit">Login</button>
+            <button class="btn ghost" id="googleLoginBtn" type="button">Login with Google</button>
+            <p class="muted fine" id="loginMsg"></p>
+          </form>
+          <p class="muted fine" id="authMsg"></p>
+        </div>
+
+        <!-- Admin -->
+        <div id="adminBox" style="display:none;">
+          <div class="tabs">
+            <button class="tabBtn active" data-tab="posts">Blog Posts</button>
+            <button class="tabBtn" data-tab="upcoming">Upcoming</button>
+            <button class="tabBtn" data-tab="publishedBooks">Published Books</button>
+            <button class="tabBtn" data-tab="activities">Activities</button>
+            <button class="tabBtn" data-tab="newsletter">Newsletter</button>
+            <button class="tabBtn" data-tab="leadMagnets">Lead Magnets</button>
+            <button class="tabBtn" data-tab="affiliate">Affiliate</button>
+            <button class="tabBtn" data-tab="profile">Profile</button>
+            <button class="tabBtn" data-tab="logs">Logs</button>
+            <button class="tabBtn" data-tab="reports">Reports</button>
+          </div>
+
+          <p class="muted fine" id="statusMsg"></p>
+
+          <!-- POSTS -->
+          <div class="pane active" id="pane-posts">
+            <div class="row">
+              <button class="btn small ghost" id="newPostBtn">Add New Post</button>
+              <button class="btn small ghost" id="cancelPostBtn" style="display:none;">Cancel</button>
+            </div>
+
+            <div id="postEditorWrap" style="display:none; margin-top:12px;">
+              <div class="field">
+                <input id="postTitle" placeholder="Post title" />
+                <input id="postTags" placeholder="Tags (comma separated)" />
+
+                <div class="row">
+                  <label class="muted fine">Status:</label>
+                  <select id="postStatus">
+                    <option value="draft">Draft</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="published">Published</option>
+                  </select>
+
+                  <label class="muted fine">Publish time:</label>
+                  <input id="publishAt" type="datetime-local" />
+                </div>
+
+                <div id="editor"></div>
+
+                <button class="btn primary" id="savePostBtn">Save</button>
+                <p class="muted fine" id="postMsg"></p>
+              </div>
+            </div>
+
+            <h2 style="margin:18px 0 10px;">Saved Posts</h2>
+            <div id="postsList" class="list"></div>
+          </div>
+
+          <!-- UPCOMING -->
+          <div class="pane" id="pane-upcoming">
+            <div class="row">
+              <button class="btn small ghost" id="newUpcomingBtn">Add Upcoming Book</button>
+              <button class="btn small ghost" id="cancelUpcomingBtn" style="display:none;">Cancel</button>
+            </div>
+
+            <div id="upcomingFormWrap" style="display:none; margin-top:12px;">
+              <div class="field">
+                <input id="upcomingTitle" placeholder="Book title" />
+                <input id="upcomingLink" placeholder="Book link (Amazon, website, etc.)" />
+                <input id="upcomingCoverUrl" placeholder="Cover image URL (optional)" />
+                <textarea id="upcomingSummary" rows="5" placeholder="Short details"></textarea>
+                <select id="upcomingStatus">
+                  <option value="upcoming">Upcoming</option>
+                  <option value="published">Published</option>
+                </select>
+                <button class="btn primary" id="saveUpcomingBtn">Save Upcoming Book</button>
+                <p class="muted fine" id="upcomingMsg"></p>
+              </div>
+            </div>
+
+            <h2 style="margin:18px 0 10px;">Upcoming Books</h2>
+            <div id="upcomingList" class="list"></div>
+          </div>
+
+          <!-- PUBLISHED BOOKS -->
+          <div class="pane" id="pane-publishedBooks">
+            <h2 style="margin:0 0 10px;">Published Books</h2>
+            <p class="muted fine" style="margin:0 0 10px;">
+              Edit a published book to update details or move it back to Upcoming.
+            </p>
+            <div id="publishedBooksList" class="list"></div>
+          </div>
+
+          <!-- ACTIVITIES -->
+          <div class="pane" id="pane-activities">
+            <div class="row">
+              <button class="btn small ghost" id="saveActivitiesBtn">Save Activities</button>
+            </div>
+            <div style="margin-top:12px;">
+              <div id="pageEditor-activities"></div>
+              <p class="muted fine" id="pageMsg-activities"></p>
+            </div>
+          </div>
+
+          <!-- NEWSLETTER -->
+          <div class="pane" id="pane-newsletter">
+            <div class="row">
+              <button class="btn small ghost" id="saveNewsletterBtn">Save Newsletter</button>
+            </div>
+            <div style="margin-top:12px;">
+              <div id="pageEditor-newsletter"></div>
+              <p class="muted fine" id="pageMsg-newsletter"></p>
+            </div>
+          </div>
+
+          <!-- LEAD MAGNETS -->
+          <div class="pane" id="pane-leadMagnets">
+            <div class="row">
+              <button class="btn small ghost" id="refreshLeadMagnetsBtn">Refresh</button>
+              <button class="btn small ghost" id="openLeadMagnetSettingsBtn">Edit Settings</button>
+              <button class="btn small ghost" id="toggleLeadMagnetTestModeBtn">Loading test mode...</button>
+              <span class="muted fine" id="leadMagnetTestModeStatus"></span>
+            </div>
+            <p class="muted fine" style="margin:10px 0 0;">
+              Recent free journal subscribers from leadMagnetSubscribers.
+            </p>
+            <div id="leadMagnetsList" class="list"></div>
+          </div>
+
+          <div class="modalOverlay" id="leadMagnetSettingsModal" aria-hidden="true">
+            <div class="modalPanel" role="dialog" aria-modal="true" aria-labelledby="leadMagnetSettingsTitle">
+              <div class="modalHeader">
+                <div>
+                  <h2 id="leadMagnetSettingsTitle" style="margin:0;">Lead Magnet Settings</h2>
+                  <p class="muted fine" style="margin:6px 0 0;">Use tokens like {firstName}, {downloadUrl}, {momFavoritesUrl}, {faithFavoritesUrl}, {homeRoutineUrl}, {momlyUrl}, and {unsubscribeUrl}.</p>
+                </div>
+                <button class="btn small ghost" id="closeLeadMagnetSettingsBtn" type="button">Close</button>
+              </div>
+
+              <div class="settingsGrid">
+                <div class="settingsField wide">
+                  <label for="leadSettingPdfUrl">PDF download URL</label>
+                  <input id="leadSettingPdfUrl" type="url" placeholder="https://..." />
+                </div>
+                <div class="settingsField">
+                  <label for="leadSettingMomFavoritesUrl">Amazon mom favorites URL</label>
+                  <input id="leadSettingMomFavoritesUrl" type="url" placeholder="https://..." />
+                </div>
+                <div class="settingsField">
+                  <label for="leadSettingFaithFavoritesUrl">Amazon faith favorites URL</label>
+                  <input id="leadSettingFaithFavoritesUrl" type="url" placeholder="https://..." />
+                </div>
+                <div class="settingsField">
+                  <label for="leadSettingHomeRoutineUrl">Amazon home routine URL</label>
+                  <input id="leadSettingHomeRoutineUrl" type="url" placeholder="https://..." />
+                </div>
+                <div class="settingsField">
+                  <label for="leadSettingMomlyUrl">Momly early access URL</label>
+                  <input id="leadSettingMomlyUrl" type="url" placeholder="https://..." />
+                </div>
+              </div>
+
+              <div id="leadEmailSettingsWrap"></div>
+
+              <div class="row" style="margin-top:14px;">
+                <button class="btn primary" id="saveLeadMagnetSettingsBtn" type="button">Save Settings</button>
+                <button class="btn ghost" id="cancelLeadMagnetSettingsBtn" type="button">Cancel</button>
+                <span class="muted fine" id="leadMagnetSettingsMsg"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- AFFILIATE -->
+          <div class="pane" id="pane-affiliate">
+            <div class="row">
+              <button class="btn small ghost" id="newLinkBtn">Add New Link</button>
+              <button class="btn small ghost" id="cancelLinkBtn" style="display:none;">Cancel</button>
+            </div>
+
+            <div id="linkFormWrap" style="display:none; margin-top:12px;">
+              <div class="field">
+                <input id="linkTitle" placeholder="Title" />
+                <input id="linkUrl" placeholder="URL" />
+                <input id="linkCategory" placeholder="Category" />
+                <input id="linkDesc" placeholder="Description" />
+                <button class="btn primary" id="saveLinkBtn">Save Link</button>
+                <p class="muted fine" id="linkMsg"></p>
+              </div>
+            </div>
+
+            <h2 style="margin:18px 0 10px;">Saved Links</h2>
+            <div id="linksList" class="list"></div>
+          </div>
+
+          <!-- PROFILE -->
+          <div class="pane" id="pane-profile">
+            <h2>Author Photo</h2>
+            <p class="muted">Upload a new photo for the About page.</p>
+
+            <div class="row">
+              <img id="profilePreview" class="previewImg" src="../angelika.png" />
+              <div>
+                <input id="profileFile" type="file" accept="image/*" />
+                <button class="btn primary" id="uploadProfileBtn">Upload</button>
+                <p class="muted fine" id="profileMsg"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- LOGS -->
+          <div class="pane" id="pane-logs">
+            <div class="row">
+              <button class="btn small ghost" id="refreshLogsBtn">Refresh</button>
+            </div>
+            <p class="muted fine" style="margin:10px 0 0;">Recent admin actions.</p>
+            <div id="logsList" class="list"></div>
+          </div>
+
+          <!-- REPORTS -->
+          <div class="pane" id="pane-reports">
+            <div class="row">
+              <button class="btn small ghost" id="refreshReportsBtn">Refresh</button>
+              <span class="muted fine">Last 7 days</span>
+            </div>
+            <div id="reportsMount" style="margin-top:12px;"></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
+  <script type="module" src="./admin.js"></script>
+</body>
+</html>

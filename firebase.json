@@ -1,0 +1,45 @@
+{
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ],
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      ".git",
+      ".git/**",
+      "**/.*",
+      "**/node_modules/**",
+      "**/*.log",
+      "functions/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/momlybyange",
+        "destination": "/momlybyange/index.html"
+      },
+      {
+        "source": "/api/subscribeLeadMagnet",
+        "function": "subscribeLeadMagnet"
+      },
+      {
+        "source": "/unsubscribe",
+        "function": "unsubscribe"
+      }
+    ]
+  }
+}
