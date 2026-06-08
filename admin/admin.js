@@ -14,6 +14,10 @@ import {
 const THEME_KEY = "bloomTheme";
 const ICON_SUN = "\u2600\uFE0F";  // â˜€ï¸
 const ICON_MOON = "\uD83C\uDF19"; // ðŸŒ™
+const ADMIN_LEAD_SEQUENCE_ENDPOINTS = [
+  "/api/adminLeadMagnetSequence",
+  "https://us-central1-bloom-in-five.cloudfunctions.net/adminLeadMagnetSequence",
+];
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -1074,18 +1078,7 @@ async function handleLeadSequenceAction(row, btn) {
     const token = await auth.currentUser?.getIdToken();
     if (!token) throw new Error("You must be signed in as an admin.");
 
-    const res = await fetch("/api/adminLeadMagnetSequence", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
-      },
-      body: JSON.stringify({ action, email, emailNumber }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || data.ok === false) {
-      throw new Error(data.message || "Sequence action failed.");
-    }
+    const data = await postLeadSequenceAction({ action, email, emailNumber, token });
 
     msg(msgEl, data.message || "Done.", "ok");
     await refreshLeadMagnets();
@@ -1096,6 +1089,49 @@ async function handleLeadSequenceAction(row, btn) {
     btn.disabled = false;
     btn.textContent = originalText;
   }
+}
+
+async function postLeadSequenceAction(payload) {
+  const body = JSON.stringify({
+    action: payload.action,
+    email: payload.email,
+    emailNumber: payload.emailNumber,
+  });
+  let lastError = null;
+
+  for (let i = 0; i < ADMIN_LEAD_SEQUENCE_ENDPOINTS.length; i += 1) {
+    const url = ADMIN_LEAD_SEQUENCE_ENDPOINTS[i];
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${payload.token}`,
+        },
+        body,
+      });
+      const raw = await res.text();
+      let data = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        data = { message: raw ? raw.slice(0, 240) : "" };
+      }
+
+      if (res.ok && data.ok !== false) return data;
+
+      const message = data.message || `Sequence action failed (${res.status}).`;
+      lastError = new Error(message);
+      if (![404, 405].includes(res.status) || i === ADMIN_LEAD_SEQUENCE_ENDPOINTS.length - 1) {
+        throw lastError;
+      }
+    } catch (err) {
+      lastError = err;
+      if (i === ADMIN_LEAD_SEQUENCE_ENDPOINTS.length - 1) throw err;
+    }
+  }
+
+  throw lastError || new Error("Sequence action failed.");
 }
 
 async function loadLeadMagnetSequenceConfig() {

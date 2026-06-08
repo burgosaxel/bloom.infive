@@ -1288,6 +1288,7 @@ function setAdminCors(req, res) {
     "https://bloominfive.blog",
     "https://www.bloominfive.blog",
     "https://bloom-in-five.web.app",
+    "https://bloom-in-five.firebaseapp.com",
     "http://localhost:5000",
     "http://127.0.0.1:5000",
   ]);
