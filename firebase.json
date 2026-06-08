@@ -37,6 +37,10 @@
         "function": "subscribeLeadMagnet"
       },
       {
+        "source": "/api/adminLeadMagnetSequence",
+        "function": "adminLeadMagnetSequence"
+      },
+      {
         "source": "/unsubscribe",
         "function": "unsubscribe"
       }

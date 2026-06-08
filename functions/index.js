@@ -1181,6 +1181,262 @@ async function markSequenceEmailFailed(acquired, error) {
   });
 }
 
+async function getOrCreateUnsubToken(normalizedEmail) {
+  const subRef = admin.firestore().doc(`subscribers/${normalizedEmail}`);
+  const subSnap = await subRef.get();
+  const subData = subSnap.exists ? (subSnap.data() || {}) : {};
+  const unsubToken = (subData.unsubToken || randomTokenHex(16)).toString();
+
+  if (!subData.unsubToken) {
+    const now = admin.firestore.FieldValue.serverTimestamp();
+    await subRef.set({
+      email: normalizedEmail,
+      status: subData.status || "active",
+      source: subData.source || "site-newsletter",
+      createdAt: subData.createdAt || now,
+      updatedAt: now,
+      unsubToken,
+    }, { merge: true });
+  }
+
+  return unsubToken;
+}
+
+async function renderLeadSequenceEmail(emailNumber, leadData, normalizedEmail, sequenceConfig) {
+  const unsubToken = await getOrCreateUnsubToken(normalizedEmail);
+  const unsubUrl = unsubscribeUrlFor(normalizedEmail, unsubToken);
+
+  if (emailNumber === 1) {
+    const emailRender = leadMagnetEmail({
+      firstName: leadData.firstName || "amiga",
+      downloadUrl: sequenceConfig.pdfDownloadUrl || "",
+      unsubUrl,
+      sequenceConfig,
+    });
+    return {
+      subject: emailRender.subject || SEQUENCE_EMAIL_SUBJECTS[1],
+      text: emailRender.text,
+      html: emailRender.html,
+    };
+  }
+
+  const subjectVars = leadMagnetTemplateVars({
+    firstName: leadData.firstName || "amiga",
+    downloadUrl: sequenceConfig.pdfDownloadUrl || "",
+    unsubUrl,
+    sequenceConfig,
+  });
+  const subject = configuredEmailSubject(emailNumber, sequenceConfig, subjectVars);
+  const { text, html } = sequenceEmailTemplate(emailNumber, {
+    ...leadData,
+    unsubUrl,
+    sequenceConfig,
+  });
+
+  return { subject, text, html };
+}
+
+async function sendLeadSequenceEmailNow({ ref, leadData, normalizedEmail, emailNumber, sequenceConfig, reason, actor }) {
+  const rendered = await renderLeadSequenceEmail(emailNumber, leadData, normalizedEmail, sequenceConfig);
+  await sendGmail({
+    to: normalizedEmail,
+    subject: rendered.subject,
+    text: rendered.text,
+    html: rendered.html,
+  });
+
+  const sentAt = admin.firestore.FieldValue.serverTimestamp();
+  const patch = {
+    [`emailsSent.${emailNumber}`]: {
+      subject: rendered.subject,
+      status: "sent",
+      sentAt,
+      adminAction: reason,
+      actorUid: actor?.uid || "",
+      actorEmail: actor?.email || "",
+    },
+    lastSequenceEmailSentAt: sentAt,
+    sequenceHasFailure: false,
+    updatedAt: sentAt,
+  };
+
+  if (emailNumber === 1) {
+    patch.emailSentAt = sentAt;
+  }
+
+  await ref.set(patch, { merge: true });
+  return rendered.subject;
+}
+
+async function verifyAdminRequest(req) {
+  const authHeader = req.get("authorization") || "";
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+  if (!match) throw new Error("missing-auth");
+
+  const decoded = await admin.auth().verifyIdToken(match[1]);
+  const adminSnap = await admin.firestore().doc(`admins/${decoded.uid}`).get();
+  if (!adminSnap.exists) throw new Error("not-admin");
+  return {
+    uid: decoded.uid,
+    email: (decoded.email || "").toString(),
+  };
+}
+
+function setAdminCors(req, res) {
+  const origin = req.get("origin") || "";
+  const allowedOrigins = new Set([
+    "https://bloominfive.blog",
+    "https://www.bloominfive.blog",
+    "https://bloom-in-five.web.app",
+    "http://localhost:5000",
+    "http://127.0.0.1:5000",
+  ]);
+  res.set("Access-Control-Allow-Origin", allowedOrigins.has(origin) ? origin : "https://bloominfive.blog");
+  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+}
+
+exports.adminLeadMagnetSequence = onRequest(
+  {
+    secrets: [GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN],
+    region: "us-central1",
+  },
+  async (req, res) => {
+    setAdminCors(req, res);
+    if (req.method === "OPTIONS") {
+      res.status(204).send("");
+      return;
+    }
+    if (req.method !== "POST") {
+      res.status(405).json({ ok: false, message: "Method not allowed." });
+      return;
+    }
+
+    try {
+      const actor = await verifyAdminRequest(req);
+      const body = req.body || {};
+      const action = cleanText(body.action, 40);
+      const normalizedEmail = normalizeEmail(body.email || body.normalizedEmail || "");
+      const emailNumber = Number(body.emailNumber || body.step || 0);
+
+      if (!["restart", "resend"].includes(action)) {
+        res.status(400).json({ ok: false, message: "Invalid action." });
+        return;
+      }
+      if (!isValidEmail(normalizedEmail)) {
+        res.status(400).json({ ok: false, message: "Invalid subscriber email." });
+        return;
+      }
+      if (emailNumber < 1 || emailNumber > 5) {
+        res.status(400).json({ ok: false, message: "Choose a sequence step from 1 to 5." });
+        return;
+      }
+
+      const ref = admin.firestore().doc(`leadMagnetSubscribers/${normalizedEmail}`);
+      const snap = await ref.get();
+      if (!snap.exists) {
+        res.status(404).json({ ok: false, message: "Lead magnet subscriber not found." });
+        return;
+      }
+
+      const leadData = snap.data() || {};
+      const sequenceConfig = await getLeadMagnetSequenceConfig();
+      if (emailNumber === 1 && !sequenceConfig.pdfDownloadUrl) {
+        res.status(500).json({ ok: false, message: "PDF URL is not configured." });
+        return;
+      }
+
+      if (action === "resend") {
+        const subject = await sendLeadSequenceEmailNow({
+          ref,
+          leadData,
+          normalizedEmail,
+          emailNumber,
+          sequenceConfig,
+          reason: "resend",
+          actor,
+        });
+        await admin.firestore().collection("adminLogs").add({
+          actorUid: actor.uid,
+          actorEmail: actor.email.slice(0, 254),
+          action: "lead_sequence_resend",
+          entity: "leadMagnetSubscribers",
+          entityId: normalizedEmail,
+          meta: JSON.stringify({ emailNumber, subject }).slice(0, 1000),
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        res.status(200).json({ ok: true, message: `Email ${emailNumber} resent.` });
+        return;
+      }
+
+      const nowDate = new Date();
+      const nowTs = timestampFromDate(nowDate);
+      const restartPatch = {
+        sequenceStatus: "active",
+        sequenceHasFailure: false,
+        sequenceStartedAt: nowTs,
+        updatedAt: nowTs,
+      };
+      for (let i = emailNumber; i <= 5; i += 1) {
+        restartPatch[`emailsSent.${i}`] = admin.firestore.FieldValue.delete();
+      }
+
+      if (emailNumber === 1) {
+        await ref.set(restartPatch, { merge: true });
+        const subject = await sendLeadSequenceEmailNow({
+          ref,
+          leadData,
+          normalizedEmail,
+          emailNumber: 1,
+          sequenceConfig,
+          reason: "restart",
+          actor,
+        });
+        await ref.set({
+          sequenceStatus: "active",
+          nextSequenceEmailNumber: 2,
+          nextSequenceEmailDueAt: sequenceDueAt(nowDate, 2, sequenceConfig.testEmailSequenceMode),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+        await admin.firestore().collection("adminLogs").add({
+          actorUid: actor.uid,
+          actorEmail: actor.email.slice(0, 254),
+          action: "lead_sequence_restart",
+          entity: "leadMagnetSubscribers",
+          entityId: normalizedEmail,
+          meta: JSON.stringify({ step: 1, subject }).slice(0, 1000),
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        res.status(200).json({ ok: true, message: "Sequence restarted from Email 1." });
+        return;
+      }
+
+      await ref.set({
+        ...restartPatch,
+        nextSequenceEmailNumber: emailNumber,
+        nextSequenceEmailDueAt: nowTs,
+      }, { merge: true });
+      await admin.firestore().collection("adminLogs").add({
+        actorUid: actor.uid,
+        actorEmail: actor.email.slice(0, 254),
+        action: "lead_sequence_restart",
+        entity: "leadMagnetSubscribers",
+        entityId: normalizedEmail,
+        meta: JSON.stringify({ step: emailNumber }).slice(0, 1000),
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      res.status(200).json({ ok: true, message: `Sequence restarted from Email ${emailNumber}.` });
+    } catch (e) {
+      if (e?.message === "missing-auth" || e?.message === "not-admin") {
+        res.status(403).json({ ok: false, message: "Admin authorization required." });
+        return;
+      }
+      logger.error("adminLeadMagnetSequence failed", e);
+      res.status(500).json({ ok: false, message: "Could not update lead magnet sequence." });
+    }
+  }
+);
+
 exports.sendLeadMagnetSequenceEmails = onSchedule(
   {
     schedule: "every 1 minutes",

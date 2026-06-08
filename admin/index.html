@@ -151,8 +151,42 @@
       min-height:170px;
       resize:vertical;
     }
+    .leadSequenceActions{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      margin-top:10px;
+    }
+    .leadSequenceActions select{
+      min-height:36px;
+      border-radius:12px;
+      border:1px solid rgba(0,0,0,.18);
+      background:#fff;
+      color:#111;
+      padding:6px 8px;
+      font:inherit;
+      font-size:13px;
+    }
+    .leadSequenceActions .btn{
+      min-height:36px;
+      padding:7px 10px;
+      font-size:13px;
+      border-radius:12px;
+    }
+    .leadSequenceMsg{
+      width:100%;
+      min-height:18px;
+      text-align:right;
+    }
     @media (max-width: 760px){
       .settingsGrid{ grid-template-columns:1fr; }
+      .leadSequenceActions{
+        justify-content:flex-start;
+      }
+      .leadSequenceMsg{
+        text-align:left;
+      }
     }
 
     /* Make admin action buttons high-contrast in dark theme */

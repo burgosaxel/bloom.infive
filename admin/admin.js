@@ -1009,8 +1009,10 @@ async function refreshLeadMagnets() {
     const fullName = `${d.firstName || ""} ${d.lastName || ""}`.trim() || "(no name)";
     const sequenceStatus = d.sequenceStatus || "not started";
     const nextEmail = d.nextSequenceEmailNumber ? `Email ${d.nextSequenceEmailNumber}` : "-";
+    const emailId = d.normalizedEmail || d.email || docSnap.id;
     const row = document.createElement("div");
     row.className = "listItem";
+    row.dataset.email = emailId;
     row.innerHTML = `
       <div style="min-width:0;">
         <div style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
@@ -1031,10 +1033,69 @@ async function refreshLeadMagnets() {
         <div>Email 1 sent: ${escapeHtml(formatDate(d.emailSentAt) || "Not yet")}</div>
         <div>Last sequence: ${escapeHtml(formatDate(d.lastSequenceEmailSentAt) || "Not yet")}</div>
         <div>Next: ${escapeHtml(nextEmail)} ${escapeHtml(formatDate(d.nextSequenceEmailDueAt) || "")}</div>
+        <div class="leadSequenceActions">
+          <select data-lead-action-select="restart" aria-label="Restart sequence step for ${escapeHtml(fullName)}">
+            ${[1, 2, 3, 4, 5].map((n) => `<option value="${n}">Restart from ${n}</option>`).join("")}
+          </select>
+          <button class="btn ghost" type="button" data-lead-action="restart">Restart</button>
+          <select data-lead-action-select="resend" aria-label="Resend sequence step for ${escapeHtml(fullName)}">
+            ${[1, 2, 3, 4, 5].map((n) => `<option value="${n}">Step ${n}</option>`).join("")}
+          </select>
+          <button class="btn ghost" type="button" data-lead-action="resend">Resend</button>
+          <div class="muted fine leadSequenceMsg" data-lead-action-msg></div>
+        </div>
       </div>
     `;
+    row.querySelectorAll("[data-lead-action]").forEach((btn) => {
+      btn.addEventListener("click", () => handleLeadSequenceAction(row, btn).catch(console.error));
+    });
     host.appendChild(row);
   });
+}
+
+async function handleLeadSequenceAction(row, btn) {
+  const email = row?.dataset?.email || "";
+  const action = btn?.dataset?.leadAction || "";
+  const select = row.querySelector(`[data-lead-action-select="${action}"]`);
+  const msgEl = row.querySelector("[data-lead-action-msg]");
+  const emailNumber = Number(select?.value || 0);
+  if (!email || !action || emailNumber < 1 || emailNumber > 5) return;
+
+  const label = action === "restart" ? `Restart from Email ${emailNumber}` : `Resend Email ${emailNumber}`;
+  const confirmed = window.confirm(`${label} for ${email}?`);
+  if (!confirmed) return;
+
+  btn.disabled = true;
+  const originalText = btn.textContent;
+  btn.textContent = action === "restart" ? "Restarting..." : "Sending...";
+  msg(msgEl, "");
+
+  try {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error("You must be signed in as an admin.");
+
+    const res = await fetch("/api/adminLeadMagnetSequence", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ action, email, emailNumber }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.ok === false) {
+      throw new Error(data.message || "Sequence action failed.");
+    }
+
+    msg(msgEl, data.message || "Done.", "ok");
+    await refreshLeadMagnets();
+  } catch (err) {
+    console.error(err);
+    msg(msgEl, err?.message || "Could not complete action.", "bad");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
 }
 
 async function loadLeadMagnetSequenceConfig() {
