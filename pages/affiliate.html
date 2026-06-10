@@ -71,7 +71,7 @@
       linksEl.innerHTML = snap.docs.map(d => {
         const x = d.data();
         return `
-          <article class="card">
+          <article class="card affiliate-card">
             <h2 style="margin:0 0 10px;">${esc(x.title || "Link")}</h2>
             <p class="muted" style="margin:0 0 12px;">${esc(x.description || x.desc || "")}</p>
             <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">

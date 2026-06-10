@@ -83,11 +83,11 @@
       cardsEl.innerHTML = docs.map((docSnap) => {
         const b = docSnap.data() || {};
         const cover = b.coverUrl
-          ? `<img src="${esc(b.coverUrl)}" alt="${esc(b.title || "Book cover")}" style="width:100%;max-width:220px;border-radius:12px;border:1px solid var(--control-border);margin-bottom:12px;" />`
+          ? `<img class="book-cover" src="${esc(b.coverUrl)}" alt="${esc(b.title || "Book cover")}" style="width:100%;max-width:220px;border-radius:12px;border:1px solid var(--control-border);margin-bottom:12px;" />`
           : "";
 
         return `
-          <article class="card">
+          <article class="card content-card">
             ${cover}
             <h2 style="margin:0 0 8px;">${esc(b.title || "Untitled")}</h2>
             <p class="muted" style="margin:0 0 12px;">${esc(b.summary || "")}</p>

@@ -183,7 +183,7 @@
           <button class="btn small ${state.selected ? "primary" : "ghost"}" type="button" data-react-main>
             ${active} <span>${total}</span>
           </button>
-          <div data-reaction-picker style="display:none;position:absolute;left:0;bottom:calc(100% + 8px);background:var(--card);border:1px solid var(--control-border);border-radius:999px;padding:6px;box-shadow:var(--shadow);white-space:nowrap;z-index:20;">
+          <div class="reaction-picker" data-reaction-picker style="display:none;position:absolute;left:0;bottom:calc(100% + 8px);background:var(--card);border:1px solid var(--control-border);border-radius:999px;padding:6px;box-shadow:var(--shadow);white-space:nowrap;z-index:20;">
             ${REACTIONS.map((reaction, idx) => `<button class="btn small ghost" type="button" data-reaction="${idx}" style="min-width:0;padding:6px 8px;">${reaction}</button>`).join("")}
           </div>
         </div>
@@ -220,9 +220,9 @@
         ` : "";
 
         return `
-          <div class="listItem" style="padding:10px 12px;">
+          <div class="listItem comment-card" style="padding:10px 12px;">
             <div style="width:100%;">
-              <div style="font-weight:700;">${who}</div>
+              <div class="comment-author" style="font-weight:700;">${who}</div>
               <div class="muted" data-comment-text="${esc(c.id)}">${text}</div>
               ${actions}
             </div>
@@ -307,10 +307,10 @@
       const comments = await getComments(id);
 
       const card = document.createElement("article");
-      card.className = "card";
+      card.className = "card book-card";
 
       const cover = book.coverUrl
-        ? `<img src="${esc(book.coverUrl)}" alt="${esc(book.title || "Book cover")}" style="width:100%;max-width:220px;border-radius:12px;border:1px solid var(--control-border);margin-bottom:12px;" />`
+        ? `<img class="book-cover" src="${esc(book.coverUrl)}" alt="${esc(book.title || "Book cover")}" style="width:100%;max-width:220px;border-radius:12px;border:1px solid var(--control-border);margin-bottom:12px;" />`
         : "";
 
       const linkBtn = book.link
@@ -319,25 +319,27 @@
 
       card.innerHTML = `
         ${cover}
-        <h2 style="margin:0 0 8px;">${esc(book.title || "Untitled")}</h2>
-        <p class="muted" style="margin:0 0 12px;">${esc(book.summary || "")}</p>
-        <div class="row" style="margin-bottom:8px;">
-          ${linkBtn}
-        </div>
-        <div class="row" data-reactions style="margin-bottom:12px; gap:8px; flex-wrap:wrap;"></div>
-        <p class="muted fine" style="margin:0 0 12px;">Reactions are anonymous.</p>
+        <div class="book-body">
+          <h2 style="margin:0 0 8px;">${esc(book.title || "Untitled")}</h2>
+          <p class="muted book-summary" style="margin:0 0 12px;">${esc(book.summary || "")}</p>
+          <div class="row book-actions" style="margin-bottom:8px;">
+            ${linkBtn}
+          </div>
+          <div class="row reaction-row" data-reactions style="margin-bottom:12px; gap:8px; flex-wrap:wrap;"></div>
+          <p class="muted fine" style="margin:0 0 12px;">Reactions are anonymous.</p>
 
-        <div style="margin-top:8px;">
-          <h3 style="margin:0 0 8px; font-size:16px;">Reviews / Comments</h3>
-          <div data-comments class="list" style="margin-bottom:10px;"></div>
+          <div class="comments-panel" style="margin-top:8px;">
+            <h3 style="margin:0 0 8px; font-size:16px;">Reviews / Comments</h3>
+            <div data-comments class="list" style="margin-bottom:10px;"></div>
 
-          <div data-comment-auth style="margin: 0 0 10px;"></div>
+            <div data-comment-auth style="margin: 0 0 10px;"></div>
 
-          <form data-comment-form class="form" style="align-items:stretch;">
-            <textarea name="text" rows="3" placeholder="Write a comment..." maxlength="1000" required style="min-width:260px;"></textarea>
-            <button class="btn small primary" type="submit">Post Comment</button>
-          </form>
-          <p class="muted fine" data-comment-msg></p>
+            <form data-comment-form class="form" style="align-items:stretch;">
+              <textarea name="text" rows="3" placeholder="Write a comment..." maxlength="1000" required style="min-width:260px;"></textarea>
+              <button class="btn small primary" type="submit">Post Comment</button>
+            </form>
+            <p class="muted fine" data-comment-msg></p>
+          </div>
         </div>
       `;
 
@@ -443,7 +445,7 @@
 
         if (!currentProfile) {
           commentAuth.innerHTML = `
-            <div class="card" style="padding:12px; border-radius:14px; margin-bottom:10px;">
+            <div class="card profile-card" style="padding:12px; border-radius:14px; margin-bottom:10px;">
               <div style="font-weight:800; margin-bottom:8px;">Set up your comment profile</div>
               <div class="muted fine" style="margin-bottom:10px;">
                 This keeps your email private. Choose a public User ID that will show with your comments.
