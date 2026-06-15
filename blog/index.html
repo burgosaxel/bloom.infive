@@ -1,28 +1,28 @@
-<!doctype html>
-<html lang="en">
+﻿<!doctype html>
+<html lang="es">
 <head>
-    <meta charset="UTF-8" />
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Blog | BLOOM.INFIVE</title>
-  <meta name="description" content="Read BLOOM.INFIVE blog posts on faith, motherhood, family, and encouragement by Angelika Burgos." />
+  <title>Historias | BLOOM.INFIVE</title>
+  <meta name="description" content="Lee historias de BLOOM.INFIVE sobre fe, maternidad, familia y ánimo por Angelika Burgos." />
   <link rel="canonical" href="https://bloominfive.blog/blog/index.html" />
   <meta name="robots" content="index,follow,max-image-preview:large" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="BLOOM.INFIVE" />
-  <meta property="og:title" content="Blog | BLOOM.INFIVE" />
-  <meta property="og:description" content="Short posts, reflections, and updates from BLOOM.INFIVE." />
+  <meta property="og:title" content="Historias | BLOOM.INFIVE" />
+  <meta property="og:description" content="Historias cortas, reflexiones y novedades de BLOOM.INFIVE." />
   <meta property="og:url" content="https://bloominfive.blog/blog/index.html" />
   <meta property="og:image" content="https://bloominfive.blog/angelika.png" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Blog | BLOOM.INFIVE" />
-  <meta name="twitter:description" content="Faith-rooted blog posts by Angelika Burgos." />
+  <meta name="twitter:title" content="Historias | BLOOM.INFIVE" />
+  <meta name="twitter:description" content="Historias con fe por Angelika Burgos." />
   <meta name="twitter:image" content="https://bloominfive.blog/angelika.png" />
   <link rel="stylesheet" href="../styles.css" />
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "Blog",
-      "name": "BLOOM.INFIVE Blog",
+      "name": "Historias BLOOM.INFIVE",
       "url": "https://bloominfive.blog/blog/index.html",
       "publisher": {
         "@type": "Person",
@@ -36,25 +36,34 @@
 <body>
   <div id="navMount"></div>
 
-  <main>
+  <main class="page-shell">
+    <section class="page-hero">
+      <div class="container page-hero-inner">
+        <div>
+          <p class="section-kicker">Diario Bloom.inFive</p>
+          <h1 class="page-title">Historias para pausas tranquilas del día.</h1>
+          <p class="page-subtitle">Notas, reflexiones y novedades de maternidad con fe, escritas para leer fácilmente en días llenos.</p>
+        </div>
+      </div>
+    </section>
+
     <section class="section">
       <div class="container">
-        <div class="sectionHead">
-          <h2>All Posts</h2>
-          <p class="muted">Short posts, reflections, and updates.</p>
-        </div>
-
-        <!-- Show something immediately -->
         <div id="posts" class="blogGrid" style="display:grid; grid-template-columns:1fr; gap:14px;">
-          <article class="postCard" style="padding:18px;">
-            <h2 style="margin:0 0 10px;">Loading posts…</h2>
-            <p class="muted" style="margin:0;">Please give it a moment on first load.</p>
+          <article class="postCard">
+            <div class="post-index">01</div>
+            <div class="post-body">
+              <h2>Cargando historias...</h2>
+              <p class="muted">Dale un momentito en la primera carga.</p>
+            </div>
           </article>
 
-          <article class="postCard" style="padding:18px; opacity:.85;">
-            <h2 style="margin:0 0 10px;"> </h2>
-            <p class="muted" style="margin:0;"> </p>
-            <div style="height:14px;"></div>
+          <article class="postCard" style="opacity:.76;">
+            <div class="post-index">02</div>
+            <div class="post-body">
+              <h2>&nbsp;</h2>
+              <p class="muted">&nbsp;</p>
+            </div>
           </article>
         </div>
       </div>
@@ -62,7 +71,7 @@
 
     <footer class="footer">
       <div class="container footerInner">
-        <p class="muted">© <span id="year"></span> BLOOM.INFIVE. All rights reserved.</p>
+        <p class="muted">&copy; <span id="year"></span> BLOOM.INFIVE. Todos los derechos reservados.</p>
       </div>
     </footer>
   </main>
@@ -90,30 +99,35 @@
       const d = document.createElement("div");
       d.innerHTML = html || "";
       const t = (d.textContent || "").trim();
-      return t.length > n ? t.slice(0, n).trimEnd() + "…" : t;
+      return t.length > n ? t.slice(0, n).trimEnd() + "..." : t;
     }
 
     function renderDocs(docs){
       if (!docs.length) {
-        postsEl.innerHTML = `<p class="muted">No posts yet.</p>`;
+        postsEl.innerHTML = `<div class="empty-state"><p class="muted">Aun no hay historias.</p></div>`;
         return;
       }
 
-      postsEl.innerHTML = docs.map(docSnap => {
+      postsEl.innerHTML = docs.map((docSnap, idx) => {
         const p = docSnap.data();
         const tags = Array.isArray(p.tags) ? p.tags : [];
         const preview = previewFromHtml(p.contentHtml || p.content || "");
+        const num = String(idx + 1).padStart(2, "0");
 
         return `
-          <article class="postCard" style="padding:18px;">
-            <h2 style="margin:0 0 10px;">
-              <a href="./post.html?id=${docSnap.id}">${esc(p.title || "Untitled")}</a>
-            </h2>
+          <article class="postCard">
+            <div class="post-index">${num}</div>
+            <div class="post-body">
+              <h2>
+                <a href="./post.html?id=${docSnap.id}">${esc(p.title || "Sin título")}</a>
+              </h2>
 
-            <p class="muted">${esc(preview)}</p>
+              <p class="muted">${esc(preview)}</p>
 
-            <div class="metaRow" style="margin-top:10px;">
-              ${tags.slice(0, 6).map(t => `<span class="tag">${esc(t)}</span>`).join("")}
+              <div class="metaRow">
+                ${tags.slice(0, 6).map(t => `<span class="tag">${esc(t)}</span>`).join("")}
+                <a class="btn small ghost" href="./post.html?id=${docSnap.id}">Leer historia &rarr;</a>
+              </div>
             </div>
           </article>
         `;
@@ -122,8 +136,8 @@
 
     function showError(msg){
       postsEl.innerHTML = `
-        <div class="card" style="box-shadow:none;">
-          <h2 style="margin:0 0 10px;">Blog loading error</h2>
+        <div class="empty-state">
+          <h2 style="margin:0 0 10px;">Error al cargar historias</h2>
           <p class="muted" style="margin:0;">${esc(msg)}</p>
         </div>
       `;
@@ -157,3 +171,4 @@
   </script>
 </body>
 </html>
+

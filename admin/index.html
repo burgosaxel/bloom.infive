@@ -56,6 +56,130 @@
     .actions{ display:flex; gap:10px; }
     .fine{ font-size:13px; }
 
+    .adminGrid{
+      display:grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, .72fr);
+      gap:14px;
+      align-items:start;
+    }
+    .adminPanel{
+      border:1px solid rgba(0,0,0,.12);
+      border-radius:12px;
+      background:rgba(255,255,255,.78);
+      padding:14px;
+    }
+    .adminPanel h3{
+      margin:0 0 8px;
+      font-size:18px;
+    }
+    .adminToolbar{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin:10px 0 0;
+    }
+    .adminToolbar input,
+    .adminToolbar select{
+      min-width:180px;
+      min-height:38px;
+      border-radius:8px;
+      padding:8px 10px;
+    }
+    .adminToolbar.tight{
+      justify-content:space-between;
+      padding:12px;
+      border:1px solid rgba(0,0,0,.10);
+      border-radius:10px;
+      background:rgba(255,255,255,.72);
+    }
+    .adminKicker{
+      margin:0;
+      color:#806a5f;
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+    }
+    .adminTitle{
+      margin:4px 0 0;
+      font-size:24px;
+      line-height:1.1;
+    }
+    .metricGrid,
+    .cards2{
+      display:grid;
+      grid-template-columns:repeat(4, minmax(0, 1fr));
+      gap:12px;
+    }
+    .metricCard{
+      border:1px solid rgba(0,0,0,.12);
+      border-radius:12px;
+      background:#fff;
+      padding:14px;
+    }
+    .metricLabel{
+      color:#6b625b;
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+    .metricValue{
+      margin-top:6px;
+      font-size:28px;
+      font-weight:900;
+      line-height:1;
+    }
+    .metricNote{
+      margin-top:6px;
+      color:#6b625b;
+      font-size:12px;
+    }
+    .tableList{
+      display:grid;
+      gap:8px;
+    }
+    .reportSection{
+      border:1px solid rgba(0,0,0,.10);
+      border-radius:12px;
+      background:rgba(255,255,255,.86);
+      padding:14px;
+    }
+    .reportSection h3{
+      margin:0 0 10px;
+      font-size:17px;
+    }
+    .tableRow{
+      display:grid;
+      grid-template-columns:minmax(0, 1fr) auto;
+      gap:12px;
+      align-items:center;
+      border:1px solid rgba(0,0,0,.10);
+      border-radius:10px;
+      background:#fff;
+      padding:10px 12px;
+    }
+    .tableTitle{
+      font-weight:800;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .tableMeta{
+      color:#6b625b;
+      font-size:12px;
+      line-height:1.45;
+    }
+    .countBadge{
+      min-width:34px;
+      text-align:center;
+      border-radius:8px;
+      background:#f4eadb;
+      padding:6px 8px;
+      font-weight:900;
+    }
+
     .statusPill{
       padding:6px 10px;
       border-radius:999px;
@@ -117,6 +241,30 @@
     .settingsField label{
       font-weight:800;
       font-size:13px;
+    }
+    .subscriberRow{
+      align-items:flex-start;
+    }
+    .subscriberMeta{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      margin-top:8px;
+    }
+    .subscriberMeta span{
+      border:1px solid rgba(0,0,0,.10);
+      border-radius:8px;
+      background:#fbf6ee;
+      padding:4px 7px;
+      color:#5f564f;
+      font-size:12px;
+    }
+    .emptyAdminState{
+      border:1px dashed rgba(0,0,0,.18);
+      border-radius:10px;
+      padding:16px;
+      background:rgba(255,255,255,.58);
+      color:#6b625b;
     }
     .settingsField input,
     .settingsField textarea{
@@ -180,6 +328,11 @@
       text-align:right;
     }
     @media (max-width: 760px){
+      .adminGrid,
+      .metricGrid,
+      .cards2{
+        grid-template-columns:1fr;
+      }
       .settingsGrid{ grid-template-columns:1fr; }
       .leadSequenceActions{
         justify-content:flex-start;
@@ -213,6 +366,26 @@
     }
     [data-theme="dark"] .ql-editor{
       color:#111;
+    }
+    [data-theme="dark"] .adminPanel,
+    [data-theme="dark"] .metricCard,
+    [data-theme="dark"] .reportSection,
+    [data-theme="dark"] .tableRow,
+    [data-theme="dark"] .adminToolbar.tight{
+      background:#fff;
+      color:#111;
+      border-color:rgba(255,255,255,.9);
+    }
+    [data-theme="dark"] .metricLabel,
+    [data-theme="dark"] .metricNote,
+    [data-theme="dark"] .tableMeta{
+      color:#4a4a4a;
+    }
+    [data-theme="dark"] .subscriberMeta span,
+    [data-theme="dark"] .emptyAdminState{
+      background:#fff;
+      color:#4a4a4a;
+      border-color:rgba(0,0,0,.16);
     }
 
     /* Show/hide password */
@@ -377,12 +550,41 @@
 
           <!-- NEWSLETTER -->
           <div class="pane" id="pane-newsletter">
-            <div class="row">
-              <button class="btn small ghost" id="saveNewsletterBtn">Save Newsletter</button>
-            </div>
-            <div style="margin-top:12px;">
-              <div id="pageEditor-newsletter"></div>
-              <p class="muted fine" id="pageMsg-newsletter"></p>
+            <div class="adminGrid">
+              <section class="adminPanel">
+                <div class="row">
+                  <div>
+                    <h3>Newsletter Page Content</h3>
+                    <p class="muted fine" style="margin:4px 0 0;">Edits the public newsletter page content stored in site/newsletter.</p>
+                  </div>
+                  <button class="btn small ghost right" id="saveNewsletterBtn">Save Newsletter Page</button>
+                </div>
+                <div style="margin-top:12px;">
+                  <div id="pageEditor-newsletter"></div>
+                  <p class="muted fine" id="pageMsg-newsletter"></p>
+                </div>
+              </section>
+
+              <section class="adminPanel">
+                <div class="row">
+                  <div>
+                    <h3>Subscribers</h3>
+                    <p class="muted fine" id="newsletterSummary" style="margin:4px 0 0;">Loading subscriber counts...</p>
+                  </div>
+                  <button class="btn small ghost right" id="refreshSubscribersBtn" type="button">Refresh</button>
+                </div>
+                <div class="adminToolbar">
+                  <input id="subscriberSearch" type="search" placeholder="Search email or source" />
+                  <select id="subscriberStatusFilter" aria-label="Subscriber status filter">
+                    <option value="all">All statuses</option>
+                    <option value="active">Active</option>
+                    <option value="unsubscribed">Unsubscribed</option>
+                    <option value="unknown">Unknown status</option>
+                  </select>
+                  <button class="btn small ghost" id="exportSubscribersBtn" type="button">Export CSV</button>
+                </div>
+                <div id="subscribersList" class="list" style="margin-top:12px;"></div>
+              </section>
             </div>
           </div>
 
@@ -491,9 +693,24 @@
 
           <!-- REPORTS -->
           <div class="pane" id="pane-reports">
-            <div class="row">
-              <button class="btn small ghost" id="refreshReportsBtn">Refresh</button>
-              <span class="muted fine">Last 7 days</span>
+            <div class="adminToolbar tight">
+              <div>
+                <p class="adminKicker">Reports</p>
+                <h2 class="adminTitle">Site health overview</h2>
+                <p class="muted fine" id="reportsStatus" style="margin:6px 0 0;">
+                  Traffic, subscribers, engagement, and lead magnet health.
+                </p>
+              </div>
+              <div class="row">
+                <label class="muted fine" for="reportsRange">Range</label>
+                <select id="reportsRange">
+                  <option value="7">Last 7 days</option>
+                  <option value="14">Last 14 days</option>
+                  <option value="30">Last 30 days</option>
+                  <option value="90">Last 90 days</option>
+                </select>
+                <button class="btn small ghost" id="refreshReportsBtn" type="button">Refresh</button>
+              </div>
             </div>
             <div id="reportsMount" style="margin-top:12px;"></div>
           </div>

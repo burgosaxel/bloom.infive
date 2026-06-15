@@ -12,8 +12,8 @@ import {
 } from "../firebase.js";
 
 const THEME_KEY = "bloomTheme";
-const ICON_SUN = "\u2600\uFE0F";  // â˜€ï¸
-const ICON_MOON = "\uD83C\uDF19"; // ðŸŒ™
+const ICON_SUN = "\u2600\uFE0F";
+const ICON_MOON = "\uD83C\uDF19";
 const ADMIN_LEAD_SEQUENCE_ENDPOINTS = [
   "/api/adminLeadMagnetSequence",
   "https://us-central1-bloom-in-five.cloudfunctions.net/adminLeadMagnetSequence",
@@ -31,73 +31,73 @@ const LEAD_EMAIL_DEFAULTS = {
     buttonUrl: "{downloadUrl}",
     bodyText: `Hola {firstName},
 
-Que alegria tenerte aqui! Gracias por unirte a este espacio donde hablamos de fe, motivacion y como vivir cada dia con proposito, incluso en medio del caos de la vida diaria.
+¡Qué alegría tenerte aquí! Gracias por unirte a este espacio donde hablamos de fe, motivación y cómo vivir cada día con propósito, incluso en medio del caos de la vida diaria.
 
-Mi nombre es Angelika, y quiero compartir contigo todo lo que he aprendido caminando con Dios y tratando de equilibrar la maternidad, la familia y mis suenos.
+Mi nombre es Angelika, y quiero compartir contigo todo lo que he aprendido caminando con Dios y tratando de equilibrar la maternidad, la familia y mis sueños.
 
-Pronto recibiras inspiracion, tips practicos, reflexiones y algunas sorpresas que tengo preparadas para ti, pero hoy quiero empezar con algo simple.
+Pronto recibirás inspiración, tips prácticos, reflexiones y algunas sorpresas que tengo preparadas para ti, pero hoy quiero empezar con algo simple.
 
-Un pequeno recordatorio: No tienes que ser perfecta para crecer, para seguir, para florecer. Cada dia cuenta, y este es tu espacio seguro para hacerlo a tu ritmo.
+Un pequeño recordatorio: No tienes que ser perfecta para crecer, para seguir, para florecer. Cada día cuenta, y este es tu espacio seguro para hacerlo a tu ritmo.
 
-Descarga tu journal gratis aqui:
+Descarga tu journal gratis aquí:
 {downloadUrl}
 
-Me encantaria que me respondieras a este email o en Instagram contandome un poquito de ti: que te trajo aqui y que esperas encontrar en este espacio?
+Me encantaría que me respondieras a este email o en Instagram contándome un poquito de ti: ¿qué te trajo aquí y qué esperas encontrar en este espacio?
 
-Gracias por estar aqui. Estoy emocionada de acompanarte en este camino.
+Gracias por estar aquí. Estoy emocionada de acompañarte en este camino.
 
-Con carino,
+Con cariño,
 Angelika`,
   },
   2: {
     subject: "Un pedacito de mi historia",
-    preheader: "Por que existe Bloom.inFive",
+    preheader: "Por qué existe Bloom.inFive",
     buttonLabel: "",
     buttonUrl: "",
     bodyText: `Hola {firstName},
 
-Queria contarte rapidamente que es Bloom in Five y por que existe.
+Quería contarte rápidamente qué es Bloom in Five y por qué existe.
 
-Este espacio nacio cuando Dios toco mi corazon y me quito el miedo de mostrar la vida tal como es: real, imperfecta, pero llena de proposito.
+Este espacio nació cuando Dios tocó mi corazón y me quitó el miedo de mostrar la vida tal como es: real, imperfecta, pero llena de propósito.
 
-Somos una familia militar de cinco y entre mudanzas, temporadas dificiles y muchas transiciones, hemos aprendido que aun en lo incierto Dios sigue siendo fiel.
+Somos una familia militar de cinco y entre mudanzas, temporadas difíciles y muchas transiciones, hemos aprendido que aun en lo incierto Dios sigue siendo fiel.
 
 Bloom significa florecer donde Dios nos planta, incluso cuando no entendemos el proceso.
 
-Por eso aqui comparto nuestra vida sin filtros, con amor y con la intencion de que otras personas puedan sentirse acompanadas, vistas y menos solas en su propio proceso.
+Por eso aquí comparto nuestra vida sin filtros, con amor y con la intención de que otras personas puedan sentirse acompañadas, vistas y menos solas en su propio proceso.
 
-Gracias por estar aqui.
+Gracias por estar aquí.
 
 Angelika`,
   },
   3: {
-    subject: "Para la mama que se siente cansada hoy",
+    subject: "Para la mamá que se siente cansada hoy",
     preheader: "Un recordatorio corto para hoy",
     buttonLabel: "",
     buttonUrl: "",
     bodyText: `Hola {firstName},
 
-Si hoy te sientes cansada, quiero recordarte algo sencillo: Dios no te esta pidiendo perfeccion. El te esta invitando a venir a El tal como estas.
+Si hoy te sientes cansada, quiero recordarte algo sencillo: Dios no te está pidiendo perfección. Él te está invitando a venir a Él tal como estás.
 
-A veces la maternidad se siente como una lista que nunca termina. Pero tu valor no esta en todo lo que logras hacer en un dia. Tu valor ya esta seguro en Dios.
+A veces la maternidad se siente como una lista que nunca termina. Pero tu valor no está en todo lo que logras hacer en un día. Tu valor ya está seguro en Dios.
 
-Hoy intenta hacer una cosa pequena con amor: respirar profundo, orar en voz bajita, tomar agua, abrazar a tus hijos, o descansar sin culpa cinco minutos.
+Hoy intenta hacer una cosa pequeña con amor: respirar profundo, orar en voz bajita, tomar agua, abrazar a tus hijos, o descansar sin culpa cinco minutos.
 
-No estas atrasada. Estas caminando. Y aun en este dia, Dios esta contigo.
+No estás atrasada. Estás caminando. Y aun en este día, Dios está contigo.
 
-Con carino,
+Con cariño,
 Angelika`,
   },
   4: {
-    subject: "Cosas sencillas que me ayudan como mama",
+    subject: "Cosas sencillas que me ayudan como mamá",
     preheader: "Favoritos sencillos para la rutina",
     buttonLabel: "",
     buttonUrl: "",
     bodyText: `Hola {firstName},
 
-Hoy queria compartirte algunas cosas sencillas que me ayudan como mama. No son cosas magicas, pero si pequenos apoyos que hacen la rutina un poquito mas ligera.
+Hoy quería compartirte algunas cosas sencillas que me ayudan como mamá. No son cosas mágicas, pero sí pequeños apoyos que hacen la rutina un poquito más ligera.
 
-Favoritos para mama:
+Favoritos para mamá:
 {momFavoritesUrl}
 
 Favoritos de fe:
@@ -106,28 +106,28 @@ Favoritos de fe:
 Rutina y hogar:
 {homeRoutineUrl}
 
-Solo toma lo que te sirva en esta temporada. A veces lo pequeno tambien es una forma de cuidarnos.
+Solo toma lo que te sirva en esta temporada. A veces lo pequeño también es una forma de cuidarnos.
 
-Con carino,
+Con cariño,
 Angelika`,
   },
   5: {
-    subject: "Estoy creando algo especial para mamas",
-    preheader: "Una invitacion suave para mamas",
+    subject: "Estoy creando algo especial para mamás",
+    preheader: "Una invitación suave para mamás",
     buttonLabel: "Ver acceso temprano",
     buttonUrl: "{momlyUrl}",
     bodyText: `Hola {firstName},
 
-Estoy creando algo especial para mamas: Momly.
+Estoy creando algo especial para mamás: Momly.
 
-La idea nacio de una necesidad muy real: tener un espacio que ayude a organizar la vida familiar sin perder de vista lo que mas importa.
+La idea nació de una necesidad muy real: tener un espacio que ayude a organizar la vida familiar sin perder de vista lo que más importa.
 
-Todavia esta creciendo, pero si te gustaria enterarte primero y ser parte del acceso temprano, puedes anotarte aqui:
+Todavía está creciendo, pero si te gustaría enterarte primero y ser parte del acceso temprano, puedes anotarte aquí:
 {momlyUrl}
 
-Gracias por caminar conmigo estos dias. Oro que este espacio siga siendo de animo, fe y compania para ti.
+Gracias por caminar conmigo estos días. Oro que este espacio siga siendo de ánimo, fe y compañía para ti.
 
-Con carino,
+Con cariño,
 Angelika`,
   },
 };
@@ -437,7 +437,7 @@ async function savePost() {
       await writeAdminLog("post_create", "post", editingPostId, { title, status, tagsCount: tags.length });
     }
 
-    msg(out, "Saved âœ…", "ok");
+    msg(out, "Saved.", "ok");
     await refreshPosts();
     openPostForm(false);
     clearPostForm();
@@ -481,7 +481,7 @@ async function refreshPosts() {
     const meta = document.createElement("div");
     meta.className = "muted";
     meta.style.fontSize = "13px";
-    meta.textContent = `${(d.status || "draft")} â€¢ ${formatDate(d.publishAt)}`;
+      meta.textContent = `${(d.status || "draft")} - ${formatDate(d.publishAt)}`;
 
     left.appendChild(t);
     left.appendChild(meta);
@@ -689,7 +689,7 @@ async function saveUpcomingBook() {
       const refDoc = await addDoc(collection(db, "books"), payload);
       await writeAdminLog("book_create", "book", refDoc.id, { title, status });
     }
-    msg(out, "Saved âœ…", "ok");
+    msg(out, "Saved.", "ok");
     openUpcomingForm(false);
     clearUpcomingForm();
     await refreshUpcomingBooks();
@@ -784,7 +784,7 @@ async function savePage(key) {
   try {
     await setDoc(doc(db, "site", key), { content, contentHtml: content, updatedAt: serverTimestamp() }, { merge: true });
     await writeAdminLog("page_update", "site", key, { bytes: content.length });
-    msg(out, "Saved âœ…", "ok");
+    msg(out, "Saved.", "ok");
   } catch (err) {
     console.error(err);
     msg(out, err?.message || "Save failed.", "bad");
@@ -795,10 +795,167 @@ async function savePage(key) {
 let editingLinkId = null;
 
 function escapeHtml(s) {
-  return (s || "").toString()
+  return (s ?? "").toString()
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
+}
+
+function timestampMillis(ts) {
+  if (!ts) return 0;
+  if (typeof ts.toMillis === "function") return ts.toMillis();
+  if (ts instanceof Date) return ts.getTime();
+  if (typeof ts === "number") return ts;
+  if (typeof ts === "string") {
+    const parsed = Date.parse(ts);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
+}
+
+function csvEscape(value) {
+  const text = (value ?? "").toString();
+  if (/[",\r\n]/.test(text)) return `"${text.replaceAll('"', '""')}"`;
+  return text;
+}
+
+function downloadTextFile(filename, text) {
+  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+let newsletterSubscriberRows = [];
+
+function subscriberStatus(row) {
+  const status = (row.status || "").toString().trim().toLowerCase();
+  return status || "unknown";
+}
+
+function subscriberSource(row) {
+  return (row.source || row.origin || row.formSource || row.page || "newsletter").toString();
+}
+
+function getFilteredNewsletterSubscribers() {
+  const search = ($("#subscriberSearch")?.value || "").trim().toLowerCase();
+  const filter = ($("#subscriberStatusFilter")?.value || "all").toLowerCase();
+
+  return newsletterSubscriberRows.filter((row) => {
+    const status = subscriberStatus(row);
+    if (filter !== "all" && status !== filter) return false;
+    if (!search) return true;
+    const haystack = [
+      row.email,
+      row.normalizedEmail,
+      subscriberSource(row),
+      status,
+      row.id,
+    ].map((x) => (x || "").toString().toLowerCase()).join(" ");
+    return haystack.includes(search);
+  });
+}
+
+function renderNewsletterSubscribers() {
+  const host = $("#subscribersList");
+  const summary = $("#newsletterSummary");
+  if (!host) return;
+
+  const active = newsletterSubscriberRows.filter((row) => subscriberStatus(row) === "active").length;
+  const unsubscribed = newsletterSubscriberRows.filter((row) => subscriberStatus(row) === "unsubscribed").length;
+  const unknown = newsletterSubscriberRows.filter((row) => subscriberStatus(row) === "unknown").length;
+  const filtered = getFilteredNewsletterSubscribers();
+
+  if (summary) {
+    summary.textContent = `${active} active - ${unsubscribed} unsubscribed - ${unknown} unknown - ${newsletterSubscriberRows.length} loaded`;
+  }
+
+  if (!newsletterSubscriberRows.length) {
+    host.innerHTML = "<div class='emptyAdminState'>No newsletter subscribers found yet.</div>";
+    return;
+  }
+
+  if (!filtered.length) {
+    host.innerHTML = "<div class='emptyAdminState'>No subscribers match these filters.</div>";
+    return;
+  }
+
+  host.innerHTML = filtered.map((row) => {
+    const email = row.email || row.normalizedEmail || row.id || "(no email)";
+    const status = subscriberStatus(row);
+    const source = subscriberSource(row);
+    const createdAt = formatDate(row.createdAt || row.subscribedAt);
+    const tokenState = row.unsubscribeToken || row.unsubToken ? "unsubscribe token set" : "no token";
+    return `
+      <div class="listItem subscriberRow">
+        <div style="min-width:0;">
+          <div style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            ${escapeHtml(email)}
+          </div>
+          <div class="subscriberMeta">
+            <span>${escapeHtml(source)}</span>
+            <span>${escapeHtml(createdAt || "no date")}</span>
+            <span>${escapeHtml(tokenState)}</span>
+          </div>
+        </div>
+        <span class="statusPill">${escapeHtml(status)}</span>
+      </div>
+    `;
+  }).join("");
+}
+
+async function refreshNewsletterSubscribers() {
+  const host = $("#subscribersList");
+  const summary = $("#newsletterSummary");
+  if (!host) return;
+
+  host.innerHTML = "<div class='emptyAdminState'>Loading subscribers...</div>";
+  if (summary) summary.textContent = "Loading subscriber summary...";
+
+  try {
+    let snap;
+    try {
+      snap = await getDocs(query(collection(db, "subscribers"), orderBy("createdAt", "desc"), limit(500)));
+    } catch {
+      snap = await getDocs(query(collection(db, "subscribers"), limit(500)));
+    }
+
+    newsletterSubscriberRows = snap.docs
+      .map((docSnap) => ({ id: docSnap.id, ...(docSnap.data() || {}) }))
+      .sort((a, b) => timestampMillis(b.createdAt || b.subscribedAt) - timestampMillis(a.createdAt || a.subscribedAt));
+
+    renderNewsletterSubscribers();
+  } catch (err) {
+    console.error(err);
+    host.innerHTML = `<div class='emptyAdminState'>${escapeHtml(err?.message || "Could not load subscribers.")}</div>`;
+    if (summary) summary.textContent = "Subscriber summary unavailable.";
+  }
+}
+
+function exportNewsletterSubscribers() {
+  const rows = getFilteredNewsletterSubscribers();
+  if (!rows.length) {
+    alert("No subscribers to export for the current filters.");
+    return;
+  }
+
+  const headers = ["email", "status", "source", "createdAt", "unsubscribeToken", "id"];
+  const body = rows.map((row) => [
+    row.email || row.normalizedEmail || "",
+    subscriberStatus(row),
+    subscriberSource(row),
+    formatDate(row.createdAt || row.subscribedAt) || "",
+    row.unsubscribeToken || row.unsubToken || "",
+    row.id || "",
+  ].map(csvEscape).join(","));
+
+  const date = new Date().toISOString().slice(0, 10);
+  downloadTextFile(`newsletter-subscribers-${date}.csv`, `${headers.join(",")}\n${body.join("\n")}`);
 }
 
 async function refreshLinks() {
@@ -893,7 +1050,7 @@ async function saveLink() {
       await writeAdminLog("affiliate_create", "affiliateLink", refDoc.id, { title, category });
     }
 
-    msg(out, "Saved âœ…", "ok");
+    msg(out, "Saved.", "ok");
     editingLinkId = null;
     pickEl("#linkTitle", "#affiliateTitle").value = "";
     pickEl("#linkUrl", "#affiliateUrl").value = "";
@@ -930,7 +1087,7 @@ async function uploadProfile() {
     const img = $("#profilePreview");
     if (img) img.src = url;
 
-    msg(out, "Uploaded âœ…", "ok");
+    msg(out, "Uploaded.", "ok");
   } catch (err) {
     console.error(err);
     msg(out, err?.message || "Upload failed.", "bad");
@@ -1396,13 +1553,65 @@ async function getPostTitleMap(postIds) {
   return map;
 }
 
+async function getCollectionCount(source) {
+  try {
+    return (await getCountFromServer(source)).data().count || 0;
+  } catch (err) {
+    console.warn("count failed:", err);
+    return 0;
+  }
+}
+
+function sortEntries(map, count = 10) {
+  return [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, count);
+}
+
+function addCount(map, key) {
+  const normalized = (key || "").toString().trim();
+  if (!normalized) return;
+  map.set(normalized, (map.get(normalized) || 0) + 1);
+}
+
+function renderMetricCard(label, value, note = "") {
+  return `
+    <div class="metricCard">
+      <div class="metricLabel">${escapeHtml(label)}</div>
+      <div class="metricValue">${escapeHtml(value)}</div>
+      ${note ? `<div class="metricNote">${escapeHtml(note)}</div>` : ""}
+    </div>
+  `;
+}
+
+function renderReportList(title, entries, emptyText = "No data yet.") {
+  return `
+    <section class="reportSection">
+      <h3>${escapeHtml(title)}</h3>
+      <div class="tableList">
+        ${entries.length ? entries.map(([label, count]) => `
+          <div class="tableRow">
+            <div style="min-width:0;">
+              <div class="tableTitle">${escapeHtml(label || "(unknown)")}</div>
+            </div>
+            <div class="countBadge">${escapeHtml(count)}</div>
+          </div>
+        `).join("") : `<div class="emptyAdminState">${escapeHtml(emptyText)}</div>`}
+      </div>
+    </section>
+  `;
+}
+
 async function refreshReports() {
   const mount = $("#reportsMount");
   if (!mount) return;
 
-  mount.innerHTML = "<div class='card'><p class='muted'>Loading...</p></div>";
+  const status = $("#reportsStatus");
+  const rangeDays = Math.max(1, Number($("#reportsRange")?.value || 7));
+  const rangeLabel = `Last ${rangeDays} days`;
 
-  const sinceMs = Date.now() - (7 * 24 * 60 * 60 * 1000);
+  mount.innerHTML = "<div class='emptyAdminState'>Loading reports...</div>";
+  if (status) status.textContent = `Loading ${rangeLabel.toLowerCase()}...`;
+
+  const sinceMs = Date.now() - (rangeDays * 24 * 60 * 60 * 1000);
   const since = Timestamp.fromMillis(sinceMs);
 
   const q = query(
@@ -1415,159 +1624,115 @@ async function refreshReports() {
   const snap = await getDocs(q);
   const events = snap.docs.map((d) => d.data() || {});
 
-  // Newsletter subscriber counts
-  let subsTotal = 0;
-  let subsActive = 0;
-  let subsUnsub = 0;
-  let leadTotal = 0;
-  let leadActive = 0;
-  let leadEmailed = 0;
-  let leadSeqActive = 0;
-  let leadSeqCompleted = 0;
-  let leadSeqUnsub = 0;
-  let leadSeqFailed = 0;
-  try {
-    subsTotal = (await getCountFromServer(collection(db, "subscribers"))).data().count || 0;
-    subsActive = (await getCountFromServer(query(collection(db, "subscribers"), where("status", "==", "active")))).data().count || 0;
-    subsUnsub = (await getCountFromServer(query(collection(db, "subscribers"), where("status", "==", "unsubscribed")))).data().count || 0;
-    leadTotal = (await getCountFromServer(collection(db, "leadMagnetSubscribers"))).data().count || 0;
-    leadActive = (await getCountFromServer(query(collection(db, "leadMagnetSubscribers"), where("status", "==", "active")))).data().count || 0;
-    leadEmailed = (await getCountFromServer(query(collection(db, "leadMagnetSubscribers"), where("emailSentAt", ">", Timestamp.fromMillis(0))))).data().count || 0;
-    leadSeqActive = (await getCountFromServer(query(collection(db, "leadMagnetSubscribers"), where("sequenceStatus", "==", "active")))).data().count || 0;
-    leadSeqCompleted = (await getCountFromServer(query(collection(db, "leadMagnetSubscribers"), where("sequenceStatus", "==", "completed")))).data().count || 0;
-    leadSeqUnsub = (await getCountFromServer(query(collection(db, "leadMagnetSubscribers"), where("sequenceStatus", "==", "unsubscribed")))).data().count || 0;
-    leadSeqFailed = (await getCountFromServer(query(collection(db, "leadMagnetSubscribers"), where("sequenceHasFailure", "==", true)))).data().count || 0;
-  } catch (e) {
-    console.warn("subscriber counts failed:", e);
-  }
-
-  if (!events.length) {
-    mount.innerHTML = `
-      <div class="cards2">
-        <div class="card"><p class="muted">No analytics events yet.</p></div>
-        <div class="card">
-          <div style="font-weight:800;">Lead Magnets</div>
-          <div class="muted fine" style="margin-top:6px;">Active: <strong>${leadActive}</strong></div>
-          <div class="muted fine">Emailed: <strong>${leadEmailed}</strong></div>
-          <div class="muted fine">Sequence active: <strong>${leadSeqActive}</strong></div>
-          <div class="muted fine">Completed: <strong>${leadSeqCompleted}</strong></div>
-          <div class="muted fine">Unsubscribed: <strong>${leadSeqUnsub}</strong></div>
-          <div class="muted fine">Failed sends: <strong>${leadSeqFailed}</strong></div>
-          <div class="muted fine">Total: <strong>${leadTotal}</strong></div>
-        </div>
-      </div>
-    `;
-    return;
-  }
+  const [
+    subsTotal,
+    subsActive,
+    subsUnsub,
+    subsNew,
+    leadTotal,
+    leadActive,
+    leadEmailed,
+    leadNew,
+    leadSeqActive,
+    leadSeqCompleted,
+    leadSeqUnsub,
+    leadSeqFailed,
+  ] = await Promise.all([
+    getCollectionCount(collection(db, "subscribers")),
+    getCollectionCount(query(collection(db, "subscribers"), where("status", "==", "active"))),
+    getCollectionCount(query(collection(db, "subscribers"), where("status", "==", "unsubscribed"))),
+    getCollectionCount(query(collection(db, "subscribers"), where("createdAt", ">=", since))),
+    getCollectionCount(collection(db, "leadMagnetSubscribers")),
+    getCollectionCount(query(collection(db, "leadMagnetSubscribers"), where("status", "==", "active"))),
+    getCollectionCount(query(collection(db, "leadMagnetSubscribers"), where("emailSentAt", ">", Timestamp.fromMillis(0)))),
+    getCollectionCount(query(collection(db, "leadMagnetSubscribers"), where("subscribedAt", ">=", since))),
+    getCollectionCount(query(collection(db, "leadMagnetSubscribers"), where("sequenceStatus", "==", "active"))),
+    getCollectionCount(query(collection(db, "leadMagnetSubscribers"), where("sequenceStatus", "==", "completed"))),
+    getCollectionCount(query(collection(db, "leadMagnetSubscribers"), where("sequenceStatus", "==", "unsubscribed"))),
+    getCollectionCount(query(collection(db, "leadMagnetSubscribers"), where("sequenceHasFailure", "==", true))),
+  ]);
 
   const pageViews = events.filter((e) => e.type === "page_view");
   const uniqueClients = new Set(pageViews.map((e) => (e.clientId || "").toString()).filter(Boolean));
 
   const byPath = new Map();
   for (const e of pageViews) {
-    const p = (e.path || "").toString();
-    byPath.set(p, (byPath.get(p) || 0) + 1);
+    addCount(byPath, e.path || "(unknown)");
   }
 
   const byRef = new Map();
   for (const e of pageViews) {
     const h = hostFromReferrer((e.referrer || "").toString());
-    if (!h) continue;
-    byRef.set(h, (byRef.get(h) || 0) + 1);
+    if (h) addCount(byRef, h);
   }
 
-  const topPages = [...byPath.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
-  const topRefs = [...byRef.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const byType = new Map();
+  for (const e of events) addCount(byType, e.type || "unknown");
+
+  const byCampaign = new Map();
+  for (const e of events) {
+    const campaign = e.utm_campaign || e.utmCampaign || e.campaign || "";
+    if (campaign) addCount(byCampaign, campaign);
+  }
+
+  const topPages = sortEntries(byPath, 10);
+  const topRefs = sortEntries(byRef, 10);
+  const topEventTypes = sortEntries(byType, 12);
+  const topCampaigns = sortEntries(byCampaign, 8);
 
   const postViews = events.filter((e) => e.type === "post_view_ok");
   const byPost = new Map();
   for (const e of postViews) {
     const id = (e.postId || "").toString();
-    if (!id) continue;
-    byPost.set(id, (byPost.get(id) || 0) + 1);
+    addCount(byPost, id);
   }
-  const topPosts = [...byPost.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const topPosts = sortEntries(byPost, 10);
   const postTitleMap = await getPostTitleMap(topPosts.map(([id]) => id));
+  const topPostLabels = topPosts.map(([id, count]) => [postTitleMap.get(id) || id, count]);
 
   const bookLikes = events.filter((e) => e.type === "book_like");
   const bookComments = events.filter((e) => e.type === "book_comment");
   const postLikes = events.filter((e) => e.type === "post_like");
   const postComments = events.filter((e) => e.type === "post_comment");
+  const engagementTotal = bookLikes.length + bookComments.length + postLikes.length + postComments.length;
+  const newsletterRate = pageViews.length ? ((subsNew / pageViews.length) * 100).toFixed(1) : "0.0";
+  const leadRate = pageViews.length ? ((leadNew / pageViews.length) * 100).toFixed(1) : "0.0";
+
+  if (status) {
+    status.textContent = `${rangeLabel}: ${events.length} tracked events, ${pageViews.length} page views, ${subsNew} new newsletter subscribers.`;
+  }
 
   mount.innerHTML = `
-    <div class="cards2">
-      <div class="card">
-        <div style="font-weight:800;">Visits</div>
-        <div class="muted fine" style="margin-top:6px;">Page views: <strong>${pageViews.length}</strong></div>
-        <div class="muted fine">Unique browsers: <strong>${uniqueClients.size}</strong></div>
-      </div>
-      <div class="card">
-        <div style="font-weight:800;">Engagement</div>
-        <div class="muted fine" style="margin-top:6px;">Book reactions: <strong>${bookLikes.length}</strong></div>
-        <div class="muted fine">Book comments: <strong>${bookComments.length}</strong></div>
-        <div class="muted fine">Post reactions: <strong>${postLikes.length}</strong></div>
-        <div class="muted fine">Post comments: <strong>${postComments.length}</strong></div>
-        <div class="muted fine">Blog post reads: <strong>${postViews.length}</strong></div>
-      </div>
-      <div class="card">
-        <div style="font-weight:800;">Newsletter</div>
-        <div class="muted fine" style="margin-top:6px;">Active: <strong>${subsActive}</strong></div>
-        <div class="muted fine">Unsubscribed: <strong>${subsUnsub}</strong></div>
-        <div class="muted fine">Total: <strong>${subsTotal}</strong></div>
-      </div>
-      <div class="card">
-        <div style="font-weight:800;">Lead Magnets</div>
-        <div class="muted fine" style="margin-top:6px;">Active: <strong>${leadActive}</strong></div>
-        <div class="muted fine">Emailed: <strong>${leadEmailed}</strong></div>
-        <div class="muted fine">Sequence active: <strong>${leadSeqActive}</strong></div>
-        <div class="muted fine">Completed: <strong>${leadSeqCompleted}</strong></div>
-        <div class="muted fine">Unsubscribed: <strong>${leadSeqUnsub}</strong></div>
-        <div class="muted fine">Failed sends: <strong>${leadSeqFailed}</strong></div>
-        <div class="muted fine">Total: <strong>${leadTotal}</strong></div>
-      </div>
+    <div class="metricGrid">
+      ${renderMetricCard("Page views", pageViews.length, `${uniqueClients.size} unique browsers`)}
+      ${renderMetricCard("Newsletter", subsActive, `${subsNew} new - ${subsUnsub} unsubscribed - ${newsletterRate}% of page views`)}
+      ${renderMetricCard("Lead magnets", leadActive, `${leadNew} new - ${leadEmailed} emailed - ${leadRate}% of page views`)}
+      ${renderMetricCard("Engagement", engagementTotal, `${postViews.length} blog reads - ${leadSeqFailed} failed lead sends`)}
     </div>
 
     <div class="cards2" style="margin-top:14px;">
-      <div class="card">
-        <div style="font-weight:800; margin-bottom:10px;">Top Pages</div>
-        <div class="list">
-          ${topPages.map(([p, c]) => `
-            <div class="listItem" style="padding:10px 12px;">
-              <div style="min-width:0; display:flex; justify-content:space-between; gap:10px; width:100%;">
-                <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(p || "(unknown)")}</div>
-                <div style="font-weight:800;">${c}</div>
-              </div>
-            </div>
-          `).join("")}
-        </div>
-      </div>
-      <div class="card">
-        <div style="font-weight:800; margin-bottom:10px;">Top Referrers</div>
-        <div class="list">
-          ${topRefs.map(([h, c]) => `
-            <div class="listItem" style="padding:10px 12px;">
-              <div style="min-width:0; display:flex; justify-content:space-between; gap:10px; width:100%;">
-                <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(h)}</div>
-                <div style="font-weight:800;">${c}</div>
-              </div>
-            </div>
-          `).join("") || `<div class="muted fine">No referrers recorded (direct traffic).</div>`}
-        </div>
-      </div>
+      ${renderReportList("Top pages", topPages, "No page views in this range.")}
+      ${renderReportList("Top referrers", topRefs, "No referrers recorded. This usually means direct traffic.")}
     </div>
 
-    <div class="card" style="margin-top:14px;">
-      <div style="font-weight:800; margin-bottom:10px;">Top Blog Posts (by reads)</div>
-      <div class="list">
-        ${topPosts.map(([id, c]) => `
-          <div class="listItem" style="padding:10px 12px;">
-            <div style="min-width:0; display:flex; justify-content:space-between; gap:10px; width:100%;">
-              <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(postTitleMap.get(id) || id)}</div>
-              <div style="font-weight:800;">${c}</div>
-            </div>
-          </div>
-        `).join("") || `<div class="muted fine">No post reads yet.</div>`}
-      </div>
+    <div class="cards2" style="margin-top:14px;">
+      ${renderReportList("Top blog posts", topPostLabels, "No post reads in this range.")}
+      ${renderReportList("Event types", topEventTypes, "No analytics events in this range.")}
+    </div>
+
+    <div class="cards2" style="margin-top:14px;">
+      ${renderReportList("UTM campaigns", topCampaigns, "No UTM campaign data recorded.")}
+      <section class="reportSection">
+        <h3>Lead sequence health</h3>
+        <div class="tableList">
+          <div class="tableRow"><div class="tableTitle">Sequence active</div><div class="countBadge">${leadSeqActive}</div></div>
+          <div class="tableRow"><div class="tableTitle">Completed</div><div class="countBadge">${leadSeqCompleted}</div></div>
+          <div class="tableRow"><div class="tableTitle">Unsubscribed</div><div class="countBadge">${leadSeqUnsub}</div></div>
+          <div class="tableRow"><div class="tableTitle">Failed sends</div><div class="countBadge">${leadSeqFailed}</div></div>
+          <div class="tableRow"><div class="tableTitle">Total lead records</div><div class="countBadge">${leadTotal}</div></div>
+          <div class="tableRow"><div class="tableTitle">Total newsletter records</div><div class="countBadge">${subsTotal}</div></div>
+        </div>
+      </section>
     </div>
   `;
 }
@@ -1611,6 +1776,7 @@ function wireUI() {
     if (tab === "upcoming") refreshUpcomingBooks().catch(console.error);
     if (tab === "publishedBooks") refreshPublishedBooks().catch(console.error);
     if (PAGE_KEYS.includes(tab)) loadPage(tab).catch(console.error);
+    if (tab === "newsletter") refreshNewsletterSubscribers().catch(console.error);
     if (tab === "leadMagnets") refreshLeadMagnets().catch(console.error);
     if (tab === "affiliate") refreshLinks().catch(console.error);
     if (tab === "profile") loadProfile().catch(console.error);
@@ -1641,6 +1807,10 @@ function wireUI() {
   // static pages
   $("#saveActivitiesBtn")?.addEventListener("click", () => savePage("activities"));
   $("#saveNewsletterBtn")?.addEventListener("click", () => savePage("newsletter"));
+  $("#refreshSubscribersBtn")?.addEventListener("click", () => refreshNewsletterSubscribers().catch(console.error));
+  $("#exportSubscribersBtn")?.addEventListener("click", exportNewsletterSubscribers);
+  $("#subscriberSearch")?.addEventListener("input", renderNewsletterSubscribers);
+  $("#subscriberStatusFilter")?.addEventListener("change", renderNewsletterSubscribers);
 
   // affiliate
   pickEl("#newLinkBtn")?.addEventListener("click", () => {
@@ -1673,6 +1843,7 @@ function wireUI() {
   $("#toggleLeadMagnetTestModeBtn")?.addEventListener("click", () => toggleLeadMagnetTestMode().catch(console.error));
   $("#refreshLogsBtn")?.addEventListener("click", () => refreshLogs().catch(console.error));
   $("#refreshReportsBtn")?.addEventListener("click", () => refreshReports().catch(console.error));
+  $("#reportsRange")?.addEventListener("change", () => refreshReports().catch(console.error));
 }
 
 document.addEventListener("DOMContentLoaded", () => {

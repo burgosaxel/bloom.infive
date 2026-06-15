@@ -1,28 +1,28 @@
 ﻿<!doctype html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Blog Post | BLOOM.INFIVE</title>
-  <meta name="description" content="Blog post." />
+  <title>Historia | BLOOM.INFIVE</title>
+  <meta name="description" content="Historia del blog." />
   <link rel="canonical" href="https://bloominfive.blog/blog/post.html" />
   <meta name="robots" content="index,follow,max-image-preview:large" />
   <meta property="og:type" content="article" />
   <meta property="og:site_name" content="BLOOM.INFIVE" />
-  <meta property="og:title" content="Blog Post | BLOOM.INFIVE" />
-  <meta property="og:description" content="Read this post on BLOOM.INFIVE." />
+  <meta property="og:title" content="Historia | BLOOM.INFIVE" />
+  <meta property="og:description" content="Lee esta historia en BLOOM.INFIVE." />
   <meta property="og:url" content="https://bloominfive.blog/blog/post.html" />
   <meta property="og:image" content="https://bloominfive.blog/angelika.png" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Blog Post | BLOOM.INFIVE" />
-  <meta name="twitter:description" content="Read this post on BLOOM.INFIVE." />
+  <meta name="twitter:title" content="Historia | BLOOM.INFIVE" />
+  <meta name="twitter:description" content="Lee esta historia en BLOOM.INFIVE." />
   <meta name="twitter:image" content="https://bloominfive.blog/angelika.png" />
   <link rel="stylesheet" href="../styles.css" />
   <script id="postJsonLd" type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "BlogPosting",
-      "headline": "Blog Post",
+      "headline": "Historia",
       "author": {
         "@type": "Person",
         "name": "Angelika Burgos"
@@ -39,18 +39,26 @@
 <body>
   <div id="navMount"></div>
 
-  <main>
-    <section class="section">
+  <main class="page-shell">
+    <section class="article-shell">
       <div class="container">
         <div class="card article-card">
-          <h2 id="title">Loading...</h2>
-          <p class="muted" id="meta"></p>
+          <header class="article-header">
+            <h1 id="title">Cargando...</h1>
+            <p class="muted" id="meta"></p>
+          </header>
           <div id="content" style="margin-top:12px;"></div>
           <div id="engagementMount" style="margin-top:16px;"></div>
 
-          <div style="margin-top:14px;">
-            <a class="btn small ghost" href="./index.html">Back to Blog</a>
+          <div class="article-back" style="margin-top:14px;">
+            <a class="btn small ghost" href="./index.html">Volver a historias</a>
           </div>
+          <aside class="content-card article-cta" style="max-width:680px;margin:24px auto 0;padding:18px;">
+            <span class="badge">Una nota suave</span>
+            <h3 style="margin:12px 0 8px;">Quieres la próxima historia en tu inbox?</h3>
+            <p class="muted">Únete a las cartas de Bloom.inFive para recibir ánimo, reflexiones de maternidad y nuevas historias.</p>
+            <a class="btn small primary" href="../pages/newsletter.html">Recibir las cartas</a>
+          </aside>
         </div>
       </div>
     </section>
@@ -147,9 +155,9 @@
 
     function applyPostSeo(post, id) {
       const url = `${siteUrl}/blog/post.html?id=${encodeURIComponent(id)}`;
-      const title = (post.title || "Blog Post").toString().trim();
+      const title = (post.title || "Historia").toString().trim();
       const text = plainTextFromHtml(post.contentHtml || post.content || "");
-      const desc = (text || "Read this post on BLOOM.INFIVE.").slice(0, 155);
+      const desc = (text || "Lee esta historia en BLOOM.INFIVE.").slice(0, 155);
       const published = post.publishAt && typeof post.publishAt.toDate === "function"
         ? post.publishAt.toDate().toISOString()
         : undefined;
@@ -178,9 +186,9 @@
     }
 
     function safeLabelFromComment(c) {
-      let n = (c?.display || c?.name || "Anonymous").toString().trim();
-      if (n.includes("@")) n = "Member";
-      return n || "Anonymous";
+      let n = (c?.display || c?.name || "Anonima").toString().trim();
+      if (n.includes("@")) n = "Miembro";
+      return n || "Anonima";
     }
 
     function isPostLive(p) {
@@ -228,13 +236,13 @@
     }
 
     async function saveCommentProfile({ firstName, lastName, handle }) {
-      if (!currentUser) throw new Error("Not signed in");
+      if (!currentUser) throw new Error("No has iniciado sesión");
       const f = (firstName || "").toString().trim().slice(0, 40);
       const l = (lastName || "").toString().trim().slice(0, 60);
       const h = (handle || "").toString().trim().slice(0, 40);
-      if (!f) throw new Error("First name is required.");
-      if (h.length < 3) throw new Error("User ID must be at least 3 characters.");
-      if (!/^[a-zA-Z0-9_.]+$/.test(h)) throw new Error("User ID can only use letters, numbers, _ and .");
+      if (!f) throw new Error("El nombre es requerido.");
+      if (h.length < 3) throw new Error("El usuario debe tener al menos 3 caracteres.");
+      if (!/^[a-zA-Z0-9_.]+$/.test(h)) throw new Error("El usuario solo puede usar letras, numeros, _ y .");
 
       const ref = doc(db, "commentProfiles", currentUser.uid);
       const now = serverTimestamp();
@@ -275,7 +283,7 @@
           <button class="btn small ${state.selected ? "primary" : "ghost"}" type="button" data-react-main>
             ${active} <span>${total}</span>
           </button>
-          <div class="reaction-picker" data-reaction-picker style="display:none;position:absolute;left:0;bottom:calc(100% + 8px);background:var(--card);border:1px solid var(--control-border);border-radius:999px;padding:6px;box-shadow:var(--shadow);white-space:nowrap;z-index:20;">
+          <div class="reaction-picker" data-reaction-picker style="display:none;position:absolute;left:0;bottom:calc(100% + 8px);background:var(--card);border:1px solid var(--control-border);border-radius:var(--radius-lg);padding:6px;box-shadow:var(--shadow-soft);white-space:nowrap;z-index:20;">
             ${REACTIONS.map((reaction, idx) => `<button class="btn small ghost" type="button" data-reaction="${idx}" style="min-width:0;padding:6px 8px;">${reaction}</button>`).join("")}
           </div>
         </div>
@@ -295,7 +303,7 @@
     function renderComments(commentsHost, comments, id) {
       if (!commentsHost) return;
       if (!comments.length) {
-        commentsHost.innerHTML = `<p class="muted">No comments yet.</p>`;
+        commentsHost.innerHTML = `<p class="muted">Aun no hay comentarios.</p>`;
         return;
       }
 
@@ -326,14 +334,14 @@
         btn.addEventListener("click", async () => {
           const idToDelete = btn.getAttribute("data-del-comment");
           if (!idToDelete) return;
-          if (!confirm("Delete this comment?")) return;
+          if (!confirm("Eliminar este comentario?")) return;
           try {
             await deleteDoc(doc(db, "posts", id, "comments", idToDelete));
             const updated = await getComments(id);
             renderComments(commentsHost, updated, id);
           } catch (e) {
             console.error(e);
-            alert("Unable to delete comment. Please try again.");
+            alert("No se pudo eliminar el comentario. Inténtalo de nuevo.");
           }
         });
       });
@@ -351,8 +359,8 @@
           wrap.innerHTML = `
             <textarea rows="3" maxlength="1000" style="width:100%; min-width:260px;">${esc(current)}</textarea>
             <div class="row" style="gap:8px; margin-top:10px;">
-              <button class="btn small primary" type="button" data-save>Save</button>
-              <button class="btn small ghost" type="button" data-cancel>Cancel</button>
+              <button class="btn small primary" type="button" data-save>Guardar</button>
+              <button class="btn small ghost" type="button" data-cancel>Cancelar</button>
             </div>
           `;
           const ta = wrap.querySelector("textarea");
@@ -372,7 +380,7 @@
           saveBtn.addEventListener("click", async () => {
             const next = (ta.value || "").toString().trim().slice(0, 1000);
             if (!next) {
-              alert("Comment cannot be empty.");
+              alert("El comentario no puede estar vacio.");
               return;
             }
             try {
@@ -381,7 +389,7 @@
               renderComments(commentsHost, updated, id);
             } catch (e) {
               console.error(e);
-              alert("Unable to edit comment. Please try again.");
+              alert("No se pudo editar el comentario. Inténtalo de nuevo.");
             }
           });
         });
@@ -390,15 +398,15 @@
 
     function renderEngagementShell() {
       engagementMount.innerHTML = `
-        <div class="card engagement-card" style="padding:14px;">
+        <div class="card engagement-card engagement-panel" style="padding:14px;">
           <div class="row" data-reactions style="margin-bottom:8px; gap:8px; flex-wrap:wrap;"></div>
-          <p class="muted fine" style="margin:0 0 12px;">Reactions are anonymous.</p>
-          <h3 style="margin:0 0 8px; font-size:16px;">Comments</h3>
+          <p class="muted fine" style="margin:0 0 12px;">Las reacciones son anónimas.</p>
+          <h3 style="margin:0 0 8px; font-size:16px;">Comentarios</h3>
           <div data-comments class="list" style="margin-bottom:10px;"></div>
           <div data-comment-auth style="margin:0 0 10px;"></div>
           <form data-comment-form class="form" style="align-items:stretch;">
-            <textarea name="text" rows="3" placeholder="Write a comment..." maxlength="1000" required style="min-width:260px;"></textarea>
-            <button class="btn small primary" type="submit">Post Comment</button>
+            <textarea name="text" rows="3" placeholder="Escribe un comentario..." maxlength="1000" required style="min-width:260px;"></textarea>
+            <button class="btn small primary" type="submit">Publicar comentario</button>
           </form>
           <p class="muted fine" data-comment-msg></p>
         </div>
@@ -487,7 +495,7 @@
         if (!currentUser) {
           commentAuth.innerHTML = `
             <button class="btn small ghost" type="button" data-signin-btn>
-              Sign in with Google to comment
+              Inicia sesión con Google para comentar
             </button>
           `;
           commentForm.style.display = "none";
@@ -499,7 +507,7 @@
                 await signInForComments();
               } catch (e) {
                 console.error(e);
-                commentMsg.textContent = "Sign-in failed. Please try again.";
+                commentMsg.textContent = "No se pudo iniciar sesión. Inténtalo de nuevo.";
               }
             });
           }
@@ -508,19 +516,19 @@
 
         if (!currentProfile) {
           commentAuth.innerHTML = `
-            <div class="card profile-card" style="padding:12px; border-radius:14px; margin-bottom:10px;">
-              <div style="font-weight:800; margin-bottom:8px;">Set up your comment profile</div>
+            <div class="card profile-card" style="padding:12px; border-radius:var(--radius-md); margin-bottom:10px;">
+              <div style="font-weight:800; margin-bottom:8px;">Configura tu perfil de comentarios</div>
               <div class="muted fine" style="margin-bottom:10px;">
-                This keeps your email private. Choose a public User ID that will show with your comments.
+                Esto mantiene tu correo privado. Elige un usuario público que aparecerá con tus comentarios.
               </div>
               <form data-profile-form class="form" style="align-items:stretch;">
-                <input name="firstName" placeholder="First name" maxlength="40" required style="min-width:160px;" />
-                <input name="lastName" placeholder="Last name" maxlength="60" style="min-width:160px;" />
-                <input name="handle" placeholder="User ID (public)" maxlength="40" required style="min-width:180px;" />
-                <button class="btn small primary" type="submit">Save</button>
+                <input name="firstName" placeholder="Nombre" maxlength="40" required style="min-width:160px;" />
+                <input name="lastName" placeholder="Apellido" maxlength="60" style="min-width:160px;" />
+                <input name="handle" placeholder="Usuario público" maxlength="40" required style="min-width:180px;" />
+                <button class="btn small primary" type="submit">Guardar</button>
               </form>
               <div class="muted fine" data-profile-msg style="margin-top:8px;"></div>
-              <button class="btn small" type="button" data-signout-btn style="margin-top:10px;">Sign out</button>
+              <button class="btn small" type="button" data-signout-btn style="margin-top:10px;">Cerrar sesión</button>
             </div>
           `;
           commentForm.style.display = "none";
@@ -545,13 +553,13 @@
                   lastName: fd.get("lastName"),
                   handle: fd.get("handle"),
                 });
-                out.textContent = "Saved. You can comment now.";
+                out.textContent = "Guardado. Ya puedes comentar.";
                 commentUiUpdaters.forEach((fn) => {
                   try { fn(); } catch (err) { console.error(err); }
                 });
               } catch (err) {
                 console.error(err);
-                out.textContent = err?.message || "Unable to save profile.";
+                out.textContent = err?.message || "No se pudo guardar el perfil.";
               }
             });
           }
@@ -559,8 +567,8 @@
         }
 
         commentAuth.innerHTML = `
-          <span class="muted fine">Commenting as <strong>${esc(currentProfile.handle)}</strong></span>
-          <button class="btn small" type="button" data-signout-btn style="margin-left:10px;">Sign out</button>
+          <span class="muted fine">Comentando como <strong>${esc(currentProfile.handle)}</strong></span>
+          <button class="btn small" type="button" data-signout-btn style="margin-left:10px;">Cerrar sesión</button>
         `;
         commentForm.style.display = "";
         const signoutBtn = commentAuth.querySelector("[data-signout-btn]");
@@ -578,18 +586,18 @@
         e.preventDefault();
 
         if (!currentUser) {
-          commentMsg.textContent = "Please sign in to comment.";
+          commentMsg.textContent = "Por favor inicia sesión para comentar.";
           return;
         }
         if (!currentProfile) {
-          commentMsg.textContent = "Please set up your comment profile first.";
+          commentMsg.textContent = "Primero configura tu perfil de comentarios.";
           return;
         }
 
         const fd = new FormData(commentForm);
         const text = (fd.get("text") || "").toString().trim().slice(0, 1000);
         if (!text) {
-          commentMsg.textContent = "Comment cannot be empty.";
+          commentMsg.textContent = "El comentario no puede estar vacio.";
           return;
         }
 
@@ -601,7 +609,7 @@
         });
         logEvent("post_comment", { postId: id });
 
-        commentMsg.textContent = "Comment posted.";
+        commentMsg.textContent = "Comentario públicado.";
         commentForm.reset();
         const updatedComments = await getComments(id);
         renderComments(commentsHost, updatedComments, id);
@@ -610,7 +618,7 @@
 
     async function boot() {
       if (!postId) {
-        titleEl.textContent = "Post not found.";
+        titleEl.textContent = "Historia no encontrada.";
         metaEl.textContent = "";
         return;
       }
@@ -618,24 +626,24 @@
       logPageView({ page: "blog_post", postId });
       const snap = await getDoc(doc(db, "posts", postId));
       if (!snap.exists()) {
-        titleEl.textContent = "Post not found.";
+        titleEl.textContent = "Historia no encontrada.";
         metaEl.textContent = "";
         return;
       }
 
       const p = snap.data() || {};
       if (!isPostLive(p)) {
-        titleEl.textContent = "Post not available.";
+        titleEl.textContent = "Historia no disponible.";
         metaEl.textContent = "";
-        contentEl.innerHTML = `<p class="muted">This post is not live yet.</p>`;
+        contentEl.innerHTML = `<p class="muted">Esta historia aún no está publicada.</p>`;
         logEvent("post_blocked", { postId });
         return;
       }
 
-      titleEl.textContent = p.title || "Untitled";
+      titleEl.textContent = p.title || "Sin título";
       const tags = Array.isArray(p.tags) ? p.tags : [];
       metaEl.textContent = tags.join(" - ");
-      contentEl.innerHTML = p.contentHtml || p.content || "<p class='muted'>No content.</p>";
+      contentEl.innerHTML = p.contentHtml || p.content || "<p class='muted'>Sin contenido.</p>";
       applyPostSeo(p, postId);
       logEvent("post_view_ok", { postId });
 
@@ -657,10 +665,11 @@
 
     boot().catch((err) => {
       console.error(err);
-      titleEl.textContent = "Post not available.";
+      titleEl.textContent = "Historia no disponible.";
       metaEl.textContent = "";
-      contentEl.innerHTML = `<p class="muted">Unable to load this post right now.</p>`;
+      contentEl.innerHTML = `<p class="muted">No se pudo cargar esta historia ahora mismo.</p>`;
     });
   </script>
 </body>
 </html>
+

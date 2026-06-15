@@ -1,21 +1,21 @@
-<!doctype html>
-<html lang="en">
+﻿<!doctype html>
+<html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Affiliate Links | BLOOM.INFIVE</title>
-  <meta name="description" content="Amazon and affiliate recommendations curated by BLOOM.INFIVE." />
+  <title>Favoritos | BLOOM.INFIVE</title>
+  <meta name="description" content="Recomendaciones de Amazon y enlaces afiliados curados por BLOOM.INFIVE." />
   <link rel="canonical" href="https://bloominfive.blog/pages/affiliate.html" />
   <meta name="robots" content="index,follow,max-image-preview:large" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="BLOOM.INFIVE" />
-  <meta property="og:title" content="Affiliate Links | BLOOM.INFIVE" />
-  <meta property="og:description" content="Curated recommendations and affiliate links." />
+  <meta property="og:title" content="Favoritos | BLOOM.INFIVE" />
+  <meta property="og:description" content="Recomendaciones curadas y enlaces afiliados." />
   <meta property="og:url" content="https://bloominfive.blog/pages/affiliate.html" />
   <meta property="og:image" content="https://bloominfive.blog/angelika.png" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Affiliate Links | BLOOM.INFIVE" />
-  <meta name="twitter:description" content="Shop curated recommendations from BLOOM.INFIVE." />
+  <meta name="twitter:title" content="Favoritos | BLOOM.INFIVE" />
+  <meta name="twitter:description" content="Explora recomendaciones curadas por BLOOM.INFIVE." />
   <meta name="twitter:image" content="https://bloominfive.blog/angelika.png" />
   <link rel="stylesheet" href="../styles.css" />
 </head>
@@ -23,25 +23,30 @@
 <body>
   <div id="navMount"></div>
 
-  <main>
+  <main class="page-shell">
+    <section class="page-hero">
+      <div class="container page-hero-inner">
+        <div>
+          <p class="section-kicker">Favoritos probados por mamá</p>
+          <h1 class="page-title">Favoritos para días familiares más suaves.</h1>
+          <p class="page-subtitle">Hallazgos curados para maternidad, fe, ritmos del hogar y pequeñas cosas que hacen más ligeros los días reales.</p>
+        </div>
+      </div>
+    </section>
+
     <section class="section">
       <div class="container">
-        <div class="sectionHead">
-          <h2>Amazon & Affiliate Links</h2>
-          <p class="muted">Curated recommendations and links.</p>
-        </div>
-
-        <div id="links" style="display:grid; grid-template-columns:1fr; gap:14px;"></div>
+        <div id="links" class="recommendation-list" style="display:grid; grid-template-columns:1fr; gap:14px;"></div>
       </div>
     </section>
 
     <footer class="footer">
       <div class="container footerInner">
-        <p class="muted">© <span id="year"></span> BLOOM.INFIVE. All rights reserved.</p>
+        <p class="muted">&copy; <span id="year"></span> BLOOM.INFIVE. Todos los derechos reservados.</p>
         <div class="footerLinks">
-          <a href="../index.html">Home</a>
-          <a href="../blog/index.html">Blog</a>
-          <a href="../pages/newsletter.html">Newsletter</a>
+          <a href="../index.html">Inicio</a>
+          <a href="../blog/index.html">Historias</a>
+          <a href="../pages/newsletter.html">Cartas</a>
         </div>
       </div>
     </footer>
@@ -66,18 +71,20 @@
     const snap = await getDocs(q);
 
     if (snap.empty) {
-      linksEl.innerHTML = `<p class="muted">No links yet.</p>`;
+      linksEl.innerHTML = `<div class="empty-state"><p class="muted">Aun no hay enlaces.</p></div>`;
     } else {
       linksEl.innerHTML = snap.docs.map(d => {
         const x = d.data();
         return `
-          <article class="card affiliate-card">
-            <h2 style="margin:0 0 10px;">${esc(x.title || "Link")}</h2>
-            <p class="muted" style="margin:0 0 12px;">${esc(x.description || x.desc || "")}</p>
-            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
-              ${x.category ? `<span class="tag">${esc(x.category)}</span>` : ""}
+          <article class="card affiliate-card recommendation-card">
+            <div>
+              <div class="recommendation-meta">
+                ${x.category ? `<span class="tag">${esc(x.category)}</span>` : `<span class="tag">Favorito de mamá</span>`}
+              </div>
+              <h2>${esc(x.title || "Enlace")}</h2>
+              <p class="muted">${esc(x.description || x.desc || "")}</p>
             </div>
-            <a class="btn small ghost" href="${esc(x.url)}" target="_blank" rel="noopener">Open</a>
+            <a class="btn small primary" href="${esc(x.url)}" target="_blank" rel="noopener">Ver favorito</a>
           </article>
         `;
       }).join("");
@@ -85,3 +92,4 @@
   </script>
 </body>
 </html>
+

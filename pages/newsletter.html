@@ -1,21 +1,21 @@
-<!doctype html>
-<html lang="en">
+﻿<!doctype html>
+<html lang="es">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Newsletter | BLOOM.INFIVE</title>
-  <meta name="description" content="Subscribe to the BLOOM.INFIVE newsletter for new blog posts, upcoming releases, and updates." />
+  <title>Cartas | BLOOM.INFIVE</title>
+  <meta name="description" content="Suscribete a las cartas de BLOOM.INFIVE para recibir nuevas historias, lanzamientos y notas suaves." />
   <link rel="canonical" href="https://bloominfive.blog/pages/newsletter.html" />
   <meta name="robots" content="index,follow,max-image-preview:large" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="BLOOM.INFIVE" />
-  <meta property="og:title" content="Newsletter | BLOOM.INFIVE" />
-  <meta property="og:description" content="Join the newsletter for updates from BLOOM.INFIVE." />
+  <meta property="og:title" content="Cartas | BLOOM.INFIVE" />
+  <meta property="og:description" content="Únete a las cartas para recibir novedades de BLOOM.INFIVE." />
   <meta property="og:url" content="https://bloominfive.blog/pages/newsletter.html" />
   <meta property="og:image" content="https://bloominfive.blog/angelika.png" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Newsletter | BLOOM.INFIVE" />
-  <meta name="twitter:description" content="Subscribe for updates and new posts." />
+  <meta name="twitter:title" content="Cartas | BLOOM.INFIVE" />
+  <meta name="twitter:description" content="Suscribete para recibir novedades y nuevas historias." />
   <meta name="twitter:image" content="https://bloominfive.blog/angelika.png" />
   <link rel="stylesheet" href="../styles.css" />
 </head>
@@ -23,21 +23,36 @@
 <body>
   <div id="navMount"></div>
 
-  <main>
+  <main class="page-shell">
+    <section class="page-hero">
+      <div class="container page-hero-inner">
+        <div>
+          <p class="section-kicker">Cartas de Bloom.inFive</p>
+          <h1 class="page-title">Un poquito de ánimo para mamás cansadas.</h1>
+          <p class="page-subtitle">Notas suaves sobre fe, maternidad, rutinas, freebies y nuevas historias.</p>
+        </div>
+      </div>
+    </section>
+
     <section class="section">
-      <div class="container">
-        <div class="sectionHead">
-          <h2>Newsletter</h2>
-          <p class="muted">Subscribe for new posts, upcoming releases, and updates.</p>
+      <div class="container split-feature">
+        <div class="story-panel">
+          <p class="pullquote">Una nota tranquila en tu inbox para esos días en que necesitas recordar que la gracia también puede encontrarte aquí.</p>
+          <div class="soft-divider"></div>
+          <div class="badge-row">
+            <span class="badge">Notas con fe</span>
+            <span class="badge">Ritmos de maternidad</span>
+            <span class="badge">Freebies y acceso temprano</span>
+          </div>
         </div>
 
-        <div class="card content-card">
-          <form id="newsletter-form" class="form" style="align-items:stretch; max-width:760px; margin-top:22px;">
+        <div class="card content-card newsletter-panel">
+          <form id="newsletter-form" class="form" style="align-items:stretch; max-width:760px;">
             <input
               id="email"
               type="email"
               name="email"
-              placeholder="you@example.com"
+              placeholder="tu@email.com"
               autocomplete="email"
               style="flex:1;"
               required
@@ -48,28 +63,28 @@
               type="submit"
               style="min-width:150px;"
             >
-              Subscribe
+              Suscribirme
             </button>
           </form>
 
           <p id="status" class="muted" style="margin-top:14px;">
-            Join the list to get updates when new content goes live.
+            Únete a la lista para recibir una nota suave cuando haya nuevo ánimo, historias, o recursos.
+          </p>
+
+          <p class="muted fine" style="margin-top:14px;">
+            Al suscribirte, aceptas recibir correos de BLOOM.INFIVE. Puedes darte de baja cuando quieras.
           </p>
         </div>
-
-        <p class="muted" style="margin-top:14px;">
-          By subscribing, you agree to receive emails from BLOOM.INFIVE. You can unsubscribe anytime.
-        </p>
       </div>
     </section>
 
     <footer class="footer">
       <div class="container footerInner">
-        <p class="muted">&copy; <span id="year"></span> BLOOM.INFIVE. All rights reserved.</p>
+        <p class="muted">&copy; <span id="year"></span> BLOOM.INFIVE. Todos los derechos reservados.</p>
         <div class="footerLinks">
-          <a href="../index.html">Home</a>
-          <a href="./about.html">About</a>
-          <a href="./newsletter.html">Newsletter</a>
+          <a href="../index.html">Inicio</a>
+          <a href="./about.html">Sobre mi</a>
+          <a href="./newsletter.html">Cartas</a>
         </div>
       </div>
     </footer>
@@ -101,12 +116,12 @@
       e.preventDefault();
       const email = (emailEl.value || "").trim().toLowerCase();
       if (!email) {
-        show("Please enter your email.");
+        show("Por favor escribe tu correo.");
         return;
       }
 
       btn.disabled = true;
-      btn.textContent = "Subscribing...";
+      btn.textContent = "Suscribiendo...";
 
       try {
         const subId = email;
@@ -119,21 +134,22 @@
           unsubToken
         });
         form.reset();
-        show("You're subscribed. Welcome to BLOOM.INFIVE!", true);
+        show("Ya estás suscrita. Bienvenida a BLOOM.INFIVE.", true);
       } catch (err) {
         console.error(err);
         const code = (err && err.code) ? String(err.code) : "";
         // If the doc already exists, this becomes an update which is blocked by rules.
         if (code === "permission-denied") {
-          show("It looks like you're already subscribed with this email.", true);
+          show("Parece que ya estás suscrita con este correo.", true);
         } else {
-          show("Subscription failed. Please try again.");
+          show("No se pudo completar la suscripción. Inténtalo de nuevo.");
         }
       } finally {
         btn.disabled = false;
-        btn.textContent = "Subscribe";
+        btn.textContent = "Suscribirme";
       }
     });
   </script>
 </body>
 </html>
+

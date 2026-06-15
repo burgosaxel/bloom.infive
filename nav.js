@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   const THEME_KEY = "bloomTheme"; // "light" | "dark"
   const ICON_SUN = "\u2600\uFE0F";  // ☀️ (escaped to avoid file encoding issues)
   const ICON_MOON = "\uD83C\uDF19"; // 🌙 (escaped to avoid file encoding issues)
@@ -31,7 +31,7 @@
 
   function formatThemeIcon(themeBtn, theme) {
     themeBtn.textContent = (theme === "dark") ? ICON_SUN : ICON_MOON;
-    themeBtn.title = (theme === "dark") ? "Switch to light" : "Switch to dark";
+    themeBtn.title = (theme === "dark") ? "Cambiar a modo claro" : "Cambiar a modo oscuro";
   }
 
   function setBrandFlowerSrc(mount, prefix, theme) {
@@ -94,13 +94,26 @@
     const menuBtn = mount.querySelector("#menuBtn");
     const navLinks = mount.querySelector("#navLinks");
     if (menuBtn && navLinks) {
+      const setMenuOpen = (open) => {
+        navLinks.classList.toggle("open", open);
+        menuBtn.setAttribute("aria-expanded", open ? "true" : "false");
+        document.body.classList.toggle("nav-open", open);
+        if (!open) {
+          navLinks.querySelectorAll(".dropdown.open").forEach(dd => {
+            dd.classList.remove("open");
+            const btn = dd.querySelector(".dropBtn");
+            if (btn) btn.setAttribute("aria-expanded", "false");
+          });
+        }
+      };
+
       menuBtn.addEventListener("click", () => {
-        navLinks.classList.toggle("open");
+        setMenuOpen(!navLinks.classList.contains("open"));
       });
 
       // close menu on link click (mobile)
       navLinks.querySelectorAll("a").forEach(a => {
-        a.addEventListener("click", () => navLinks.classList.remove("open"));
+        a.addEventListener("click", () => setMenuOpen(false));
       });
     }
 
@@ -110,6 +123,7 @@
         if (window.matchMedia("(max-width: 760px)").matches) {
           const dd = btn.closest(".dropdown");
           dd.classList.toggle("open");
+          btn.setAttribute("aria-expanded", dd.classList.contains("open") ? "true" : "false");
         }
       });
     });
@@ -130,13 +144,13 @@
     const ok = await ensureFirebase(prefix);
     if (!ok) {
       const host = mount.querySelector("#blogTitlesMount");
-      if (host) host.innerHTML = `<a href="${map.blogIndex}">View posts</a>`;
+      if (host) host.innerHTML = `<a href="${map.blogIndex}">Ver historias</a>`;
       return;
     }
 
     loadBlogTitles(prefix, mount).catch(() => {
       const host = mount.querySelector("#blogTitlesMount");
-      if (host) host.innerHTML = `<a href="${map.blogIndex}">View posts</a>`;
+      if (host) host.innerHTML = `<a href="${map.blogIndex}">Ver historias</a>`;
     });
   }
 
@@ -157,14 +171,14 @@
     if (!host) return;
 
     if (snap.empty) {
-      host.innerHTML = `<a href="${prefix}blog/index.html">No posts yet</a>`;
+      host.innerHTML = `<a href="${prefix}blog/index.html">Aun no hay historias</a>`;
       return;
     }
 
     host.innerHTML = "";
     snap.forEach(docSnap => {
       const data = docSnap.data() || {};
-      const title = (data.title || "Untitled").toString();
+      const title = (data.title || "Sin título").toString();
       const url = `${prefix}blog/post.html?id=${encodeURIComponent(docSnap.id)}`;
 
       const a = document.createElement("a");
@@ -177,3 +191,5 @@
 
   document.addEventListener("DOMContentLoaded", injectNav);
 })();
+
+

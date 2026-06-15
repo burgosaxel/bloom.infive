@@ -1,4 +1,4 @@
-<header class="header">
+﻿<header class="header">
   <div class="container nav">
     <a class="brand" data-home-link href="#">
       <span class="brandText">BLOOM.INFIVE</span>
@@ -6,43 +6,44 @@
     </a>
 
     <div class="navRight">
-      <button class="menuBtn" id="menuBtn" aria-label="Open menu" aria-expanded="false">
+      <button class="menuBtn" id="menuBtn" aria-label="Abrir menu" aria-expanded="false" aria-controls="navLinks">
         <span></span><span></span><span></span>
       </button>
 
-      <nav class="navLinks" id="navLinks" aria-label="Primary">
-        <a class="navLink" data-link="about" href="#">About</a>
-        <a class="navLink" data-link="upcoming" href="#">Upcoming</a>
-        <a class="navLink" data-link="publishedBooks" href="#">Published Books</a>
-        <a class="navLink" data-link="activities" href="#">Activities</a>
+      <nav class="navLinks mobile-menu-shell" id="navLinks" aria-label="Navegacion principal">
+        <a class="navLink" data-link="about" href="#">Sobre mi</a>
+        <a class="navLink" data-link="upcoming" href="#">Proximamente</a>
+        <a class="navLink" data-link="publishedBooks" href="#">Libros</a>
+        <a class="navLink" data-link="activities" href="#">Actividades</a>
         <a class="navLink" data-link="momly" href="#">Momly</a>
 
         <div class="dropdown" data-dd="blog">
           <button class="dropBtn navLink" type="button" aria-haspopup="true" aria-expanded="false">
-            Blog
+            Historias
           </button>
           <div class="dropMenu" id="blogMenu" role="menu">
-            <a data-link="blogIndex" href="#" role="menuitem">All Posts</a>
+            <a data-link="blogIndex" href="#" role="menuitem">Todas las historias</a>
             <div class="dropDivider"></div>
             <div id="blogTitlesMount">
-              <a href="#" role="menuitem">Loading...</a>
+              <a href="#" role="menuitem">Cargando...</a>
             </div>
           </div>
         </div>
 
         <div class="dropdown" data-dd="amazon">
           <button class="dropBtn navLink" type="button" aria-haspopup="true" aria-expanded="false">
-            Amazon
+            Favoritos
           </button>
           <div class="dropMenu" role="menu">
-            <a data-link="amazonAffiliate" href="#" role="menuitem">Amazon &amp; Affiliate</a>
+            <a data-link="amazonAffiliate" href="#" role="menuitem">Favoritos y enlaces</a>
           </div>
         </div>
 
-        <a class="navLink" data-link="newsletter" href="#">Newsletter</a>
+        <a class="navLink" data-link="newsletter" href="#">Cartas</a>
       </nav>
 
-      <button class="themeBtn" id="themeBtn" aria-label="Toggle dark mode" title="Toggle theme">Theme</button>
+      <button class="themeBtn" id="themeBtn" aria-label="Cambiar modo oscuro" title="Cambiar tema">Tema</button>
     </div>
   </div>
 </header>
+

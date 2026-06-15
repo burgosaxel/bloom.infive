@@ -1,21 +1,21 @@
-<!doctype html>
-<html lang="en">
+﻿<!doctype html>
+<html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Upcoming | BLOOM.INFIVE</title>
-  <meta name="description" content="See upcoming books and projects from BLOOM.INFIVE." />
+  <title>Proximamente | BLOOM.INFIVE</title>
+  <meta name="description" content="Mira los libros y proyectos que vienen de BLOOM.INFIVE." />
   <link rel="canonical" href="https://bloominfive.blog/pages/upcoming.html" />
   <meta name="robots" content="index,follow,max-image-preview:large" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="BLOOM.INFIVE" />
-  <meta property="og:title" content="Upcoming | BLOOM.INFIVE" />
-  <meta property="og:description" content="Books on the way from BLOOM.INFIVE." />
+  <meta property="og:title" content="Proximamente | BLOOM.INFIVE" />
+  <meta property="og:description" content="Libros en camino de BLOOM.INFIVE." />
   <meta property="og:url" content="https://bloominfive.blog/pages/upcoming.html" />
   <meta property="og:image" content="https://bloominfive.blog/angelika.png" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Upcoming | BLOOM.INFIVE" />
-  <meta name="twitter:description" content="See what books are coming next." />
+  <meta name="twitter:title" content="Proximamente | BLOOM.INFIVE" />
+  <meta name="twitter:description" content="Mira que libros vienen pronto." />
   <meta name="twitter:image" content="https://bloominfive.blog/angelika.png" />
   <link rel="stylesheet" href="../styles.css" />
 </head>
@@ -23,21 +23,26 @@
 <body>
   <div id="navMount"></div>
 
-  <main>
+  <main class="page-shell">
+    <section class="page-hero">
+      <div class="container page-hero-inner">
+        <div>
+          <p class="section-kicker">Muy pronto</p>
+          <h1 class="page-title">Proyectos en Construcción</h1>
+          <p class="page-subtitle">Un vistazo tranquilo a libros y proyectos que todavía están tomando forma.</p>
+        </div>
+      </div>
+    </section>
+
     <section class="section">
       <div class="container">
-        <div class="sectionHead">
-          <h2>Upcoming</h2>
-          <p class="muted">Books on the way.</p>
-        </div>
-
-        <div id="upcomingCards" class="list"></div>
+        <div id="upcomingCards" class="list showcase-list"></div>
       </div>
     </section>
 
     <footer class="footer">
       <div class="container footerInner">
-        <p class="muted">&copy; <span id="year"></span> BLOOM.INFIVE. All rights reserved.</p>
+        <p class="muted">&copy; <span id="year"></span> BLOOM.INFIVE. Todos los derechos reservados.</p>
       </div>
     </footer>
   </main>
@@ -61,7 +66,7 @@
     }
 
     async function loadUpcoming() {
-      cardsEl.innerHTML = `<div class="card"><p class="muted">Loading...</p></div>`;
+      cardsEl.innerHTML = `<div class="loading-state"><p class="muted">Cargando...</p></div>`;
 
       const q = query(
         collection(db, "books"),
@@ -70,7 +75,7 @@
 
       const snap = await getDocs(q);
       if (snap.empty) {
-        cardsEl.innerHTML = `<div class="card"><p class="muted">No upcoming books... yet. But stay tuned!</p></div>`;
+        cardsEl.innerHTML = `<div class="empty-state"><p class="muted">Aun no hay libros próximos. Este espacio crecera cuando la siguiente historia este lista.</p></div>`;
         return;
       }
 
@@ -83,15 +88,18 @@
       cardsEl.innerHTML = docs.map((docSnap) => {
         const b = docSnap.data() || {};
         const cover = b.coverUrl
-          ? `<img class="book-cover" src="${esc(b.coverUrl)}" alt="${esc(b.title || "Book cover")}" style="width:100%;max-width:220px;border-radius:12px;border:1px solid var(--control-border);margin-bottom:12px;" />`
-          : "";
+          ? `<div class="book-cover-rail"><img class="book-cover" src="${esc(b.coverUrl)}" alt="${esc(b.title || "Book cover")}" /></div>`
+          : `<div class="book-cover-rail" aria-hidden="true"><span class="badge">Muy pronto</span></div>`;
 
         return `
-          <article class="card content-card">
+          <article class="card book-card">
             ${cover}
-            <h2 style="margin:0 0 8px;">${esc(b.title || "Untitled")}</h2>
-            <p class="muted" style="margin:0 0 12px;">${esc(b.summary || "")}</p>
-            ${b.link ? `<a class="btn small ghost" href="${esc(b.link)}" target="_blank" rel="noopener">Book Link</a>` : ""}
+            <div class="book-body">
+              <span class="badge">Proximamente</span>
+              <h2 style="margin-top:12px;">${esc(b.title || "Sin título")}</h2>
+              <p class="muted book-summary">${esc(b.summary || "")}</p>
+              ${b.link ? `<a class="btn small ghost" href="${esc(b.link)}" target="_blank" rel="noopener">Ver libro</a>` : ""}
+            </div>
           </article>
         `;
       }).join("");
@@ -99,8 +107,9 @@
 
     loadUpcoming().catch((err) => {
       console.error(err);
-      cardsEl.innerHTML = `<div class="card"><p class="muted">Unable to load upcoming books right now.</p></div>`;
+      cardsEl.innerHTML = `<div class="empty-state"><p class="muted">No se pudieron cargar los próximos libros ahora mismo.</p></div>`;
     });
   </script>
 </body>
 </html>
+

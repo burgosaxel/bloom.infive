@@ -1,21 +1,21 @@
-<!doctype html>
-<html lang="en">
+﻿<!doctype html>
+<html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Activities | BLOOM.INFIVE</title>
-  <meta name="description" content="Discover readings, events, and visit opportunities from BLOOM.INFIVE." />
+  <title>Actividades | BLOOM.INFIVE</title>
+  <meta name="description" content="Descubre lecturas, eventos y oportunidades de visita de BLOOM.INFIVE." />
   <link rel="canonical" href="https://bloominfive.blog/pages/activities.html" />
   <meta name="robots" content="index,follow,max-image-preview:large" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="BLOOM.INFIVE" />
-  <meta property="og:title" content="Activities | BLOOM.INFIVE" />
-  <meta property="og:description" content="Readings, events, and visits." />
+  <meta property="og:title" content="Actividades | BLOOM.INFIVE" />
+  <meta property="og:description" content="Lecturas, eventos y visitas." />
   <meta property="og:url" content="https://bloominfive.blog/pages/activities.html" />
   <meta property="og:image" content="https://bloominfive.blog/angelika.png" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Activities | BLOOM.INFIVE" />
-  <meta name="twitter:description" content="Readings, events, and author visits." />
+  <meta name="twitter:title" content="Actividades | BLOOM.INFIVE" />
+  <meta name="twitter:description" content="Lecturas, eventos y visitas de autora." />
   <meta name="twitter:image" content="https://bloominfive.blog/angelika.png" />
   <link rel="stylesheet" href="../styles.css" />
 </head>
@@ -23,30 +23,42 @@
 <body>
   <div id="navMount"></div>
 
-  <main>
+  <main class="page-shell">
+    <section class="page-hero">
+      <div class="container page-hero-inner">
+        <div>
+          <p class="section-kicker">Lecturas y visitas</p>
+          <h1 class="page-title">Lives y Eventos</h1>
+          <p class="page-subtitle">Lecturas, visitas y formas simples de conectar con Bloom.inFive en persona o en línea.</p>
+        </div>
+      </div>
+    </section>
+
     <section class="section">
-      <div class="container">
-        <div class="sectionHead">
-          <h2>Activities</h2>
-          <p class="muted">Readings, events, and visits.</p>
+      <div class="container split-feature">
+        <div class="story-panel">
+          <h2>Reunirnos alrededor de historias, fe y momentos de familia.</h2>
+          <p class="muted">Este espacio guardará lecturas, visitas y oportunidades para reunirnos alrededor de libros, maternidad y ánimo con fe.</p>
         </div>
 
-        <div class="card content-card">
-          <div id="activitiesContent">
-            <p class="muted">Loading...</p>
+        <div>
+          <div class="card content-card">
+            <div id="activitiesContent">
+              <p class="muted">Cargando...</p>
+            </div>
           </div>
-        </div>
 
-        <div class="card content-card" id="request" style="margin-top:14px;">
-          <h2>Request a Visit</h2>
-          <p class="muted">Under construction. Stay tuned!</p>
+          <div class="card content-card" id="request" style="margin-top:14px;">
+            <h2>Solicitar una visita</h2>
+            <p class="muted">Esta parte todavía se está preparando. Pronto habrá más detalles.</p>
+          </div>
         </div>
       </div>
     </section>
 
     <footer class="footer">
       <div class="container footerInner">
-        <p class="muted">© <span id="year"></span> BLOOM.INFIVE. All rights reserved.</p>
+        <p class="muted">&copy; <span id="year"></span> BLOOM.INFIVE. Todos los derechos reservados.</p>
       </div>
     </footer>
   </main>
@@ -61,11 +73,12 @@
     const snap = await getDoc(doc(db, "site", "activities"));
 
     if (!snap.exists()) {
-      el.innerHTML = `<p class="muted">Under construction. Stay tuned!</p>`;
+      el.innerHTML = `<p class="muted">En construcción. Muy pronto habrá novedades.</p>`;
     } else {
       const d = snap.data();
-      el.innerHTML = d.contentHtml || d.content || `<p class="muted">Under construction. Stay tuned!</p>`;
+      el.innerHTML = d.contentHtml || d.content || `<p class="muted">En construcción. Muy pronto habrá novedades.</p>`;
     }
   </script>
 </body>
 </html>
+

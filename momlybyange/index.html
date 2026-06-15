@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -41,7 +41,7 @@
       gap:8px;
       padding:8px 12px;
       border:1px solid var(--elev-2);
-      border-radius:999px;
+      border-radius:8px;
       background:color-mix(in srgb, var(--card) 72%, transparent);
       color:var(--muted);
       font-size:14px;
@@ -67,9 +67,9 @@
     .heroPanel{
       position:relative;
       min-height:380px;
-      border-radius:22px;
+      border-radius:10px;
       background:
-        linear-gradient(145deg, color-mix(in srgb, var(--card) 86%, transparent), color-mix(in srgb, var(--bg2) 80%, transparent)),
+        línear-gradient(145deg, color-mix(in srgb, var(--card) 86%, transparent), color-mix(in srgb, var(--bg2) 80%, transparent)),
         var(--card);
       border:1px solid var(--elev-2);
       box-shadow:var(--shadow);
@@ -177,7 +177,7 @@
     .problemPanel,
     .heartPanel,
     .ctaPanel{
-      border-radius:24px;
+      border-radius:10px;
       border:1px solid var(--elev-2);
       background:color-mix(in srgb, var(--card) 86%, transparent);
       box-shadow:var(--shadow);
@@ -195,7 +195,7 @@
     .previewList span{
       display:inline-flex;
       align-items:center;
-      border-radius:999px;
+      border-radius:8px;
       border:1px solid var(--elev-2);
       padding:8px 11px;
       background:color-mix(in srgb, var(--bg2) 68%, var(--card) 32%);
@@ -283,10 +283,42 @@
         flex-wrap:wrap;
       }
     }
+
+    .momlyBadge,
+    .problemWords span,
+    .previewList span{
+      border-radius:8px;
+      font-size:12px;
+      padding:6px 8px;
+    }
+
+    .heroPanel,
+    .problemPanel,
+    .heartPanel,
+    .ctaPanel,
+    .softCard,
+    .previewCard{
+      border-radius:10px;
+      box-shadow:var(--shadow-soft);
+    }
+
+    .plannerCard,
+    .softCardIcon{
+      border-radius:8px;
+      box-shadow:none;
+    }
+
+    .momlyTitle{
+      font-size:clamp(36px, 6vw, 64px);
+    }
+
+    .ctaPanel h2{
+      font-size:clamp(28px, 4vw, 42px);
+    }
   </style>
 </head>
 
-<body>
+<body class="momly-landing">
   <div id="nav-host"></div>
 
   <main>
@@ -323,6 +355,7 @@
     <section class="section">
       <div class="container">
         <div class="problemPanel">
+          <p class="section-kicker">El problema</p>
           <h2>Las mamás cargan mucho</h2>
           <div class="problemWords" aria-label="Cargas mentales comunes">
             <span>Rutinas</span>
@@ -340,6 +373,7 @@
 
     <section class="section alt">
       <div class="container">
+        <p class="section-kicker">La solución</p>
         <h2>Lo que Momly ayuda a organizar</h2>
         <p class="sectionIntro">Una forma más suave de mirar la semana, cuidar la casa y sostener a la familia sin sentir que tienes que hacerlo perfecto.</p>
 
@@ -381,6 +415,7 @@
     <section class="section">
       <div class="container">
         <div class="heartPanel">
+          <p class="section-kicker">El corazón</p>
           <h2>Creada con el corazón de Bloom.inFive</h2>
           <p class="sectionIntro">Momly está siendo creada desde el mismo corazón detrás de Bloom.inFive: fe, maternidad real, gracia, intención y organización sin perfeccionismo.</p>
           <p class="muted">No es una herramienta para exigirte más. Es una invitación a sostener tu vida familiar con un poquito más de claridad, y con mucha más ternura hacia ti misma.</p>
@@ -390,6 +425,7 @@
 
     <section class="section alt">
       <div class="container">
+        <p class="section-kicker">Vista previa</p>
         <h2>Lo que viene en Momly</h2>
         <p class="sectionIntro">Estamos construyendo esto con amor para ayudarte más. Estas son algunas áreas que estamos explorando y preparando con intención.</p>
 
@@ -428,11 +464,11 @@
 
   <footer class="footer">
     <div class="container footerInner">
-      <div>© <span id="year"></span> Angelika Burgos. All rights reserved.</div>
+      <div>© <span id="year"></span> Angelika Burgos. Todos los derechos reservados.</div>
       <div class="footerLinks">
-        <a href="../index.html">Home</a>
-        <a href="../blog/index.html">Blog</a>
-        <a href="../pages/newsletter.html">Newsletter</a>
+        <a href="../index.html">Inicio</a>
+        <a href="../blog/index.html">Historias</a>
+        <a href="../pages/newsletter.html">Cartas</a>
       </div>
     </div>
   </footer>
@@ -463,3 +499,5 @@
   <script src="../nav.js"></script>
 </body>
 </html>
+
+
