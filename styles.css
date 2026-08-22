@@ -672,6 +672,13 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 
   font-size:13px;
 }
 .footerInner p{margin:0}
+.footerCredit{
+  color:var(--muted);
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.02em;
+}
+.footerCredit:hover{color:var(--ink)}
 .footerLinks{display:flex;gap:4px;flex-wrap:wrap}
 .footerLinks a{padding:6px 8px;border-radius:var(--radius-sm);color:var(--muted);font-weight:700}
 .footerLinks a:hover{background:var(--accent-soft);color:var(--ink)}
